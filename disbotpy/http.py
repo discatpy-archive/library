@@ -22,13 +22,14 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from typing import Optional
+from typing import Any, Dict, Optional, Union
 from urllib.parse import quote as urlquote
 import sys
 import asyncio
 import aiohttp
 
 from . import __version__
+from .errors import HTTPException
 
 __all__ = (
     "Route",
@@ -55,6 +56,11 @@ class Route:
         self.api_version: int = api_ver
         self.url: str = self.BASE_URL.format(self.api_version) + self.path
 
+# TODO: Move to a more relevant place like disbotpy.utils
+def get_user_agent():
+    user_agent = "DiscordBot (https://github.com/EmreTech/DisBotPy.git, {0}) Python/{1.major}.{1.minor}.{1.micro} aiohttp/{2}"
+    return user_agent.format(__version__, sys.version_info, aiohttp.__version__)
+
 class HTTPClient:
     def __init__(
         self, 
@@ -63,8 +69,7 @@ class HTTPClient:
         self.connector = connector
         self._session = None # initalized by client
 
-        user_agent = "DiscordBot (https://github.com/EmreTech/DisBotPy.git, {0}) Python/{1.major}.{1.minor}.{1.micro} aiohttp/{2}"
-        self.user_agent = user_agent.format(__version__, sys.version_info, aiohttp.__version__)
+        self.user_agent = get_user_agent()
 
     def recreate_session(self):
         if self._session.closed:
@@ -89,11 +94,21 @@ class HTTPClient:
 
         kwargs["headers"] = headers
 
-        async with self._session.request(route.method, route.url, **kwargs) as response:
-            # TODO: Type checking
-            data = await response.json()
-            resp_code = response.status
+        try:
+            response: Optional[aiohttp.ClientResponse] = None
+            data: Optional[Union[Dict[str, Any], str]] = None
+            async with self._session.request(route.method, route.url, **kwargs) as response:
+                data = await response.json(encoding="utf-8") #await json_to_text(response)
+                print(type(data))
+                resp_code = response.status
 
-            return (data, resp_code)
+                if resp_code >= 200 and resp_code < 300:
+                    print("Connection to \"{0}\" succeeded!".format(route.url))
+                elif resp_code >= 400 and resp_code < 500:
+                    raise HTTPException("Got {0} client error code when attempting to connect to {1}".format(resp_code, route.path))
+                elif resp_code >= 500:
+                    raise HTTPException("Got {0} server error code when attempting to connect to {1}".format(resp_code, route.path))
 
-        
+                return data
+        except:
+            raise HTTPException("Unknown exception when trying to connect to {0}".format(route.path))        

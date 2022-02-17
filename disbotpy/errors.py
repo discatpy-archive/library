@@ -22,10 +22,10 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-__title__   = "DisBotPy"
-__author__  = "EmreTech"
-__version__ = "v1.0.0-Alpha"
+#__all__ = (
+#    "HTTPException"
+#)
 
-# TODO: Import modules here
-from .http import *
-from .errors import *
+# TODO: More proper HTTP Exception handling (use the ClientResponse and data)
+class HTTPException(Exception):
+    pass
