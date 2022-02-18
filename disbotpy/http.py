@@ -62,12 +62,10 @@ def get_user_agent():
     return user_agent.format(__version__, sys.version_info, aiohttp.__version__)
 
 class HTTPClient:
-    def __init__(
-        self, 
-        connector: Optional[aiohttp.BaseConnector] = None
-    ):
+    def __init__(self, connector: Optional[aiohttp.BaseConnector] = None):
         self.connector = connector
-        self._session = None # initalized by client
+        self._session: Optional[aiohttp.ClientSession] = None # initalized by client
+        self.token: Optional[str] = None
 
         self.user_agent = get_user_agent()
 
@@ -111,4 +109,18 @@ class HTTPClient:
 
                 return data
         except:
-            raise HTTPException("Unknown exception when trying to connect to {0}".format(route.path))        
+            raise HTTPException("Unknown exception when trying to connect to {0}".format(route.path))
+
+    async def get_gateway(self):
+        try:
+            url = await self.request(Route("GET", "/gateway", 0))
+            return url["url"]
+        except:
+            # TODO: Better error handling
+            pass  
+
+        return ""
+
+    async def get_gateway_bot(self):
+        # TODO: Implement this since it's a little more complicated
+        return "Unimplemented."
