@@ -25,7 +25,7 @@ DEALINGS IN THE SOFTWARE.
 from typing import Any, Dict, Optional, Union
 from urllib.parse import quote as urlquote
 import sys
-import asyncio
+#import asyncio
 import aiohttp
 
 from . import __version__
@@ -36,38 +36,44 @@ __all__ = (
     "HTTPClient"
 )
 
+API_VERSION = 9
+
 class Route:
-    BASE_URL = "https://discord.com/api/v{0}"
-
-    def __init__(self, method: str, path: str, api_ver: int) -> None:
-        # Currently, DisBotPy only supports Discord API v9 and v10. 
-        # Anything older is depecrated and anything newer has not been release yet.
-        # Setting api_ver to 0 means that it will be set to the default (v9)
-
-        if api_ver > 10:
-            raise RuntimeError(f"Discord API Version {api_ver} is too new to be used.")
-        elif api_ver < 9 and api_ver != 0:
-            raise RuntimeError(f"Discord API Version {api_ver} is now discontinued. Use a newer version.")
-        else:
-            api_ver = 9
-
+    def __init__(self, method: str, path: str, **parameters: Any) -> None:
         self.method: str = method
-        self.path: str = urlquote(path)
-        self.api_version: int = api_ver
-        self.url: str = self.BASE_URL.format(self.api_version) + self.path
+        self.path: str = path
+        url: str = self.base + self.path
+        if parameters:
+            url = url.format_map({k: urlquote(v) if isinstance(v, str) else v for k, v in parameters.items()})
+        self.url: str = url
+
+        # some major parameters
+        # TODO: Switch str type to Snowflake type except for webhook token
+        self.channel_id: Optional[str] = parameters.get("channel_id")
+        self.guild_id: Optional[str] = parameters.get("guild_id")
+        self.webhook_id: Optional[str] = parameters.get("webhook_id")
+        self.webhook_token: Optional[str] = parameters.get("webhook_token")
+
+    @property
+    def base(self) -> str:
+        return "https://discord.com/api/v{0}".format(API_VERSION)
+
+    #@property
+    #def bucket(self) -> str:
+    #    return f"{self.channel_id}:{self.guild_id}:{self.path}"
 
 # TODO: Move to a more relevant place like disbotpy.utils
-def get_user_agent():
+def _get_user_agent():
     user_agent = "DiscordBot (https://github.com/EmreTech/DisBotPy.git, {0}) Python/{1.major}.{1.minor}.{1.micro} aiohttp/{2}"
     return user_agent.format(__version__, sys.version_info, aiohttp.__version__)
 
 class HTTPClient:
-    def __init__(self, connector: Optional[aiohttp.BaseConnector] = None):
+    def __init__(self, connector: Optional[aiohttp.BaseConnector] = None, token: Optional[str] = None):
         self.connector = connector
         self._session: Optional[aiohttp.ClientSession] = None # initalized by client
-        self.token: Optional[str] = None
+        self.token: Optional[str] = token
 
-        self.user_agent = get_user_agent()
+        self.user_agent = _get_user_agent()
 
     def recreate_session(self):
         if self._session.closed:
@@ -80,9 +86,8 @@ class HTTPClient:
             "User-Agent": self.user_agent
         }
 
-        token = kwargs.get("token")
-        if token is not None:
-            headers["Authorization"] = f"Bot {token}"
+        if self.token is not None:
+            headers["Authorization"] = f"Bot {self.token}"
 
         json = kwargs.get("json")
         if json is not None:
@@ -92,35 +97,27 @@ class HTTPClient:
 
         kwargs["headers"] = headers
 
-        try:
-            response: Optional[aiohttp.ClientResponse] = None
-            data: Optional[Union[Dict[str, Any], str]] = None
-            async with self._session.request(route.method, route.url, **kwargs) as response:
-                data = await response.json(encoding="utf-8") #await json_to_text(response)
-                print(type(data))
-                resp_code = response.status
+        response: Optional[aiohttp.ClientResponse] = None
+        data: Optional[Union[Dict[str, Any], str]] = None
+        async with self._session.request(route.method, route.url, **kwargs) as response:
+            data = await response.json(encoding="utf-8")
+            resp_code = response.status
 
-                if resp_code >= 200 and resp_code < 300:
-                    print("Connection to \"{0}\" succeeded!".format(route.url))
-                elif resp_code >= 400 and resp_code < 500:
-                    raise HTTPException("Got {0} client error code when attempting to connect to {1}".format(resp_code, route.path))
-                elif resp_code >= 500:
-                    raise HTTPException("Got {0} server error code when attempting to connect to {1}".format(resp_code, route.path))
-
+            if resp_code >= 200 and resp_code < 300:
+                print("Connection to \"{0}\" succeeded!".format(route.url))
                 return data
-        except:
-            raise HTTPException("Unknown exception when trying to connect to {0}".format(route.path))
+            elif resp_code >= 400 and resp_code < 500:
+                raise HTTPException("Got {0} client error code when attempting to connect to {1}".format(resp_code, route.path))
+            elif resp_code >= 500:
+                raise HTTPException("Got {0} server error code when attempting to connect to {1}".format(resp_code, route.path))
 
-    async def get_gateway(self):
-        try:
-            url = await self.request(Route("GET", "/gateway", 0))
-            return url["url"]
-        except:
-            # TODO: Better error handling
-            pass  
-
-        return ""
+        raise RuntimeError("Got to unreachable section of HTTPClient.request")
 
     async def get_gateway_bot(self):
-        # TODO: Implement this since it's a little more complicated
-        return "Unimplemented."
+        return await self.request(Route("GET", "/gateway/bot"))
+
+    async def get_user(self, user_id: str):
+        return await self.request(Route("GET", "/users/{user_id}", user_id=user_id))
+
+    async def get_message(self, channel_id: str, message_id: str):
+        return await self.request(Route("GET", "/channels/{channel_id}/messages/{message_id}", channel_id=channel_id, message_id=message_id))
