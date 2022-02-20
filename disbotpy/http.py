@@ -171,7 +171,7 @@ class HTTPClient:
                     if resp_code == 429:
                         if response.headers.get("Via") or isinstance(data, str):
                             # probably banned by CloudFlare
-                            raise HTTPException("Got response code 429: Banned from CloudFlare")
+                            raise HTTPException(response, data)
 
                         retry_after = data["retry_after"]
                         is_global = data.get("global", False)
@@ -194,20 +194,20 @@ class HTTPClient:
 
                     # other error cases
                     if resp_code == 403:
-                        raise HTTPException("Got response code 403: forbidden")
+                        raise HTTPException(response, data)
                     elif resp_code == 404:
-                        raise HTTPException("Got response code 404: not found")
+                        raise HTTPException(response, data)
                     elif resp_code >= 500:
-                        raise HTTPException("Got response code {0}: the server is having trouble understanding the request".format(resp_code))
+                        raise HTTPException(response, data)
                     else:
-                        raise HTTPException("Got response code {0}: unknown".format(resp_code))
+                        raise HTTPException(response, data)
 
             # exhausted retries
             if response is not None:
                 if resp_code >= 500:
-                    raise HTTPException("Got response code {0}: the server is having trouble understanding the request".format(resp_code))
+                    raise HTTPException(response, data)
 
-                raise HTTPException("Got response code {0}: unknown".format(resp_code))
+                raise HTTPException(response, data)
 
         raise RuntimeError("Got to unreachable section of HTTPClient.request")
 
