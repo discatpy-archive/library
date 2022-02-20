@@ -32,7 +32,7 @@ import json
 import datetime
 
 from . import __version__
-from .errors import HTTPException
+from .errors import DisBotPyException, HTTPException
 
 __all__ = (
     "Route",
@@ -210,6 +210,27 @@ class HTTPClient:
                 raise HTTPException(response, data)
 
         raise RuntimeError("Got to unreachable section of HTTPClient.request")
+
+    async def login(self, token: str):
+        self._session = aiohttp.ClientSession(
+            connector=self.connector
+        )
+        old_token = self.token
+        self.token = token
+
+        try:
+            # get info about ourselves
+            data = await self.request(Route("GET", "/users/@me"))
+        except HTTPException as e:
+            self.token = old_token
+            if e.status == 401:
+                raise DisBotPyException("LoginFailure: Improper token has been passed.") from e
+            raise
+
+        return data
+
+    async def logout(self):
+        return await self.request(Route("POST", "/auth/logout"))
 
     async def get_gateway_bot(self):
         return await self.request(Route("GET", "/gateway/bot"))
