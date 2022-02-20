@@ -26,7 +26,10 @@ from typing import Any, Dict, Optional, Union
 from urllib.parse import quote as urlquote
 import sys
 import asyncio
+import weakref
 import aiohttp
+import json
+import datetime
 
 from . import __version__
 from .errors import HTTPException
@@ -36,38 +39,72 @@ __all__ = (
     "HTTPClient"
 )
 
+API_VERSION = 9
+
 class Route:
-    BASE_URL = "https://discord.com/api/v{0}"
-
-    def __init__(self, method: str, path: str, api_ver: int) -> None:
-        # Currently, DisBotPy only supports Discord API v9 and v10. 
-        # Anything older is depecrated and anything newer has not been release yet.
-        # Setting api_ver to 0 means that it will be set to the default (v9)
-
-        if api_ver > 10:
-            raise RuntimeError(f"Discord API Version {api_ver} is too new to be used.")
-        elif api_ver < 9 and api_ver != 0:
-            raise RuntimeError(f"Discord API Version {api_ver} is now discontinued. Use a newer version.")
-        else:
-            api_ver = 9
-
+    def __init__(self, method: str, path: str, **parameters: Any) -> None:
         self.method: str = method
-        self.path: str = urlquote(path)
-        self.api_version: int = api_ver
-        self.url: str = self.BASE_URL.format(self.api_version) + self.path
+        self.path: str = path
+        url: str = self.base + self.path
+        if parameters:
+            url = url.format_map({k: urlquote(v) if isinstance(v, str) else v for k, v in parameters.items()})
+        self.url: str = url
 
-# TODO: Move to a more relevant place like disbotpy.utils
-def get_user_agent():
+        # some major parameters
+        # TODO: Switch str type to Snowflake type except for webhook token
+        self.channel_id: Optional[str] = parameters.get("channel_id")
+        self.guild_id: Optional[str] = parameters.get("guild_id")
+        self.webhook_id: Optional[str] = parameters.get("webhook_id")
+        self.webhook_token: Optional[str] = parameters.get("webhook_token")
+
+    @property
+    def base(self) -> str:
+        return "https://discord.com/api/v{0}".format(API_VERSION)
+
+    @property
+    def bucket(self) -> str:
+        return f"{self.channel_id}:{self.guild_id}:{self.path}"
+
+def _get_user_agent():
     user_agent = "DiscordBot (https://github.com/EmreTech/DisBotPy.git, {0}) Python/{1.major}.{1.minor}.{1.micro} aiohttp/{2}"
     return user_agent.format(__version__, sys.version_info, aiohttp.__version__)
 
-class HTTPClient:
-    def __init__(self, connector: Optional[aiohttp.BaseConnector] = None):
-        self.connector = connector
-        self._session: Optional[aiohttp.ClientSession] = None # initalized by client
-        self.token: Optional[str] = None
+class MaybeUnlock:
+    def __init__(self, lock: asyncio.Lock):
+        self.lock: asyncio.Lock = lock
+        self._unlock: bool = True
 
-        self.user_agent = get_user_agent()
+    def __enter__(self):
+        return self
+
+    def defer(self):
+        self._unlock = False
+
+    def __exit__(self, exc_type, exc, traceback):
+        if self._unlock:
+            self.lock.release()
+
+def _parse_ratelimit_header(headers: Dict[str, Any]):
+    reset_after: Optional[str] = headers.get("X-RateLimit-Reset-After")
+    if not reset_after:
+        utc = datetime.timezone.utc
+        now = datetime.datetime.now(utc)
+        reset = datetime.datetime.fromtimestamp(headers.get("X-RateLimit-Reset"))
+        return (reset - now).total_seconds()
+    else:
+        return float(reset_after)
+
+class HTTPClient:
+    def __init__(self, connector: Optional[aiohttp.BaseConnector] = None, token: Optional[str] = None):
+        self.loop: asyncio.AbstractEventLoop = asyncio.get_running_loop()
+        self.connector = connector
+        self._session: Optional[aiohttp.ClientSession] = None # initalized later by static_login
+        self._global_ratelimit_over: asyncio.Event = asyncio.Event()
+        self._global_ratelimit_over.set()
+        self._bucket_locks: weakref.WeakValueDictionary = weakref.WeakValueDictionary()
+        self.token: Optional[str] = token
+
+        self.user_agent = _get_user_agent()
 
     def recreate_session(self):
         if self._session.closed:
@@ -76,51 +113,109 @@ class HTTPClient:
             )
 
     async def request(self, route: Route, **kwargs):
-        headers = {
+        bucket = route.bucket
+        url = route.url
+        method = route.method
+
+        lock = self._bucket_locks.get(bucket)
+        if lock is None:
+            # lock for this bucket has not been initalized
+            lock = asyncio.Lock()
+            if bucket is not None:
+                self._bucket_locks[bucket] = lock
+
+        headers: Dict[str, Any] = {
             "User-Agent": self.user_agent
         }
 
-        token = kwargs.get("token")
-        if token is not None:
-            headers["Authorization"] = f"Bot {token}"
+        if self.token is not None:
+            headers["Authorization"] = f"Bot {self.token}"
 
-        json = kwargs.get("json")
-        if json is not None:
+        data = kwargs.get("json")
+        if data is not None:
             headers["Content-Type"] = "application/json"
-            # TODO: Convert dict to str
-            kwargs["data"] = kwargs.pop("json")
+            kwargs["data"] = json.dumps(data, separators=(",", ":"), ensure_ascii=True)
+
+        # TODO: Manage Audit log reason
 
         kwargs["headers"] = headers
 
-        try:
-            response: Optional[aiohttp.ClientResponse] = None
-            data: Optional[Union[Dict[str, Any], str]] = None
-            async with self._session.request(route.method, route.url, **kwargs) as response:
-                data = await response.json(encoding="utf-8") #await json_to_text(response)
-                print(type(data))
-                resp_code = response.status
+        if not self._global_ratelimit_over.is_set():
+            # global ratelimit is not over, wait
+            await self._global_ratelimit_over.wait()
 
-                if resp_code >= 200 and resp_code < 300:
-                    print("Connection to \"{0}\" succeeded!".format(route.url))
-                elif resp_code >= 400 and resp_code < 500:
-                    raise HTTPException("Got {0} client error code when attempting to connect to {1}".format(resp_code, route.path))
-                elif resp_code >= 500:
-                    raise HTTPException("Got {0} server error code when attempting to connect to {1}".format(resp_code, route.path))
+        response: Optional[aiohttp.ClientResponse] = None
+        data: Optional[Union[Dict[str, Any], str]] = None
 
-                return data
-        except:
-            raise HTTPException("Unknown exception when trying to connect to {0}".format(route.path))
+        # wait for the bucket lock to be unlocked, then lock it again
+        await lock.acquire()
+        with MaybeUnlock(lock) as m_lock:
+            # try to connect 5 times before giving up
+            for tries in range(5):
+                async with self._session.request(method, url, **kwargs) as response:
+                    data = await response.json(encoding="utf-8")
+                    resp_code = response.status
 
-    async def get_gateway(self):
-        try:
-            url = await self.request(Route("GET", "/gateway", 0))
-            return url["url"]
-        except:
-            # TODO: Better error handling
-            pass  
+                    remaining_req = response.headers.get("X-RateLimit-Remaining")
+                    if remaining_req == "0" and resp_code != 429:
+                        # this means that the current ratelimit bucket has been exhausted
+                        delta = _parse_ratelimit_header(response.headers)
+                        m_lock.defer()
+                        self.loop.call_later(delta, lock.release)
 
-        return ""
+                    if resp_code >= 200 and resp_code < 300:
+                        print("Connection to \"{0}\" succeeded!".format(route.url))
+                        return data
+
+                    # we are being ratelimited
+                    if resp_code == 429:
+                        if response.headers.get("Via") or isinstance(data, str):
+                            # probably banned by CloudFlare
+                            raise HTTPException(response, data)
+
+                        retry_after = data["retry_after"]
+                        is_global = data.get("global", False)
+                        if is_global:
+                            # unset global ratelimit over event
+                            self._global_ratelimit_over.clear()
+
+                        # wait then try again
+                        await asyncio.sleep(retry_after)
+
+                        if is_global:
+                            self._global_ratelimit_over.set()
+
+                        continue
+                    
+                    # server error, retry after waiting
+                    if resp_code in {500, 502, 504}:
+                        await asyncio.sleep(1 + tries * 2)
+                        continue
+
+                    # other error cases
+                    if resp_code == 403:
+                        raise HTTPException(response, data)
+                    elif resp_code == 404:
+                        raise HTTPException(response, data)
+                    elif resp_code >= 500:
+                        raise HTTPException(response, data)
+                    else:
+                        raise HTTPException(response, data)
+
+            # exhausted retries
+            if response is not None:
+                if resp_code >= 500:
+                    raise HTTPException(response, data)
+
+                raise HTTPException(response, data)
+
+        raise RuntimeError("Got to unreachable section of HTTPClient.request")
 
     async def get_gateway_bot(self):
-        # TODO: Implement this since it's a little more complicated
-        return "Unimplemented."
+        return await self.request(Route("GET", "/gateway/bot"))
+
+    async def get_user(self, user_id: str):
+        return await self.request(Route("GET", "/users/{user_id}", user_id=user_id))
+
+    async def get_message(self, channel_id: str, message_id: str):
+        return await self.request(Route("GET", "/channels/{channel_id}/messages/{message_id}", channel_id=channel_id, message_id=message_id))
