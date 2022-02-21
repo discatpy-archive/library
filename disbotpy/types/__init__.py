@@ -22,13 +22,4 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-__title__   = "DisBotPy"
-__author__  = "EmreTech"
-__version__ = "v1.0.0-Alpha"
-__license__ = "MIT"
-
-from .http import *
-from .errors import *
 from .gateway import *
-from .mixins import *
-from .types import *

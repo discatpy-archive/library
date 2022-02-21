@@ -211,6 +211,9 @@ class HTTPClient:
 
         raise RuntimeError("Got to unreachable section of HTTPClient.request")
 
+    async def close(self):
+        return await self._session.close()
+
     async def login(self, token: str):
         self._session = aiohttp.ClientSession(
             connector=self.connector
@@ -229,11 +232,18 @@ class HTTPClient:
 
         return data
 
-    async def logout(self):
-        return await self.request(Route("POST", "/auth/logout"))
+    async def get_gateway_bot(self, *, encoding: str = "json", zlib: bool = True):
+        try:
+            data = await self.request(Route("GET", "/gateway/bot"))
+        except HTTPException as e:
+            raise DisBotPyException("Gateway not found") from e
 
-    async def get_gateway_bot(self):
-        return await self.request(Route("GET", "/gateway/bot"))
+        if zlib:
+            fmt = "{0}?v={1}&encoding={2}&compress=zlib-stream"
+        else:
+            fmt = "{0}?v={1}&encoding={2}"
+
+        return data["shards"], fmt.format(data["url"], API_VERSION, encoding)
 
     async def get_user(self, user_id: str):
         return await self.request(Route("GET", "/users/{user_id}", user_id=user_id))

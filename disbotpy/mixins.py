@@ -22,13 +22,51 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-__title__   = "DisBotPy"
-__author__  = "EmreTech"
-__version__ = "v1.0.0-Alpha"
-__license__ = "MIT"
+class SnowflakeMixin:
+    __slots__ = ()
 
-from .http import *
-from .errors import *
-from .gateway import *
-from .mixins import *
-from .types import *
+    raw_id: int
+
+    @property
+    def id(self):
+        """
+        Alias for the raw Snowflake ID of this object.
+        """
+        return self.raw_id
+
+    @id.setter
+    def id(self, new_id: int):
+        """
+        Alias for the raw Snowflake ID of this object.
+        """
+        self.raw_id = new_id
+
+    @property
+    def snowflake_timestamp(self):
+        """
+        The timestamp stored in this object's Snowflake ID.
+        """
+        return (self.raw_id >> 22) + 1420070400000
+
+    @property
+    def snowflake_iwid(self):
+        """
+        The internal worker ID stored in this object's
+        Snowflake ID.
+        """
+        return (self.raw_id & 0x3E0000) >> 17
+
+    @property
+    def snowflake_ipid(self):
+        """
+        The internal process ID stored in this object's
+        Snowflake ID.
+        """
+        return (self.raw_id & 0x1F000) >> 12
+
+    @property
+    def snowflake_increment(self):
+        """
+        The increment of the object's Snowflake ID.
+        """
+        return self.raw_id & 0xFFF

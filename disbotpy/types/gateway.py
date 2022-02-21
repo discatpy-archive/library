@@ -22,13 +22,23 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-__title__   = "DisBotPy"
-__author__  = "EmreTech"
-__version__ = "v1.0.0-Alpha"
-__license__ = "MIT"
+from typing import Any, Dict, Optional
 
-from .http import *
-from .errors import *
-from .gateway import *
-from .mixins import *
-from .types import *
+class GatewayPayload:
+    op: int
+    d: Dict[str, Any]
+    s: Optional[int]
+    t: Optional[str]
+
+class GatewayOpcode:
+    DISPATCH = 0
+    HEARTBEAT = 1
+    IDENTIFY = 2
+    PRESENCE_UPDATE = 3
+    VOICE_STATE_UPDATE = 4
+    RESUME = 6
+    RECONNECT = 7
+    REQUEST_GUILD_MEMBERS = 8
+    INVALID_SESSION = 9
+    HELLO = 10
+    HEARTBEAT_ACK = 11

@@ -22,13 +22,38 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-__title__   = "DisBotPy"
-__author__  = "EmreTech"
-__version__ = "v1.0.0-Alpha"
-__license__ = "MIT"
+import asyncio
+import aiohttp
+import platform
+import zlib
+from typing import Any, Dict
 
-from .http import *
-from .errors import *
-from .gateway import *
-from .mixins import *
-from .types import *
+from .types.gateway import GatewayPayload, GatewayOpcode
+
+#__all__ = (
+#    "GatewayClient",
+#)
+
+_identify_connection_properties = {
+    "$os": platform.uname().system,
+    "$browser": "disbotpy",
+    "$device": "disbotpy",
+}
+
+def _map_dict_to_gateway_payload(d: Dict[str, Any]):
+    output: GatewayPayload = GatewayPayload()
+    output.op = d.get("op", -1)
+    output.d = d.get("d")
+    output.s = d.get("s")
+    output.t = d.get("t")
+    return output
+
+class GatewayClient:
+    def __init__(self, ws: aiohttp.ClientWebSocketResponse):
+        self.ws = ws
+        self.zlib = zlib.decompressobj()
+
+    async def get_response(self):
+        # for testing purposes, will be changed
+        return await self.ws.receive()
+    
