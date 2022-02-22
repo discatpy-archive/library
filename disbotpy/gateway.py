@@ -64,6 +64,28 @@ def decompress_msg(inflator: zlib._Decompress, msg: bytes):
     return out_str
 
 class GatewayClient:
+    """The Gateway Client between your Bot and Discord
+    
+    Parameters
+    ----------
+    ws: :class:`aiohttp.ClientWebSocketResponse`
+        The websockets response
+    client
+        The Client
+    
+    Attributes
+    ----------
+    inflator: :class:`zlib.decompressobj`
+        The Gateways inflator
+    heartbeat_interval: :class:`float`
+        The interval to heartbeat given by Discord
+    seq_num: :class:`int`
+        The current sequence number
+    recent_gp: :class:`GatewayPayload`
+        The newest Gateway Payload
+    keep_alive_thread: :class:`threading.Thread`
+        The thread used to keep the connection alive
+    """
     def __init__(self, ws: aiohttp.ClientWebSocketResponse, client):
         self.ws: aiohttp.ClientWebSocketResponse = ws
         self.inflator = zlib.decompressobj()
@@ -78,6 +100,7 @@ class GatewayClient:
             "op": GatewayOpcode.IDENTIFY,
             "d": {
                 "token": self.client.token,
+                "intents": self.client.intents,
                 "properties": _identify_connection_properties,
                 "large_threshold": 250,
             }
@@ -106,7 +129,7 @@ class GatewayClient:
 
     async def poll_event(self):
         if self.recent_gp.op == GatewayOpcode.HELLO:
-            self.heartbeat_interval = self.recent_gp.d["heartbeat_interval"]
+            self.heartbeat_interval = self.recent_gp.d["heartbeat_interval"] / 1000
             await self.ws.send_json(self.identify_payload())
             self.keep_alive_thread = threading.Thread(target=self.keep_alive_run)
 
@@ -128,7 +151,7 @@ class GatewayClient:
             inflated_msg = json.loads(inflated_msg)
             gp = _map_dict_to_gateway_payload(inflated_msg)
 
-            asyncio.sleep(self.heartbeat_interval)
+            await asyncio.sleep(self.heartbeat_interval)
 
     def keep_alive_run(self):
         loop = asyncio.new_event_loop()
