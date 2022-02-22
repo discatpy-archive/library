@@ -151,7 +151,7 @@ class GatewayClient:
             inflated_msg = json.loads(inflated_msg)
             gp = _map_dict_to_gateway_payload(inflated_msg)
 
-            asyncio.sleep(self.heartbeat_interval)
+            await asyncio.sleep(self.heartbeat_interval)
 
     def keep_alive_run(self):
         loop = asyncio.new_event_loop()
