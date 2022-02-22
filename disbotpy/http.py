@@ -112,6 +112,19 @@ class HTTPClient:
                 connector=self.connector
             )
 
+    async def ws_connect(self, url: str):
+        kwargs = {
+            "max_msg_size": 0,
+            "timeout": 30.0,
+            "autoclose": False,
+            "headers": {
+                "User-Agent": self.user_agent
+            },
+            "compress": 0,
+        }
+
+        return await self._session.ws_connect(url, **kwargs)
+
     async def request(self, route: Route, **kwargs):
         bucket = route.bucket
         url = route.url

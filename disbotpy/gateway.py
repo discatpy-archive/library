@@ -26,8 +26,9 @@ import asyncio
 import json
 import aiohttp
 import platform
+import threading
 import zlib
-from typing import Any, Dict, Generic, TypeVar, Union
+from typing import Any, Dict, Generic, TypeVar, Union, Optional
 
 from .types.gateway import GatewayPayload, GatewayOpcode
 
@@ -51,74 +52,84 @@ def _map_dict_to_gateway_payload(d: Dict[str, Any]):
     output.t = d.get("t")
     return output
 
-class HeartbeatHandler:
-    def __init__(self, gw) -> None:
-        self.gw = gw
-        self.s = None
+def decompress_msg(inflator: zlib._Decompress, msg: bytes):
+    out_str: str = ""
 
-    async def loop(self):
-        heartbeat_payload = {
-            "op": GatewayOpcode.HEARTBEAT,
-            "d": self.s
-        }
-        await self.gw.send_json(heartbeat_payload)
+    # Message should be compressed
+    if len(msg) < 4 or msg[-4:] != ZLIB_SUFFIX:
+        return out_str
 
-        msg = await self.gw.ws.receive()
-        # let's assume the type of msg is text
-        msg_json = json.loads(msg.data)
-        gp = _map_dict_to_gateway_payload(msg_json)
-
-        # TODO: Break connection if HEARTBEAT_ACK wasn't received
+    buff = inflator.decompress(msg)
+    out_str = buff.decode("utf-8")
+    return out_str
 
 class GatewayClient:
     def __init__(self, ws: aiohttp.ClientWebSocketResponse, client):
-        self.ws = ws
+        self.ws: aiohttp.ClientWebSocketResponse = ws
         self.inflator = zlib.decompressobj()
         self.client = client
-        self.heartbeat_interval = 0
-        self.recent_gp = GatewayPayload()
-        self.heartbeat_handler = HeartbeatHandler(self)
-    
-    def decompress_msg(self, msg: bytes):
-        out_str: str = ""
+        self.heartbeat_interval: float = 0.0
+        self.seq_num: Optional[int] = None
+        self.recent_gp: GatewayPayload = GatewayPayload()
+        self.keep_alive_thread: Optional[threading.Thread] = None
 
-        # Message should be compressed
-        if len(msg) < 4 or msg[-4:] != ZLIB_SUFFIX:
-            return out_str
-
-        buff = self.inflator.decompress(msg)
-        out_str = buff.decode("utf-8")
-        return out_str
-
-    async def get_request(self):
-        msg = await self.ws.receive()
-        if msg.type == aiohttp.WSMsgType.BINARY:
-            decompressed_msg = self.decompress_msg(msg.data)
-            decompressed_msg = json.loads(decompressed_msg)
-            self.recent_gp = _map_dict_to_gateway_payload(decompressed_msg)
-            # TODO: Poll event
-            
-        elif msg.type == aiohttp.WSMsgType.TEXT:
-            msg_json = json.loads(msg.data)
-            self.recent_gp = _map_dict_to_gateway_payload(msg_json)
-            # TODO: Poll event
-
-    async def send_json(self, d: Dict[str, Any]):
-        json_str = json.dumps(d)
-        await self.ws.send_str(json_str)
-
-    async def poll_event(self, gp: GatewayPayload):
-        if gp.op == 10:
-            send_gp = {
-                "op": GatewayOpcode.IDENTIFY,
-                "d": {
-                    "token": self.client.token,
-                    "properties": _identify_connection_properties,
-                    "large_threshold": self.client.large_threshold,
-                    "presence": self.client.user.presence,
-                    "intents": self.client.raw_intents,
-                }
+    def identify_payload(self):
+        identify_dict = {
+            "op": GatewayOpcode.IDENTIFY,
+            "d": {
+                "token": self.client.token,
+                "properties": _identify_connection_properties,
+                "large_threshold": 250,
             }
-            await self.send_json(send_gp)
-            self.heartbeat_interval = gp.d.get("heartbeat_interval")
-            # TODO: Start heartbeat loop
+        }
+
+        if self.client.intents is not None:
+            identify_dict["d"]["intents"] = self.client.intents.raw
+        if self.client.user.presence is not None:
+            identify_dict["d"]["presence"] = self.client.user.presence.to_dict()
+
+        return identify_dict
+
+    async def loop(self):
+        while True:
+            if self.ws.closed:
+                break
+
+            msg = await self.ws.receive()
+
+            # we should be able to say that the type of the message is binary and its compressed
+            inflated_msg = decompress_msg(self.inflator, msg)
+            inflated_msg = json.loads(inflated_msg)
+            self.recent_gp = _map_dict_to_gateway_payload(inflated_msg)
+
+            await self.poll_event()
+
+    async def poll_event(self):
+        if self.recent_gp.op == GatewayOpcode.HELLO:
+            self.heartbeat_interval = self.recent_gp.d["heartbeat_interval"]
+            await self.ws.send_json(self.identify_payload())
+            self.keep_alive_thread = threading.Thread(target=self.keep_alive_run)
+
+    async def keep_alive_loop(self):
+        while True:
+            if self.ws.closed:
+                break
+
+            heartbeat_payload = {
+                "op": GatewayOpcode.HEARTBEAT,
+                "d": self.seq_num
+            }
+            await self.ws.send_json(heartbeat_payload)
+
+            msg = await self.ws.receive_json()
+
+            # we should be able to say that the type of the message is binary and its compressed
+            inflated_msg = decompress_msg(self.inflator, msg)
+            inflated_msg = json.loads(inflated_msg)
+            gp = _map_dict_to_gateway_payload(inflated_msg)
+
+            asyncio.sleep(self.heartbeat_interval)
+
+    def keep_alive_run(self):
+        loop = asyncio.new_event_loop()
+        loop.run_until_complete(self.keep_alive_loop())
