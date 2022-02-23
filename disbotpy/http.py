@@ -1,6 +1,7 @@
 """
 The MIT License (MIT)
 
+Copyright (c) 2015-2021 Rapptz
 Copyright (c) 2022-present EmreTech
 
 Permission is hereby granted, free of charge, to any person obtaining a
@@ -66,8 +67,8 @@ class Route:
         return f"{self.channel_id}:{self.guild_id}:{self.path}"
 
 def _get_user_agent():
-    user_agent = "DiscordBot (https://github.com/EmreTech/DisBotPy.git, {0}) Python/{1.major}.{1.minor}.{1.micro} aiohttp/{2}"
-    return user_agent.format(__version__, sys.version_info, aiohttp.__version__)
+    user_agent = "DiscordBot (https://github.com/EmreTech/DisBotPy.git, {0}) Python/{1.major}.{1.minor}.{1.micro}"
+    return user_agent.format(__version__, sys.version_info)
 
 class MaybeUnlock:
     def __init__(self, lock: asyncio.Lock):
