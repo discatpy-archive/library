@@ -24,9 +24,11 @@ DEALINGS IN THE SOFTWARE.
 
 import asyncio
 import json
+import random
 import aiohttp
 import platform
 import threading
+import datetime
 import zlib
 from typing import Any, Dict, Generic, TypeVar, Union, Optional
 
@@ -52,7 +54,7 @@ def _map_dict_to_gateway_payload(d: Dict[str, Any]):
     output.t = d.get("t")
     return output
 
-def decompress_msg(inflator: zlib._Decompress, msg: bytes):
+def decompress_msg(inflator, msg: bytes):
     out_str: str = ""
 
     # Message should be compressed
@@ -72,6 +74,9 @@ class GatewayClient:
         The websockets response
     client
         The Client
+    heartbeat_timeout: :class:`int`
+        The amount of time (in seconds) to wait for a heartbeat ack
+        to come in.
     
     Attributes
     ----------
@@ -86,7 +91,7 @@ class GatewayClient:
     keep_alive_thread: :class:`threading.Thread`
         The thread used to keep the connection alive
     """
-    def __init__(self, ws: aiohttp.ClientWebSocketResponse, client):
+    def __init__(self, ws: aiohttp.ClientWebSocketResponse, client, heartbeat_timeout: float = 30.0):
         self.ws: aiohttp.ClientWebSocketResponse = ws
         self.inflator = zlib.decompressobj()
         self.client = client
@@ -94,6 +99,9 @@ class GatewayClient:
         self.seq_num: Optional[int] = None
         self.recent_gp: GatewayPayload = GatewayPayload()
         self.keep_alive_thread: Optional[threading.Thread] = None
+        self._first_heartbeat: bool = True
+        self._last_heartbeat_ack: Optional[datetime.datetime] = None
+        self.heartbeat_timeout: float = heartbeat_timeout
 
     def identify_payload(self):
         identify_dict = {
@@ -106,17 +114,16 @@ class GatewayClient:
             }
         }
 
-        if self.client.intents is not None:
-            identify_dict["d"]["intents"] = self.client.intents.raw
         if self.client.user.presence is not None:
             identify_dict["d"]["presence"] = self.client.user.presence.to_dict()
 
         return identify_dict
 
     async def loop(self):
-        while True:
-            if self.ws.closed:
-                break
+        while not self.ws.closed:
+            if (datetime.datetime.now() - self._last_heartbeat_ack).total_seconds() > self.heartbeat_timeout:
+                self.ws.close(code=999)
+                await self.client._gateway_reconnect.set()
 
             msg = await self.ws.receive()
 
@@ -132,12 +139,15 @@ class GatewayClient:
             self.heartbeat_interval = self.recent_gp.d["heartbeat_interval"] / 1000
             await self.ws.send_json(self.identify_payload())
             self.keep_alive_thread = threading.Thread(target=self.keep_alive_run)
+        # TODO: Maybe move to the keep alive thread?
+        if self.recent_gp.op == GatewayOpcode.HEARTBEAT_ACK:
+            self._last_heartbeat_ack = datetime.datetime.now()
+        if self.recent_gp.op == GatewayOpcode.RECONNECT:
+            self.ws.close(code=999)
+            await self.client._gateway_reconnect.set()
 
     async def keep_alive_loop(self):
-        while True:
-            if self.ws.closed:
-                break
-
+        while not self.ws.closed:
             heartbeat_payload = {
                 "op": GatewayOpcode.HEARTBEAT,
                 "d": self.seq_num
@@ -151,7 +161,11 @@ class GatewayClient:
             inflated_msg = json.loads(inflated_msg)
             gp = _map_dict_to_gateway_payload(inflated_msg)
 
-            await asyncio.sleep(self.heartbeat_interval)
+            delta = self.heartbeat_interval
+            if self._first_heartbeat:
+                delta *= random.uniform(0.0, 1.0)
+                self._first_heartbeat = False
+            await asyncio.sleep(delta)
 
     def keep_alive_run(self):
         loop = asyncio.new_event_loop()
