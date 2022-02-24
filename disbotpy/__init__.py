@@ -24,7 +24,7 @@ DEALINGS IN THE SOFTWARE.
 
 __title__   = "DisBotPy"
 __author__  = "EmreTech"
-__version__ = "v1.0.0-Alpha"
+__version__ = "1.0.0-alpha0"
 __license__ = "MIT"
 
 from .http import *
