@@ -30,7 +30,7 @@ import platform
 import threading
 import datetime
 import zlib
-from typing import Any, Dict, Generic, TypeVar, Union, Optional
+from typing import Any, Dict, Optional
 
 from .types.gateway import GatewayPayload, GatewayOpcode
 
@@ -55,6 +55,17 @@ def _map_dict_to_gateway_payload(d: Dict[str, Any]):
     return output
 
 def decompress_msg(inflator, msg: bytes):
+    """
+    Decompresses the message with the provided object from
+    zlib.decompressobj().
+
+    Parameters
+    ----------
+    inflator:
+        The object returned from zlib.decompressobj()
+    msg: :type:`bytes`
+        The compressed message
+    """
     out_str: str = ""
 
     # Message should be compressed
@@ -102,8 +113,13 @@ class GatewayClient:
         self._first_heartbeat: bool = True
         self._last_heartbeat_ack: Optional[datetime.datetime] = None
         self.heartbeat_timeout: float = heartbeat_timeout
+        self._gateway_resumable: bool = False
 
     def identify_payload(self):
+        """
+        Returns the identifcation payload. 
+        For internal use only.
+        """
         identify_dict = {
             "op": GatewayOpcode.IDENTIFY,
             "d": {
@@ -120,9 +136,17 @@ class GatewayClient:
         return identify_dict
 
     async def loop(self):
+        """
+        Executes the main Gateway loop, which is the following:
+        - compare the last time the heartbeat ack was sent from the server to current time
+            - if that comparison is greater than the heartbeat timeout, then we reconnect
+        - receive the latest message from the server
+        - decompress and convert this message to the GatewayPayload format
+        - poll the latest message to see what to do
+        """
         while not self.ws.closed:
             if (datetime.datetime.now() - self._last_heartbeat_ack).total_seconds() > self.heartbeat_timeout:
-                self.ws.close(code=999)
+                self.ws.close(code=1008)
                 await self.client._gateway_reconnect.set()
 
             msg = await self.ws.receive()
@@ -135,31 +159,47 @@ class GatewayClient:
             await self.poll_event()
 
     async def poll_event(self):
+        """
+        Polls the latest message from the server. 
+        For internal use only.
+        """
+        if self.recent_gp.op == GatewayOpcode.DISPATCH:
+            # TODO: Tell the client that there is a new event
+            print("Unimplemented.")
+
+        if self.recent_gp.op == GatewayOpcode.RECONNECT:
+            self.ws.close(code=1012)
+            await self.client._gateway_reconnect.set()
+        
+        if self.recent_gp.op == GatewayOpcode.INVALID_SESSION:
+            resumable: bool = self.recent_gp.d if isinstance(self.recent_gp.d, bool) else False
+            self._gateway_resumable = resumable
+            self.ws.close(code=1012)
+            await self.client._gateway_reconnect.set()
+
         if self.recent_gp.op == GatewayOpcode.HELLO:
             self.heartbeat_interval = self.recent_gp.d["heartbeat_interval"] / 1000
             await self.ws.send_json(self.identify_payload())
             self.keep_alive_thread = threading.Thread(target=self.keep_alive_run)
+        
         # TODO: Maybe move to the keep alive thread?
         if self.recent_gp.op == GatewayOpcode.HEARTBEAT_ACK:
             self._last_heartbeat_ack = datetime.datetime.now()
-        if self.recent_gp.op == GatewayOpcode.RECONNECT:
-            self.ws.close(code=999)
-            await self.client._gateway_reconnect.set()
 
     async def keep_alive_loop(self):
+        """
+        Executes the keep alive loop, which is the following:
+        - sends a heartbeat payload with the sequence number
+        - wait for the set heartbeat_interval time defined by the server
+            - if this is the first heartbeat, then we multiply that time with a jitter (value between 0 and 1)
+        Do not run this yourself. Instead, use keep_alive_run.
+        """
         while not self.ws.closed:
             heartbeat_payload = {
                 "op": GatewayOpcode.HEARTBEAT,
                 "d": self.seq_num
             }
             await self.ws.send_json(heartbeat_payload)
-
-            msg = await self.ws.receive_json()
-
-            # we should be able to say that the type of the message is binary and its compressed
-            inflated_msg = decompress_msg(self.inflator, msg)
-            inflated_msg = json.loads(inflated_msg)
-            gp = _map_dict_to_gateway_payload(inflated_msg)
 
             delta = self.heartbeat_interval
             if self._first_heartbeat:
@@ -168,5 +208,10 @@ class GatewayClient:
             await asyncio.sleep(delta)
 
     def keep_alive_run(self):
+        """
+        Runs the keep_alive_loop until it is complete.
+        Do not run this yourself. poll_event will start this for you in a new thread 
+        when it receives opcode 10 (Hello payload).
+        """
         loop = asyncio.new_event_loop()
         loop.run_until_complete(self.keep_alive_loop())

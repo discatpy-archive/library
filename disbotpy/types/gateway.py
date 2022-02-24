@@ -26,7 +26,7 @@ from typing import Any, Dict, Optional
 
 class GatewayPayload:
     op: int
-    d: Dict[str, Any]
+    d: Any # most of the time this is Dict[str, Any], but sometimes it can be some other type
     s: Optional[int]
     t: Optional[str]
 
