@@ -30,7 +30,7 @@ import platform
 import threading
 import datetime
 import zlib
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Union, Optional
 
 from .types.gateway import GatewayPayload, GatewayOpcode
 
@@ -97,6 +97,8 @@ class GatewayClient:
         The interval to heartbeat given by Discord
     seq_num: :class:`int`
         The current sequence number
+    session_id: :class:`str`
+        The session id of this Gateway connection
     recent_gp: :class:`GatewayPayload`
         The newest Gateway Payload
     keep_alive_thread: :class:`threading.Thread`
@@ -108,16 +110,18 @@ class GatewayClient:
         self.client = client
         self.heartbeat_interval: float = 0.0
         self.seq_num: Optional[int] = None
+        self.session_id: str = ""
         self.recent_gp: GatewayPayload = GatewayPayload()
         self.keep_alive_thread: Optional[threading.Thread] = None
         self._first_heartbeat: bool = True
         self._last_heartbeat_ack: Optional[datetime.datetime] = None
         self.heartbeat_timeout: float = heartbeat_timeout
-        self._gateway_resumable: bool = False
+        self._gateway_resume: bool = False
 
     def identify_payload(self):
         """
         Returns the identifcation payload. 
+
         For internal use only.
         """
         identify_dict = {
@@ -138,13 +142,27 @@ class GatewayClient:
     async def loop(self):
         """
         Executes the main Gateway loop, which is the following:
+
         - compare the last time the heartbeat ack was sent from the server to current time
             - if that comparison is greater than the heartbeat timeout, then we reconnect
         - receive the latest message from the server
         - decompress and convert this message to the GatewayPayload format
         - poll the latest message to see what to do
+
         """
         while not self.ws.closed:
+            if self._gateway_resume:
+                resume_dict = {
+                    "op": GatewayOpcode.RESUME,
+                    "d": {
+                        "token": self.client.token,
+                        "session_id": self.session_id,
+                        "seq": self.seq_num,
+                    }
+                }
+                await self.ws.send_json(resume_dict)
+                self._gateway_resume = False
+
             if (datetime.datetime.now() - self._last_heartbeat_ack).total_seconds() > self.heartbeat_timeout:
                 self.ws.close(code=1008)
                 await self.client._gateway_reconnect.set()
@@ -155,17 +173,22 @@ class GatewayClient:
             inflated_msg = decompress_msg(self.inflator, msg)
             inflated_msg = json.loads(inflated_msg)
             self.recent_gp = _map_dict_to_gateway_payload(inflated_msg)
-
+            
+            self.seq_num = self.recent_gp.s
             await self.poll_event()
 
     async def poll_event(self):
         """
-        Polls the latest message from the server. 
+        Polls the latest message from the server.
+
         For internal use only.
         """
         if self.recent_gp.op == GatewayOpcode.DISPATCH:
-            # TODO: Tell the client that there is a new event
-            print("Unimplemented.")
+            if self.recent_gp.t == "READY":
+                self.session_id = self.recent_gp.d["session_id"]
+                # TODO: Add (unavailable) guilds to the client cache
+            else:
+                await self.poll_dispatched_event()
 
         if self.recent_gp.op == GatewayOpcode.RECONNECT:
             self.ws.close(code=1012)
@@ -173,7 +196,7 @@ class GatewayClient:
         
         if self.recent_gp.op == GatewayOpcode.INVALID_SESSION:
             resumable: bool = self.recent_gp.d if isinstance(self.recent_gp.d, bool) else False
-            self._gateway_resumable = resumable
+            self._gateway_resume = resumable
             self.ws.close(code=1012)
             await self.client._gateway_reconnect.set()
 
@@ -186,13 +209,87 @@ class GatewayClient:
         if self.recent_gp.op == GatewayOpcode.HEARTBEAT_ACK:
             self._last_heartbeat_ack = datetime.datetime.now()
 
+    async def poll_dispatched_event(self):
+        """
+        Polls the latest dispatched event from the server.
+
+        For internal use only.
+        """
+        # TODO: Implement events
+        print("Unimplemented.")
+        
+    async def request_guild_members(self, guild_id: int, user_ids: Optional[Union[int, List[int]]], limit: int = 0, query: str = "", presences: bool = False):
+        """
+        Sends a command to the Gateway requesting members from a certain guild.
+        
+        When the chucks of the members are received, they will be automatically 
+        inserted into the client's cache.
+
+        Parameters
+        ----------
+        guild_id: :type:`int`
+            The guild ID we are requesting members from
+        user_ids: :type:`Optional[Union[int, List[int]]]`
+            The user id(s) to request. Set to nothing by default
+        limit: :type:`int`
+            The maximum amount of members to grab. Set to 0 by default
+        query: :type:`str`
+            The string the username starts with. Set to "" by default
+        presences: :type:`bool`
+            If we want to grab the presences of the members. Set to False by default
+        """
+        guild_mems_req = {
+            "op": GatewayOpcode.REQUEST_GUILD_MEMBERS,
+            "d": {
+                "guild_id": str(guild_id),
+                "query": query,
+                "limit": limit,
+                "presences": presences,
+            }
+        }
+
+        if user_ids is not None:
+            guild_mems_req["d"]["user_ids"] = user_ids
+
+        await self.ws.send_json(guild_mems_req)
+
+    async def update_presence(self, since: int, activities: None, status: str, afk: bool):
+        """
+        Sends a presence update to the Gateway.
+
+        Parameters
+        ----------
+        since: :type:`int`
+            When the bot went AFK
+        activities:
+            The current activities
+        status: :type:`str`
+            The current status of the bot now
+        afk: :type:`bool`
+            If the bot is AFK or not
+        """
+        # TODO: Implement activities
+        new_presence_dict = {
+            "op": GatewayOpcode.PRESENCE_UPDATE,
+            "d": {
+                "since": since,
+                "activities": activities,
+                "status": status,
+                "afk": afk,
+            }
+        }
+
+        await self.ws.send_json(new_presence_dict)
+
     async def keep_alive_loop(self):
         """
         Executes the keep alive loop, which is the following:
+
         - sends a heartbeat payload with the sequence number
         - wait for the set heartbeat_interval time defined by the server
             - if this is the first heartbeat, then we multiply that time with a jitter (value between 0 and 1)
-        Do not run this yourself. Instead, use keep_alive_run.
+        
+        Do not run this yourself. keep_alive_run will start this for you.
         """
         while not self.ws.closed:
             heartbeat_payload = {
@@ -210,6 +307,7 @@ class GatewayClient:
     def keep_alive_run(self):
         """
         Runs the keep_alive_loop until it is complete.
+
         Do not run this yourself. poll_event will start this for you in a new thread 
         when it receives opcode 10 (Hello payload).
         """
