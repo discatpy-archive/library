@@ -22,6 +22,6 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from .activities import *
-from .gateway import *
-from .snowflake import *
+from typing import Union
+
+Snowflake = Union[str, int]

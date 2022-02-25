@@ -24,6 +24,11 @@ DEALINGS IN THE SOFTWARE.
 
 from typing import Any, Dict, Optional
 
+__all__ = (
+    "GatewayPayload",
+    "GatewayOpcode",
+)
+
 class GatewayPayload:
     op: int
     d: Any # most of the time this is Dict[str, Any], but sometimes it can be some other type

@@ -32,6 +32,7 @@ import datetime
 import zlib
 from typing import Any, Dict, List, Union, Optional
 
+from .types.activities import Activity
 from .types.gateway import GatewayPayload, GatewayOpcode
 
 __all__ = (
@@ -77,7 +78,8 @@ def decompress_msg(inflator, msg: bytes):
     return out_str
 
 class GatewayClient:
-    """The Gateway Client between your Bot and Discord
+    """
+    The Gateway Client between your Bot and Discord
     
     Parameters
     ----------
@@ -253,7 +255,7 @@ class GatewayClient:
 
         await self.ws.send_json(guild_mems_req)
 
-    async def update_presence(self, since: int, activities: None, status: str, afk: bool):
+    async def update_presence(self, since: int, activities: List[Activity], status: str, afk: bool):
         """
         Sends a presence update to the Gateway.
 
@@ -261,23 +263,66 @@ class GatewayClient:
         ----------
         since: :type:`int`
             When the bot went AFK
-        activities:
+        activities: :type:`List[Activity]`
             The current activities
         status: :type:`str`
             The current status of the bot now
         afk: :type:`bool`
             If the bot is AFK or not
         """
-        # TODO: Implement activities
         new_presence_dict = {
             "op": GatewayOpcode.PRESENCE_UPDATE,
             "d": {
                 "since": since,
-                "activities": activities,
+                "activities": [],
                 "status": status,
                 "afk": afk,
             }
         }
+
+        # TODO: Move this script to a to_dict function for Activities
+        for i in activities:
+            new_presence_dict["d"]["activities"].append({
+                "name": i.name,
+                "type": i.type,
+                "url": i.url,
+                "created_at": i.created_at,
+                "timestamps": {
+                    "start": i.timestamps.start,
+                    "end": i.timestamps.end,
+                },
+                "application_id": i.application_id,
+                "details": i.details,
+                "state": i.state,
+                "emoji": {
+                    "name": i.emoji.name,
+                    "id": i.emoji.id,
+                    "animated": i.emoji.animated,
+                },
+                "party": {
+                    "id": i.party.id,
+                    "size": i.party.size,
+                },
+                "assets": {
+                    "large_image": i.assets.large_image,
+                    "large_text": i.assets.large_text,
+                    "small_image": i.assets.small_image,
+                    "small_text": i.assets.small_text,
+                },
+                "secrets": {
+                    "join": i.secrets.join,
+                    "spectate": i.secrets.spectate,
+                    "match": i.secrets.match,
+                },
+                "instance": i.instance,
+                "flags": i.flags,
+                "buttons": []
+            })
+            for j in i.buttons:
+                new_presence_dict["d"]["activities"][len(new_presence_dict["d"]["activities"]) - 1]["buttons"].append({
+                    "label": j.label,
+                    "url": j.url,
+                })
 
         await self.ws.send_json(new_presence_dict)
 

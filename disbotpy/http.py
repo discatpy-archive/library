@@ -33,6 +33,7 @@ import json
 import datetime
 
 from . import __version__
+from .types.snowflake import *
 from .errors import DisBotPyException, HTTPException
 
 __all__ = (
@@ -43,6 +44,35 @@ __all__ = (
 API_VERSION = 9
 
 class Route:
+    """
+    The route for a request
+
+    This tells the HTTPClient where you want to go and what
+    method you want to connect with.
+
+    Parameters
+    ----------
+    method: :type:`str`
+        The method to use when connecting
+    path: :type:`str`
+        The path to connect to
+    parameters :type:`Dict[str, Any]`
+        Additional parameters to the path. Automatically formatted
+
+    Attributes
+    ----------
+    url: :type:`str`
+        Fully formatted url to connect to
+    channel_id: :type:`Optional[Snowflake]`
+        The channel id if it's specified in parameters
+    guild_id: :type:`Optional[Snowflake]`
+        The guild id if it's specified in parameters
+    webhook_id: :type:`Optional[Snowflake]`
+        The webhook id if it's specified in parameters
+    webhook_token: :type:`Optional[str]`
+        The webhook token if it's specified in parameters
+    """
+
     def __init__(self, method: str, path: str, **parameters: Any) -> None:
         self.method: str = method
         self.path: str = path
@@ -52,10 +82,9 @@ class Route:
         self.url: str = url
 
         # some major parameters
-        # TODO: Switch str type to Snowflake type except for webhook token
-        self.channel_id: Optional[str] = parameters.get("channel_id")
-        self.guild_id: Optional[str] = parameters.get("guild_id")
-        self.webhook_id: Optional[str] = parameters.get("webhook_id")
+        self.channel_id: Optional[Snowflake] = parameters.get("channel_id")
+        self.guild_id: Optional[Snowflake] = parameters.get("guild_id")
+        self.webhook_id: Optional[Snowflake] = parameters.get("webhook_id")
         self.webhook_token: Optional[str] = parameters.get("webhook_token")
 
     @property
@@ -64,6 +93,9 @@ class Route:
 
     @property
     def bucket(self) -> str:
+        """
+        Returns the current ratelimit bucket for this Route.
+        """
         return f"{self.channel_id}:{self.guild_id}:{self.path}"
 
 def _get_user_agent():
@@ -96,24 +128,56 @@ def _parse_ratelimit_header(headers: Dict[str, Any]):
         return float(reset_after)
 
 class HTTPClient:
-    def __init__(self, connector: Optional[aiohttp.BaseConnector] = None, token: Optional[str] = None):
+    """
+    The HTTP client between your bot and Discord.
+
+    This manages connections to the Discord API and allows you
+    to make your own requests.
+
+    Parameters
+    ----------
+    connector: :type:`Optional[aiohttp.BaseConnector]`
+        The connector to use with the internal aiohttp session
+
+    Attributes
+    ----------
+    loop: :type:`asyncio.AbstractEventLoop`
+        The main event loop. Used for ratelimiting in request
+    _session: :type:`Optional[aiohttp.ClientSession]`
+        The internal aiohttp session. Initalized later by login
+    token: :type:`Optional[str]`
+        The bot's token. Initalized later by login
+    user_agent: :type:`str`
+        The user agent sent with all requests and the Gateway.
+        Do not modify this
+    """
+
+    def __init__(self, connector: Optional[aiohttp.BaseConnector] = None):
         self.loop: asyncio.AbstractEventLoop = asyncio.get_running_loop()
         self.connector = connector
-        self._session: Optional[aiohttp.ClientSession] = None # initalized later by static_login
+        self._session: Optional[aiohttp.ClientSession] = None # initalized later by login
         self._global_ratelimit_over: asyncio.Event = asyncio.Event()
         self._global_ratelimit_over.set()
         self._bucket_locks: weakref.WeakValueDictionary = weakref.WeakValueDictionary()
-        self.token: Optional[str] = token
+        self.token: Optional[str] = None
 
-        self.user_agent = _get_user_agent()
+        self.user_agent: str = _get_user_agent()
 
     def recreate_session(self):
+        """
+        Recreates the session if it's closed.
+        """
         if self._session.closed:
             self._session = aiohttp.ClientSession(
                 connector=self.connector
             )
 
     async def ws_connect(self, url: str):
+        """
+        Starts a websocket connection. 
+        
+        This is only used for the Gateway.
+        """
         kwargs = {
             "max_msg_size": 0,
             "timeout": 30.0,
@@ -127,6 +191,18 @@ class HTTPClient:
         return await self._session.ws_connect(url, **kwargs)
 
     async def request(self, route: Route, **kwargs):
+        """
+        Sends a request to the Discord API.
+
+        This function automatically handles ratelimiting.
+
+        Parameters
+        ----------
+        route: :type:`Route`
+            Where we should send a request to and the method to use
+        json: :type:`Dict[str, Any]`
+            Any content we should send along with the request
+        """
         bucket = route.bucket
         url = route.url
         method = route.method
@@ -207,28 +283,34 @@ class HTTPClient:
                         continue
 
                     # other error cases
-                    if resp_code == 403:
-                        raise HTTPException(response, data)
-                    elif resp_code == 404:
-                        raise HTTPException(response, data)
-                    elif resp_code >= 500:
-                        raise HTTPException(response, data)
-                    else:
+                    if resp_code >= 400:
                         raise HTTPException(response, data)
 
             # exhausted retries
             if response is not None:
-                if resp_code >= 500:
-                    raise HTTPException(response, data)
-
                 raise HTTPException(response, data)
 
         raise RuntimeError("Got to unreachable section of HTTPClient.request")
 
     async def close(self):
+        """
+        Closes the internal session. 
+        
+        Required when the client is done in order to stop 
+        aiohttp from complaining.
+        """
         return await self._session.close()
 
     async def login(self, token: str):
+        """
+        Logs into the bot account by initalizing the aiohttp.ClientSession then
+        grabbing info on the bot account.
+
+        Parameters
+        ----------
+        token: :type:`str`
+            The token to login with
+        """
         self._session = aiohttp.ClientSession(
             connector=self.connector
         )
@@ -247,6 +329,16 @@ class HTTPClient:
         return data
 
     async def get_gateway_bot(self, *, encoding: str = "json", zlib: bool = True):
+        """
+        Grabs the Gateway URL along with the number of shards.
+
+        Parameters
+        ----------
+        encoding: :type:`str`
+            The encoding the Gateway should use. Set to "json" by default
+        zlib: :type:`bool`
+            If the Gateway should send compressed payloads or not. Set to True by default
+        """
         try:
             data = await self.request(Route("GET", "/gateway/bot"))
         except HTTPException as e:
@@ -259,8 +351,26 @@ class HTTPClient:
 
         return data["shards"], fmt.format(data["url"], API_VERSION, encoding)
 
-    async def get_user(self, user_id: str):
+    async def get_user(self, user_id: Snowflake):
+        """
+        Grabs a user object from its id.
+
+        Parameters
+        ----------
+        user_id: :type:`Snowflake`
+            The id of the user to grab
+        """
         return await self.request(Route("GET", "/users/{user_id}", user_id=user_id))
 
-    async def get_message(self, channel_id: str, message_id: str):
+    async def get_message(self, channel_id: Snowflake, message_id: Snowflake):
+        """
+        Grabs a message object from its id.
+
+        Parameters
+        ----------
+        channel_id: :type:`Snowflake`
+            The id of the channel where the message is from
+        message_id: :type:`Snowflake`
+            The id of the message to grab
+        """
         return await self.request(Route("GET", "/channels/{channel_id}/messages/{message_id}", channel_id=channel_id, message_id=message_id))
