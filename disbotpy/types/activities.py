@@ -22,59 +22,22 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from typing import List, Optional
+from typing import Optional
 
 __all__ = (
-    "ActivityTimestamps",
-    "ActivityEmoji",
-    "ActivityParty",
-    "ActivityAssets",
-    "ActivitySecrets",
-    "ActivityButton",
+    "ActivityTypes",
     "Activity",
 )
 
-class ActivityTimestamps:
-    start: Optional[int]
-    end: Optional[int]
-
-class ActivityEmoji:
-    name: str
-    id: Optional[int]
-    animated: bool = False
-
-class ActivityParty:
-    id: str
-    size: List[int]
-
-class ActivityAssets:
-    large_image: Optional[str]
-    large_text: Optional[str]
-    small_image: Optional[str]
-    small_text: Optional[str]
-
-class ActivitySecrets:
-    join: Optional[str]
-    spectate: Optional[str]
-    match: Optional[str]
-
-class ActivityButton:
-    label: str
-    url: str
+class ActivityTypes:
+    GAME = 0
+    STREAMING = 1
+    LISTENING = 2
+    WATCHING = 3
+    CUSTOM = 4
+    COMPETING = 5
 
 class Activity:
     name: str
     type: int
     url: Optional[str]
-    created_at: int
-    timestamps: ActivityTimestamps
-    application_id: int
-    details: Optional[str]
-    state: Optional[str]
-    emoji: ActivityEmoji
-    party: ActivityParty
-    assets: ActivityAssets
-    secrets: ActivitySecrets
-    instance: bool
-    flags: int
-    buttons: List[ActivityButton]

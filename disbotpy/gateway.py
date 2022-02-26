@@ -286,43 +286,7 @@ class GatewayClient:
                 "name": i.name,
                 "type": i.type,
                 "url": i.url,
-                "created_at": i.created_at,
-                "timestamps": {
-                    "start": i.timestamps.start,
-                    "end": i.timestamps.end,
-                },
-                "application_id": i.application_id,
-                "details": i.details,
-                "state": i.state,
-                "emoji": {
-                    "name": i.emoji.name,
-                    "id": i.emoji.id,
-                    "animated": i.emoji.animated,
-                },
-                "party": {
-                    "id": i.party.id,
-                    "size": i.party.size,
-                },
-                "assets": {
-                    "large_image": i.assets.large_image,
-                    "large_text": i.assets.large_text,
-                    "small_image": i.assets.small_image,
-                    "small_text": i.assets.small_text,
-                },
-                "secrets": {
-                    "join": i.secrets.join,
-                    "spectate": i.secrets.spectate,
-                    "match": i.secrets.match,
-                },
-                "instance": i.instance,
-                "flags": i.flags,
-                "buttons": []
             })
-            for j in i.buttons:
-                new_presence_dict["d"]["activities"][len(new_presence_dict["d"]["activities"]) - 1]["buttons"].append({
-                    "label": j.label,
-                    "url": j.url,
-                })
 
         await self.ws.send_json(new_presence_dict)
 
