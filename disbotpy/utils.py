@@ -25,7 +25,19 @@ DEALINGS IN THE SOFTWARE.
 import asyncio
 from typing import Generic, Union, TypeVar
 
+from .types.snowflake import *
+
 T = TypeVar("T")
+
+__all__ = (
+    "Unset",
+    "DataEvent",
+    "DISCORD_EPOCH",
+    "snowflake_timestamp",
+    "snowflake_iwid",
+    "snowflake_ipid",
+    "snowflake_increment",
+)
 
 # Data Event taken from here: https://gist.github.com/vcokltfre/69bef173a015d08a44e93fd4cbdaadd8
 
@@ -47,3 +59,58 @@ class DataEvent(asyncio.Event, Generic[T]):
 
     def set(self, data: T) -> None:
         self.data = data
+
+def _ensure_snowflake_is_int(sf: Snowflake) -> int:
+    ret_id = sf
+    if isinstance(ret_id, str):
+        ret_id = int(ret_id)
+
+    return ret_id
+
+DISCORD_EPOCH = 1420070400000
+
+def snowflake_timestamp(id: Snowflake) -> int:
+    """
+    The timestamp stored in this object's Snowflake ID.
+
+    Parameters
+    ----------
+    id: :type:`Snowflake`
+        The snowflake to extract from
+    """
+    return (_ensure_snowflake_is_int(id) >> 22) + DISCORD_EPOCH
+
+def snowflake_iwid(id: Snowflake) -> int:
+    """
+    The internal worker ID stored in this object's
+    Snowflake ID.
+
+    Parameters
+    ----------
+    id: :type:`Snowflake`
+        The snowflake to extract from
+    """
+    return (_ensure_snowflake_is_int(id) & 0x3E0000) >> 17
+
+def snowflake_ipid(id: Snowflake) -> int:
+    """
+    The internal process ID stored in this object's
+    Snowflake ID.
+
+    Parameters
+    ----------
+    id: :type:`Snowflake`
+        The snowflake to extract from
+    """
+    return (_ensure_snowflake_is_int(id) & 0x1F000) >> 12
+
+def snowflake_increment(id: Snowflake) -> int:
+    """
+    The increment of the object's Snowflake ID.
+
+    Parameters
+    ----------
+    id: :type:`Snowflake`
+        The snowflake to extract from
+    """
+    return _ensure_snowflake_is_int(id) & 0xFFF

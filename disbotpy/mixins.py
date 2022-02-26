@@ -22,10 +22,17 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
+from .types.snowflake import *
+from . import utils
+
+__all__ = (
+    "SnowflakeMixin",
+)
+
 class SnowflakeMixin:
     __slots__ = ()
 
-    raw_id: int
+    raw_id: Snowflake
 
     @property
     def id(self):
@@ -35,7 +42,7 @@ class SnowflakeMixin:
         return self.raw_id
 
     @id.setter
-    def id(self, new_id: int):
+    def id(self, new_id: Snowflake):
         """
         Alias for the raw Snowflake ID of this object.
         """
@@ -46,7 +53,7 @@ class SnowflakeMixin:
         """
         The timestamp stored in this object's Snowflake ID.
         """
-        return (self.raw_id >> 22) + 1420070400000
+        return utils.snowflake_timestamp(self.raw_id)
 
     @property
     def snowflake_iwid(self):
@@ -54,7 +61,7 @@ class SnowflakeMixin:
         The internal worker ID stored in this object's
         Snowflake ID.
         """
-        return (self.raw_id & 0x3E0000) >> 17
+        return utils.snowflake_iwid(self.raw_id)
 
     @property
     def snowflake_ipid(self):
@@ -62,11 +69,11 @@ class SnowflakeMixin:
         The internal process ID stored in this object's
         Snowflake ID.
         """
-        return (self.raw_id & 0x1F000) >> 12
+        return utils.snowflake_ipid(self.raw_id)
 
     @property
     def snowflake_increment(self):
         """
         The increment of the object's Snowflake ID.
         """
-        return self.raw_id & 0xFFF
+        return utils.snowflake_increment(self.raw_id)
