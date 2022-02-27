@@ -141,6 +141,24 @@ class GatewayClient:
 
         return identify_dict
 
+    async def close(self, code: int = 1000, reconnect: bool = True):
+        """
+        Closes the connection with the gateway.
+
+        For internal use only.
+
+        Parameters
+        ----------
+        code: :type:`int`
+            The websocket code to close with. Set to 1000 by default
+        reconnect: :type:`bool`
+            If we should reconnect or not. Set to True by default
+        """
+        await self.ws.close(code=code)
+        self.keep_alive_thread.join()
+        if reconnect:
+            await self.client._gateway_reconnect.set()
+
     async def loop(self):
         """
         Executes the main Gateway loop, which is the following:
@@ -166,10 +184,14 @@ class GatewayClient:
                 self._gateway_resume = False
 
             if (datetime.datetime.now() - self._last_heartbeat_ack).total_seconds() > self.heartbeat_timeout:
-                await self.ws.close(code=1008)
-                await self.client._gateway_reconnect.set()
+                await self.close(code=1008)
 
-            msg = await self.ws.receive(timeout=self.heartbeat_timeout)
+            try:
+                # maybe re-add timeout?
+                msg = await self.ws.receive()
+            except asyncio.TimeoutError:
+                # try to re-establish the connection with the Gateway
+                await self.close(code=1012)
 
             if msg.type == aiohttp.WSMsgType.BINARY:
                 # we should be able to say that the type of the message is binary and its compressed
@@ -181,8 +203,7 @@ class GatewayClient:
                 await self.poll_event()
             elif msg.type in (aiohttp.WSMsgType.CLOSE, aiohttp.WSMsgType.CLOSED, aiohttp.WSMsgType.CLOSING):
                 # we got a close code
-                self.keep_alive_thread.join()
-                await self.ws.close()
+                await self.close(reconnect=False)
 
     async def poll_event(self):
         """
@@ -198,13 +219,12 @@ class GatewayClient:
                 await self.poll_dispatched_event()
 
         if self.recent_gp.op == GatewayOpcode.RECONNECT:
-            self.ws.close(code=1012)
-            await self.client._gateway_reconnect.set()
+            await self.close(code=1012)
         
         if self.recent_gp.op == GatewayOpcode.INVALID_SESSION:
             resumable: bool = self.recent_gp.d if isinstance(self.recent_gp.d, bool) else False
             self._gateway_resume = resumable
-            await self.ws.close(code=1012)
+            await self.close(code=1012)
             await self.client._gateway_reconnect.set()
 
         if self.recent_gp.op == GatewayOpcode.HELLO:
