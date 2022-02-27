@@ -116,7 +116,7 @@ class GatewayClient:
         self.recent_gp: GatewayPayload = GatewayPayload()
         self.keep_alive_thread: Optional[threading.Thread] = None
         self._first_heartbeat: bool = True
-        self._last_heartbeat_ack: Optional[datetime.datetime] = None
+        self._last_heartbeat_ack: datetime.datetime = datetime.datetime.now()
         self.heartbeat_timeout: float = heartbeat_timeout
         self._gateway_resume: bool = False
 
@@ -166,18 +166,22 @@ class GatewayClient:
                 self._gateway_resume = False
 
             if (datetime.datetime.now() - self._last_heartbeat_ack).total_seconds() > self.heartbeat_timeout:
-                self.ws.close(code=1008)
+                await self.ws.close(code=1008)
                 await self.client._gateway_reconnect.set()
 
             msg = await self.ws.receive()
 
-            # we should be able to say that the type of the message is binary and its compressed
-            inflated_msg = decompress_msg(self.inflator, msg)
-            inflated_msg = json.loads(inflated_msg)
-            self.recent_gp = _map_dict_to_gateway_payload(inflated_msg)
-            
-            self.seq_num = self.recent_gp.s
-            await self.poll_event()
+            if isinstance(msg.data, bytes):
+                # we should be able to say that the type of the message is binary and its compressed
+                inflated_msg = decompress_msg(self.inflator, msg.data)
+                inflated_msg = json.loads(inflated_msg)
+                self.recent_gp = _map_dict_to_gateway_payload(inflated_msg)
+
+                self.seq_num = self.recent_gp.s
+                await self.poll_event()
+            else:
+                # we got a close code
+                await self.ws.close()
 
     async def poll_event(self):
         """
@@ -199,7 +203,7 @@ class GatewayClient:
         if self.recent_gp.op == GatewayOpcode.INVALID_SESSION:
             resumable: bool = self.recent_gp.d if isinstance(self.recent_gp.d, bool) else False
             self._gateway_resume = resumable
-            self.ws.close(code=1012)
+            await self.ws.close(code=1012)
             await self.client._gateway_reconnect.set()
 
         if self.recent_gp.op == GatewayOpcode.HELLO:

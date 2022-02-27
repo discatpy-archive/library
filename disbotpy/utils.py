@@ -37,9 +37,12 @@ __all__ = (
     "snowflake_iwid",
     "snowflake_ipid",
     "snowflake_increment",
+    "get_avatar_url",
+    "get_banner_url",
 )
 
 # Data Event taken from here: https://gist.github.com/vcokltfre/69bef173a015d08a44e93fd4cbdaadd8
+# TODO: Might wanna remove data event since Gateway events will be handled differently
 
 class Unset:
     pass
@@ -114,3 +117,31 @@ def snowflake_increment(id: Snowflake) -> int:
         The snowflake to extract from
     """
     return _ensure_snowflake_is_int(id) & 0xFFF
+
+BASE_CDN_PATH = "https://cdn.discordapp.com/"
+
+def get_avatar_url(id: Snowflake, hash: str):
+    """
+    Returns the avatar url of a user.
+
+    Parameters
+    ----------
+    id: :type:`Snowflake`
+        The user id
+    hash: :type:`str`
+        The avatar hash
+    """
+    return BASE_CDN_PATH + "avatars/" + str(id) + "/" + hash
+
+def get_banner_url(id: Snowflake, hash: str):
+    """
+    Returns the banner url of a user or guild.
+
+    Parameters
+    ----------
+    id: :type:`Snowflake`
+        The user/guild id
+    hash: :type:`str`
+        The banner hash
+    """
+    return BASE_CDN_PATH + "banners/" + str(id) + "/" + hash

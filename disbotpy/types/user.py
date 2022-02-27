@@ -22,28 +22,31 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from typing import Any, Dict
+__all__ = (
+    "UserFlags",
+    "PremiumTypes",
+)
 
-class APIType:
-    """
-    A raw API type. 
-    All types here from the Discord API use this as a base.
-    """
+class UserFlags:
+    NONE = 0
+    STAFF = 1 << 0
+    PARTNER = 1 << 1
+    HYPESQUAD = 1 << 2
+    BUG_HUNTER_LEVEL_1 = 1 << 3
+    HYPESQUAD_ONLINE_HOUSE_1 = 1 << 6
+    HYPESQUAD_ONLINE_HOUSE_2 = 1 << 7
+    HYPESQUAD_ONLINE_HOUSE_3 = 1 << 8
+    PREMIUM_EARLY_SUPPORTER = 1 << 9
+    TEAM_PSEUDO_USER = 1 << 10
+    BUG_HUNTER_LEVEL_2 = 1 << 14
+    VERIFIED_BOT = 1 << 16
+    VERIFIED_DEVELOPER = 1 << 17
+    CERTIFIED_MODERATOR = 1 << 18
+    BOT_HTTP_INTERACTIONS = 1 << 19
 
-    @classmethod
-    def from_dict(cls, d: Dict[str, Any]):
-        """
-        Returns this API type from a provided Dict.
+class PremiumTypes:
+    NONE = 0
+    NITRO_CLASSIC = 1
+    NITRO = 2
 
-        Usually used to convert types directly from the API.
-        """
-        raise NotImplementedError
-
-    def to_dict(self) -> Dict[str, Any]:
-        """
-        Returns this type converted into a Dict.
-
-        Usually used to convert types for the API.
-        """
-        raise NotImplementedError
-
+# TODO: Add the ConnectionObject type?
