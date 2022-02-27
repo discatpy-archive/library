@@ -169,9 +169,9 @@ class GatewayClient:
                 await self.ws.close(code=1008)
                 await self.client._gateway_reconnect.set()
 
-            msg = await self.ws.receive()
+            msg = await self.ws.receive(timeout=self.heartbeat_timeout)
 
-            if isinstance(msg.data, bytes):
+            if msg.type == aiohttp.WSMsgType.BINARY:
                 # we should be able to say that the type of the message is binary and its compressed
                 inflated_msg = decompress_msg(self.inflator, msg.data)
                 inflated_msg = json.loads(inflated_msg)
@@ -179,8 +179,9 @@ class GatewayClient:
 
                 self.seq_num = self.recent_gp.s
                 await self.poll_event()
-            else:
+            elif msg.type in (aiohttp.WSMsgType.CLOSE, aiohttp.WSMsgType.CLOSED, aiohttp.WSMsgType.CLOSING):
                 # we got a close code
+                self.keep_alive_thread.join()
                 await self.ws.close()
 
     async def poll_event(self):
@@ -210,8 +211,8 @@ class GatewayClient:
             self.heartbeat_interval = self.recent_gp.d["heartbeat_interval"] / 1000
             await self.ws.send_json(self.identify_payload())
             self.keep_alive_thread = threading.Thread(target=self.keep_alive_run)
+            self.keep_alive_thread.start()
         
-        # TODO: Maybe move to the keep alive thread?
         if self.recent_gp.op == GatewayOpcode.HEARTBEAT_ACK:
             self._last_heartbeat_ack = datetime.datetime.now()
 
@@ -325,4 +326,7 @@ class GatewayClient:
         when it receives opcode 10 (Hello payload).
         """
         loop = asyncio.new_event_loop()
-        loop.run_until_complete(self.keep_alive_loop())
+        try:
+            loop.run_until_complete(self.keep_alive_loop())
+        except asyncio.CancelledError or asyncio.TimeoutError:
+            pass
