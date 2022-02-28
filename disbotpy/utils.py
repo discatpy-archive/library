@@ -38,6 +38,7 @@ __all__ = (
     "snowflake_ipid",
     "snowflake_increment",
     "get_avatar_url",
+    "get_default_avatar_url",
     "get_banner_url",
 )
 
@@ -132,6 +133,18 @@ def get_avatar_url(id: Snowflake, hash: str):
         The avatar hash
     """
     return BASE_CDN_PATH + "avatars/" + str(id) + "/" + hash
+
+def get_default_avatar_url(discrim: str):
+    """
+    Returns the default avatar url of a user.
+    This is calculated with their discriminator.
+
+    Parameters
+    ----------
+    discrim: :type:`str`
+        The discriminator for this user
+    """
+    return BASE_CDN_PATH + "embed/avatars/" + str(int(discrim) % 5) + ".png"
 
 def get_banner_url(id: Snowflake, hash: str):
     """

@@ -28,7 +28,7 @@ from .types.snowflake import *
 from .types.user import *
 from .abs import APIType
 from .mixins import SnowflakeMixin
-from .utils import get_avatar_url, get_banner_url
+from .utils import get_avatar_url, get_default_avatar_url, get_banner_url
 
 __all__ = (
     "UserAvatar",
@@ -56,10 +56,14 @@ class UserAvatar:
     is_gif: :type:`bool`
         If the avatar is a GIF or not
     """
-    def __init__(self, hash: str, user_id: Snowflake) -> None:
-        self.raw_hash: str = hash
-        self.url = get_avatar_url(user_id, self.raw_hash)
-        self.is_gif: bool = self.raw_hash.startswith("a_")
+    def __init__(self, hash: Optional[str], user_id: Snowflake, discrim: str) -> None:
+        self.raw_hash: Optional[str] = hash
+        if self.raw_hash:
+            self.url = get_avatar_url(user_id, self.raw_hash)
+            self.is_gif: bool = self.raw_hash.startswith("a_")
+        else:
+            self.url = get_default_avatar_url(discrim)
+            self.is_gif: bool = False
 
 class UserBanner:
     """
@@ -77,20 +81,26 @@ class UserBanner:
 
     Attributes
     ----------
-    raw_hash: :type:`str`
+    raw_hash: :type:`Optional[str]`
         The raw hash of the banner's url
-    accent_color: :type:`str`
+    accent_color: :type:`Optional[str]`
         The accent color for this banner in hexadecimal form
-    url: :type:`str`
+    url: :type:`Optional[str]`
         The url for the user's banner
     is_gif: :type:`bool`
         If the banner is a GIF or not
     """
     def __init__(self, hash: Optional[str], accent_color: Optional[int], user_id: Snowflake) -> None:
-        self.raw_hash: str = hash if hash else ""
-        self.accent_color: str = hex(int(accent_color))
-        self.url: str = get_banner_url(user_id, self.raw_hash)
-        self.is_gif: bool = self.raw_hash.startswith("a_")
+        self.raw_hash: Optional[str] = None
+        self.accent_color: Optional[str] = None
+        self.url: Optional[str] = None
+        self.is_gif: bool = False
+
+        if hash and accent_color:
+            self.raw_hash = hash if hash else None
+            self.accent_color = hex(int(accent_color))
+            self.url = get_banner_url(user_id, self.raw_hash)
+            self.is_gif = self.raw_hash.startswith("a_")
 
 class User(APIType, SnowflakeMixin):
     """
@@ -151,10 +161,14 @@ class User(APIType, SnowflakeMixin):
         id: Snowflake = d.get("id")
         name: str = d.get("username")
         discriminator: str = d.get("discriminator")
-        avatar: UserAvatar = UserAvatar(d.get("avatar"), id)
+        avatar: UserAvatar = UserAvatar(d.get("avatar"), id, discriminator)
         bot: bool = d.get("bot", False)
         tfa_enabled: bool = d.get("mfa_enabled", False)
-        banner: UserBanner = UserBanner(d.get("banner"), int(d.get("accent_color")), id)
+        banner: UserBanner = UserBanner(
+            d.get("banner"), 
+            int(d.get("accent_color")) if d.get("accent_color") is not None else None, 
+            id
+        )
         # TODO: Locales
         flags: int = d.get("flags", UserFlags.NONE)
         premium_type: int = d.get("premium_type", PremiumTypes.NONE)

@@ -152,8 +152,8 @@ class HTTPClient:
         Do not modify this
     """
 
-    def __init__(self, connector: Optional[aiohttp.BaseConnector] = None):
-        self.loop: asyncio.AbstractEventLoop = asyncio.get_running_loop()
+    def __init__(self, loop: asyncio.AbstractEventLoop, connector: Optional[aiohttp.BaseConnector] = None):
+        self.loop: asyncio.AbstractEventLoop = loop
         self.connector = connector
         self._session: Optional[aiohttp.ClientSession] = None # initalized later by login
         self._global_ratelimit_over: asyncio.Event = asyncio.Event()

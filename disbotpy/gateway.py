@@ -129,14 +129,14 @@ class GatewayClient:
         identify_dict = {
             "op": GatewayOpcode.IDENTIFY,
             "d": {
-                "token": self.client.token,
+                "token": self.client.http.token,
                 "intents": self.client.intents,
                 "properties": _identify_connection_properties,
                 "large_threshold": 250,
             }
         }
 
-        if self.client.user.presence is not None:
+        if self.client.me.presence is not None:
             identify_dict["d"]["presence"] = self.client.user.presence.to_dict()
 
         return identify_dict

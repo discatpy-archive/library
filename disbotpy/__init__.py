@@ -29,6 +29,7 @@ __license__ = "MIT"
 
 from . import utils
 from .abs import *
+from .client import *
 from .errors import *
 from .gateway import *
 from .http import *
