@@ -2,7 +2,7 @@
 
 ![Logo for DisBotPy](./logo_full.png)
 
-(This logo is not finished. It is subject to change.)
+[Discord Server](https://discord.gg/v7r9hNqQJb)
 
 A completely different approach to Discord API Wrapper libs in Python.
 
