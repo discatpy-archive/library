@@ -80,7 +80,8 @@ class Dispatcher:
     async def dispatch(self, name: str, *args: Any, **kwargs: Any):
         """
         Dispatches a event. This will trigger the listener's callback
-        with the same name.
+        with the same name and if set, will also trigger the listener's
+        overloaded callback.
 
         Parameters
         ----------
@@ -91,20 +92,29 @@ class Dispatcher:
         **kwargs: :type:`Any`
             More arguments to pass into the event callback
         """
-        event = getattr(self, name.lower())
-        func = event.get("callback")
+        event = getattr(self, name)
+        funcs = event.get("callback")
         one_shot = event.get("one_shot", False)
 
-        await self.run(func, name.lower(), one_shot, *args, **kwargs)
+        await self.run(funcs.get("original"), name, one_shot, *args, **kwargs)
 
-    def add_listener(self, func: CoroFunc, name: Optional[str] = None, one_shot: bool = False):
+        overloaded_func = funcs.get("overloaded")
+        if overloaded_func:
+            await self.run(overloaded_func, name, one_shot, *args, **kwargs)
+
+    def add_listener(self, func: CoroFunc, overloaded_func: Optional[CoroFunc], name: Optional[str] = None, one_shot: bool = False):
         """
-        Adds a new listener for an event.
+        Adds a new listener for an event. This listener can have an 
+        overloaded variant that performs different operations, 
+        however it must have the same name and accept the same 
+        parameters.
 
         Parameters
         ----------
         func: :type:`Callable[..., Coroutine[Any, Any, Any]]`
             The callback function for this listener
+        overloaded_func: :type:`Optional[Callable[..., Coroutine[Any, Any, Any]]]`
+            The (optional) overloaded function for this listener
         name: :type:`Optional[str]`
             The name of this event. If not set, then it uses the name of 
             the callback function
@@ -114,9 +124,15 @@ class Dispatcher:
         """
         if not asyncio.iscoroutinefunction(func):
             raise TypeError("Function provided is not a coroutine.")
+        
+        if overloaded_func is not None:
+            if not asyncio.iscoroutinefunction(overloaded_func):
+                raise TypeError("Overloaded function provided is not a coroutine.")
+            if not name and (overloaded_func.__name__ != func.__name__):
+                raise RuntimeError("Overloaded function does not have the same name as the original function!")
 
         event_name = func.__name__ if not name else name
-        setattr(self, event_name, {"callback": func, "one_shot": one_shot})
+        setattr(self, event_name, {"callback": {"original": func, "overloaded": overloaded_func}, "one_shot": one_shot})
 
     def remove_listener(self, name: str):
         """

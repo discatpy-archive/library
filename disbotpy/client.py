@@ -25,6 +25,7 @@ DEALINGS IN THE SOFTWARE.
 import asyncio
 from typing import Optional
 
+from .internal.dispatcher import *
 from .gateway import GatewayClient
 from .http import HTTPClient
 from .user import User
@@ -51,6 +52,8 @@ class Client:
         Whether or not the client is running
     intents: :type:`int`
         The intents for the gateway
+    dispatcher: :type:`Dispatcher`
+        The event dispatcher for Gateway events
     """
     def __init__(self, intents: int):
         self.loop: asyncio.AbstractEventLoop = asyncio.new_event_loop()
@@ -60,6 +63,7 @@ class Client:
         self._gateway_reconnect = asyncio.Event()
         self.running: bool = False
         self.intents: int = intents
+        self.dispatcher: Dispatcher = Dispatcher()
 
     async def login(self, token: str):
         """

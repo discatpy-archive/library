@@ -26,5 +26,4 @@ from .activities import *
 from .channel import *
 from .gateway import *
 from .snowflake import *
-from .thread import *
 from .user import *

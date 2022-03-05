@@ -30,7 +30,7 @@ import platform
 import threading
 import datetime
 import zlib
-from typing import Any, Dict, List, Union, Optional
+from typing import Any, Dict, List, Tuple, Union, Optional
 
 from .types.activities import Activity
 from .types.gateway import GatewayPayload, GatewayOpcode
@@ -211,28 +211,33 @@ class GatewayClient:
 
         For internal use only.
         """
+        # Manages all event dispatches
         if self.recent_gp.op == GatewayOpcode.DISPATCH:
+            # TODO: Make the READY event a callback
             if self.recent_gp.t == "READY":
                 self.session_id = self.recent_gp.d["session_id"]
                 # TODO: Add (unavailable) guilds to the client cache
             else:
                 await self.poll_dispatched_event()
 
+        # Attempts to reconnect to the Gateway when prompted
         if self.recent_gp.op == GatewayOpcode.RECONNECT:
             await self.close(code=1012)
         
+        # This connection session is invalid: if we can resume, then resume. Otherwise, reconnect.
         if self.recent_gp.op == GatewayOpcode.INVALID_SESSION:
             resumable: bool = self.recent_gp.d if isinstance(self.recent_gp.d, bool) else False
             self._gateway_resume = resumable
             await self.close(code=1012)
-            await self.client._gateway_reconnect.set()
 
+        # Handles the hello message (means we successfully connected) with the identify payload and keep alive loop
         if self.recent_gp.op == GatewayOpcode.HELLO:
             self.heartbeat_interval = self.recent_gp.d["heartbeat_interval"] / 1000
             await self.ws.send_json(self.identify_payload())
             self.keep_alive_thread = threading.Thread(target=self.keep_alive_run)
             self.keep_alive_thread.start()
         
+        # Handles a heartbeat acknowledge to prevent our system from thinking the connection is "zombied"
         if self.recent_gp.op == GatewayOpcode.HEARTBEAT_ACK:
             self._last_heartbeat_ack = datetime.datetime.now()
 
@@ -242,8 +247,15 @@ class GatewayClient:
 
         For internal use only.
         """
-        # TODO: Implement events
-        print("Unimplemented.")
+        args: List[Any] = ()
+
+        # TODO: Parse event data into arguments
+        if self.recent_gp.t == "READY":
+            self.session_id = self.recent_gp.d["session_id"]
+            # TODO: Add (unavailable) guilds to the client cache
+
+        name = "on_" + self.recent_gp.t.lower()
+        await self.client.dispatcher.dispatch(name, *args)
         
     async def request_guild_members(self, guild_id: int, user_ids: Optional[Union[int, List[int]]], limit: int = 0, query: str = "", presences: bool = False):
         """
