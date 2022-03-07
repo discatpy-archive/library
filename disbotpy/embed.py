@@ -131,5 +131,3 @@ class Embed(APIType):
         # TODO: Fields
 
         return ret_dict
-
-        return ret_dict
