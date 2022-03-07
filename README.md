@@ -1,10 +1,10 @@
 # DisBotPy
 
-![Logo for DisBotPy](./logo_full.png)
+![Logo for DisBotPy](./logo_small.png)
 
 [Discord Server](https://discord.gg/v7r9hNqQJb)
 
-A completely different approach to Discord API Wrapper libs in Python.
+DESCRIPTION COMING SOON
 
 ## Features
 
