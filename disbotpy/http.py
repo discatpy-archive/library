@@ -328,6 +328,17 @@ class HTTPClient:
 
         return data
 
+    async def leave_guild(self, guild_id: Snowflake):
+        """
+        Makes the bot leave a guild with the provided guild id.
+
+        Parameters
+        ----------
+        guild_id: :type:`Snowflake`
+            The id of the guild to leave
+        """
+        return await self.request(Route("DELETE", "/users/@me/guilds/{guild_id}", guild_id=guild_id))
+
     async def get_gateway_bot(self, *, encoding: str = "json", zlib: bool = True):
         """
         Grabs the Gateway URL along with the number of shards.
@@ -351,6 +362,11 @@ class HTTPClient:
 
         return data["shards"], fmt.format(data["url"], API_VERSION, encoding)
 
+    async def modify_current_user(self, username: str):
+        # TODO: add the ability to modify the avatar
+        json_req: Dict[str, Any] = {"username": username}
+        return await self.request(Route("PATCH", "/users/@me"), json=json_req)
+
     async def get_user(self, user_id: Snowflake):
         """
         Grabs a user object from its id.
@@ -362,9 +378,97 @@ class HTTPClient:
         """
         return await self.request(Route("GET", "/users/{user_id}", user_id=user_id))
 
+    async def modify_dm_channel(self, channel_id: Snowflake, new_channel: Dict[str, Any]):
+        """
+        Modifies a Group DM channel with the given channel (in Dict form).
+
+        Parameters
+        ----------
+        channel_id: :type:`Snowflake`
+            The id of the channel to modify
+        new_channel: :type:`Dict[str, Any]`
+            The updated channel. Outputted from `DMChannel.to_dict()`
+        """
+        name = new_channel.get("name")
+        icon = new_channel.get("icon")
+        return await self.request(
+            Route("PATCH", "/channels/{channel_id}", channel_id=channel_id),
+            json={
+                "name": name,
+                "icon": icon
+            }
+        )
+
+    async def modify_guild_channel(self, channel_id: Snowflake, new_channel: Dict[str, Any]):
+        """
+        Modifies a guild channel with the given channel (in Dict form).
+
+        Parameters
+        ----------
+        channel_id: :type:`Snowflake`
+            The id of the channel to modify
+        new_channel: :type:`Dict[str, Any]`
+            The updated channel. Outputted from `GuildChannel.to_dict()`
+        """
+        return await self.request(Route("PATCH", "/channels/{channel_id}", channel_id=channel_id), json=new_channel)
+
+    async def get_channel(self, channel_id: Snowflake):
+        """
+        Grabs a channel from its id.
+
+        Parameters
+        ----------
+        channel_id: :type:`Snowflake`
+            The id of the channel to grab
+        """
+        return await self.request(Route("GET", "/channels/{channel_id}", channel_id=channel_id))
+
+    async def delete_channel(self, channel_id: Snowflake):
+        """
+        Deletes/closes a channel.
+
+        Parameters
+        ----------
+        channel_id: :type:`Snowflake`
+            The id of the channel to delete/close
+        """
+        return await self.request(Route("DELETE", "/channels/{channel_id}", channel_id=channel_id))
+
+    async def get_messages(self, channel_id: Snowflake, around: Optional[Snowflake] = None, before: Optional[Snowflake] = None, after: Optional[Snowflake] = None, limit: int = 50):
+        """
+        Grabs all messages from a channel.
+
+        Parameters
+        ----------
+        channel_id: :type:`Snowflake`
+            The id of the channel to grab the messages from
+        around: :type:`Optional[Snowflake]`
+            The id of the message to grab the messages around. Set to None by default
+        before: :type:`Optional[Snowflake]`
+            The id of the message to grab the messages before. Set to None by default
+        after: :type:`Optional[Snowflake]`
+            The id of the message to grab the messages after. Set to None by default
+        limit: :type:`int`
+            The amount of messages to grab. Set to 50 by default
+        """
+        if limit < 1:
+            raise ValueError("Got a limit that's smaller than 1")
+        elif limit > 100:
+            raise ValueError("Got a limit that's larger than 100")
+
+        json_req: Dict[str, Any] = {"limit": limit}
+        if around:
+            json_req["around"] = around
+        if before:
+            json_req["before"] = before
+        if after:
+            json_req["after"] = after
+
+        return await self.request(Route("GET", "/channels/{channel_id}/messages", channel_id=channel_id), json=json_req)
+
     async def get_message(self, channel_id: Snowflake, message_id: Snowflake):
         """
-        Grabs a message object from its id.
+        Grabs a message from its id.
 
         Parameters
         ----------
@@ -373,4 +477,4 @@ class HTTPClient:
         message_id: :type:`Snowflake`
             The id of the message to grab
         """
-        return await self.request(Route("GET", "/channels/{channel_id}/messages/{message_id}", channel_id=channel_id, message_id=message_id))
+        return await self.request(Route("GET", "/channels/{channel_id}/messages/{message_id}", channel_id=channel_id, message_id=message_id))  

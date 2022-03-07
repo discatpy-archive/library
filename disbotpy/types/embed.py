@@ -1,6 +1,6 @@
-"""
+"""   
 The MIT License (MIT)
-
+ 
 Copyright (c) 2022-present EmreTech
 
 Permission is hereby granted, free of charge, to any person obtaining a
@@ -12,7 +12,7 @@ Software is furnished to do so, subject to the following conditions:
 
 The above copyright notice and this permission notice shall be included in
 all copies or substantial portions of the Software.
-
+  
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
 OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -22,35 +22,33 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from typing import Any, Dict
+from typing import Optional
 
 __all__ = (
-    "APIType",
+    "EmbedFooter",
+    "EmbedAttribute",
+    "EmbedAuthor",
+    "EmbedField",
 )
 
-class APIType:
-    """
-    A raw API type. 
-    All types here from the Discord API use this as a base.
-    """
+class EmbedFooter:
+    text: str
+    icon_url: Optional[str]
+    proxy_icon_url: Optional[str]
 
-    @classmethod
-    def from_dict(cls, d: Dict[str, Any]):
-        """
-        Returns this API type from a provided Dict.
+class EmbedAttribute:
+    url: str
+    proxy_url: Optional[str]
+    height: Optional[int]
+    width: Optional[int]
 
-        Usually used to convert types directly from the API.
-        """
-        raise NotImplementedError
+class EmbedAuthor:
+    name: str
+    url: Optional[str]
+    icon_url: Optional[str]
+    proxy_icon_url: Optional[str]
 
-    def to_dict(self) -> Dict[str, Any]:
-        """
-        Returns this type converted into a Dict.
-
-        Usually used to convert types for the API.
-        """
-        raise NotImplementedError
-
-# TODO: Add Messageable abstraction where the bot can send messages to
-# For example, sending a DM to someone or sending a message in a text channel
-
+class EmbedField:
+    name: str
+    value: str
+    inline: bool = False

@@ -24,6 +24,7 @@ DEALINGS IN THE SOFTWARE.
 
 from .activities import *
 from .channel import *
+from .embed import *
 from .gateway import *
 from .snowflake import *
 from .user import *
