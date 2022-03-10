@@ -24,4 +24,8 @@ DEALINGS IN THE SOFTWARE.
 
 from typing import Union
 
+__all__ = (
+    "Snowflake",
+)
+
 Snowflake = Union[str, int]
