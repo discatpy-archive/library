@@ -27,10 +27,9 @@ import json
 import random
 import aiohttp
 import platform
-import threading
 import datetime
 import zlib
-from typing import Any, Dict, List, Tuple, Union, Optional
+from typing import Any, Dict, List, Union, Optional
 
 from .types.activities import Activity
 from .types.gateway import GatewayPayload, GatewayOpcode
@@ -103,8 +102,8 @@ class GatewayClient:
         The session id of this Gateway connection
     recent_gp: :class:`GatewayPayload`
         The newest Gateway Payload
-    keep_alive_thread: :class:`threading.Thread`
-        The thread used to keep the connection alive
+    keep_alive_task: :class:`Optional[asyncio.Task]`
+        The task used to keep the connection alive
     """
     def __init__(self, ws: aiohttp.ClientWebSocketResponse, client, heartbeat_timeout: float = 30.0):
         self.ws: aiohttp.ClientWebSocketResponse = ws
@@ -114,7 +113,7 @@ class GatewayClient:
         self.seq_num: Optional[int] = None
         self.session_id: str = ""
         self.recent_gp: GatewayPayload = GatewayPayload()
-        self.keep_alive_thread: Optional[threading.Thread] = None
+        self.keep_alive_task: Optional[asyncio.Task] = None
         self._first_heartbeat: bool = True
         self._last_heartbeat_ack: datetime.datetime = datetime.datetime.now()
         self.heartbeat_timeout: float = heartbeat_timeout
@@ -155,7 +154,12 @@ class GatewayClient:
             If we should reconnect or not. Set to True by default
         """
         await self.ws.close(code=code)
-        self.keep_alive_thread.join()
+        self.keep_alive_task.cancel()
+        try:
+            await self.keep_alive_task
+        except asyncio.CancelledError:
+            pass
+        
         if reconnect:
             await self.client._gateway_reconnect.set()
 
@@ -234,8 +238,7 @@ class GatewayClient:
         if self.recent_gp.op == GatewayOpcode.HELLO:
             self.heartbeat_interval = self.recent_gp.d["heartbeat_interval"] / 1000
             await self.ws.send_json(self.identify_payload())
-            self.keep_alive_thread = threading.Thread(target=self.keep_alive_run)
-            self.keep_alive_thread.start()
+            self.keep_alive_task = self.client.loop.create_task(self.keep_alive_loop())
         
         # Handles a heartbeat acknowledge to prevent our system from thinking the connection is "zombied"
         if self.recent_gp.op == GatewayOpcode.HEARTBEAT_ACK:
@@ -335,7 +338,7 @@ class GatewayClient:
         - wait for the set heartbeat_interval time defined by the server
             - if this is the first heartbeat, then we multiply that time with a jitter (value between 0 and 1)
         
-        Do not run this yourself. keep_alive_run will start this for you.
+        Do not run this yourself. The Gateway will automatically start an `asyncio.Task` to run this.
         """
         while not self.ws.closed:
             heartbeat_payload = {
@@ -348,17 +351,8 @@ class GatewayClient:
             if self._first_heartbeat:
                 delta *= random.uniform(0.0, 1.0)
                 self._first_heartbeat = False
-            await asyncio.sleep(delta)
 
-    def keep_alive_run(self):
-        """
-        Runs the keep_alive_loop until it is complete.
-
-        Do not run this yourself. poll_event will start this for you in a new thread 
-        when it receives opcode 10 (Hello payload).
-        """
-        loop = asyncio.new_event_loop()
-        try:
-            loop.run_until_complete(self.keep_alive_loop())
-        except asyncio.CancelledError or asyncio.TimeoutError:
-            pass
+            try:
+                await asyncio.sleep(delta)
+            except asyncio.CancelledError:
+                break
