@@ -154,11 +154,7 @@ class GatewayClient:
             If we should reconnect or not. Set to True by default
         """
         await self.ws.close(code=code)
-        self.keep_alive_task.cancel()
-        try:
-            await self.keep_alive_task
-        except asyncio.CancelledError:
-            pass
+        await self.keep_alive_task
         
         if reconnect:
             await self.client._gateway_reconnect.set()
@@ -238,7 +234,7 @@ class GatewayClient:
         if self.recent_gp.op == GatewayOpcode.HELLO:
             self.heartbeat_interval = self.recent_gp.d["heartbeat_interval"] / 1000
             await self.ws.send_json(self.identify_payload())
-            self.keep_alive_task = self.client.loop.create_task(self.keep_alive_loop())
+            self.keep_alive_task = asyncio.create_task(self.keep_alive_loop())
         
         # Handles a heartbeat acknowledge to prevent our system from thinking the connection is "zombied"
         if self.recent_gp.op == GatewayOpcode.HEARTBEAT_ACK:

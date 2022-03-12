@@ -141,8 +141,6 @@ class HTTPClient:
 
     Attributes
     ----------
-    loop: :type:`asyncio.AbstractEventLoop`
-        The main event loop. Used for ratelimiting in request
     _session: :type:`Optional[aiohttp.ClientSession]`
         The internal aiohttp session. Initalized later by login
     token: :type:`Optional[str]`
@@ -152,8 +150,7 @@ class HTTPClient:
         Do not modify this
     """
 
-    def __init__(self, loop: asyncio.AbstractEventLoop, connector: Optional[aiohttp.BaseConnector] = None):
-        self.loop: asyncio.AbstractEventLoop = loop
+    def __init__(self, connector: Optional[aiohttp.BaseConnector] = None):
         self.connector = connector
         self._session: Optional[aiohttp.ClientSession] = None # initalized later by login
         self._global_ratelimit_over: asyncio.Event = asyncio.Event()
@@ -251,7 +248,13 @@ class HTTPClient:
                         # this means that the current ratelimit bucket has been exhausted
                         delta = _parse_ratelimit_header(response.headers)
                         m_lock.defer()
-                        self.loop.call_later(delta, lock.release)
+
+                        async def unlock():
+                            await asyncio.sleep(delta)
+                            lock.release()
+
+                        ratelimit_task = asyncio.create_task(unlock())
+                        await ratelimit_task
 
                     if resp_code >= 200 and resp_code < 300:
                         print("Connection to \"{0}\" succeeded!".format(route.url))
