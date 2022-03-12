@@ -4,7 +4,7 @@
 
 [Discord Server](https://discord.gg/v7r9hNqQJb)
 
-DESCRIPTION COMING SOON
+A high level, asynchronous Discord API wrapper made completely from scratch.
 
 ## Features
 
