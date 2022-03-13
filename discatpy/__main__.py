@@ -24,7 +24,7 @@ DEALINGS IN THE SOFTWARE.
 
 import sys
 
-import disbotpy
+import discatpy
 import platform
 
 def neofetch():
@@ -45,7 +45,7 @@ Y88888D    888888   `8888Y'    Y8888P'      'Y88P'      'YP   88         YP
 
     entries = []
     entries.append("Python Version: {0.major}.{0.minor}.{0.micro}-{0.releaselevel}".format(sys.version_info))
-    entries.append("DisBotPy Version: {}".format(disbotpy.__version__))
+    entries.append("DisCatPy Version: {}".format(discatpy.__version__))
     entries.append("System Information: {0.system} {0.release} {0.version}".format(platform.uname()))
     print('\n'.join(entries))
 
