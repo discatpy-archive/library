@@ -46,8 +46,6 @@ class Client:
         The http client that handles connections with the REST API
     me: :type:`User`
         The bot user
-    loop: :type:`AbstractEventLoop`
-        The main running loop
     running: :type:`bool`
         Whether or not the client is running
     intents: :type:`int`
@@ -56,14 +54,21 @@ class Client:
         The event dispatcher for Gateway events
     """
     def __init__(self, intents: int):
-        self.loop: asyncio.AbstractEventLoop = asyncio.new_event_loop()
         self.gateway: Optional[GatewayClient] = None # initalized later
-        self.http: HTTPClient = HTTPClient(self.loop)
+        self.http: HTTPClient = HTTPClient()
         self.me: Optional[User] = None
         self._gateway_reconnect = asyncio.Event()
         self.running: bool = False
         self.intents: int = intents
         self.dispatcher: Dispatcher = Dispatcher()
+    
+    @property
+    def token(self):
+        """
+        The bot's token. 
+        Shortcut for `discatpy.Client.http.token`.
+        """
+        return self.http.token
 
     async def login(self, token: str):
         """
@@ -106,6 +111,10 @@ class Client:
                 await self.gateway.close(reconnect=False)
                 self.running = False
 
+    async def _run(self, token: str):
+        await self.login(token)
+        await self.gateway_run()
+
     def run(self, token: str):
         """
         Logs into the bot user then starts the Gateway client.
@@ -115,9 +124,8 @@ class Client:
         token: :type:`str`
             The token for the bot user
         """
-        self.loop.run_until_complete(self.login(token))
         try:
-            self.loop.run_until_complete(self.gateway_run())
+            asyncio.run(self._run(token))
         except KeyboardInterrupt:
             pass
         

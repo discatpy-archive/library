@@ -26,14 +26,14 @@ from typing import Any, Dict, List, Tuple, Union, Optional
 from aiohttp import ClientResponse
 
 __all__ = (
-    "DisBotPyException",
+    "DisCatPyException",
     "HTTPException",
 )
 
-class DisBotPyException(Exception):
+class DisCatPyException(Exception):
     """
-    Basis for all exceptions in DisBotPy. If you wanted to catch any exception
-    thrown by DisBotPy, you would catch this exception.
+    Basis for all exceptions in DisCatPy. If you wanted to catch any exception
+    thrown by DisCatPy, you would catch this exception.
     """
     pass
 
@@ -56,7 +56,7 @@ def _shorten_error_dict(d: Dict[str, Any], key: str = "") -> Dict[str, str]:
 
     return dict(ret_items)
 
-class HTTPException(DisBotPyException):
+class HTTPException(DisCatPyException):
     """
     Represents an error while attempting to connect to the Discord REST API.
 

@@ -13,7 +13,7 @@ with open(get_abspath("README.md"), "r", encoding="utf-8") as ldf:
 
 # Get version from __init__.py
 version = ""
-with open(get_abspath("disbotpy/__init__.py"), "r") as fp:
+with open(get_abspath("discatpy/__init__.py"), "r") as fp:
     # I hate regex so much.
     version = re.search(r"^__version__\s*=\s*['\"]([^'\"]*)['\"]", fp.read(), re.MULTILINE).group(1)
 
@@ -24,22 +24,22 @@ with open(get_abspath("requirements.txt"), "r") as fp:
 
 # List packages to be included
 packages = [
-    "disbotpy",
-    "disbotpy.types",
+    "discatpy",
+    "discatpy.types",
 ]
 
 
 # Use setuptools.setup to configure the package metadata
 setuptools.setup(
-    name="disbotpy",
+    name="discatpy",
     author="EmreTech",
     version=version,
-    description="A completely different approach to Discord API Wrapper libs in Python.",
+    description="A high level, asynchronous Discord API wrapper made completely from scratch.",
     long_description=long_desc,
     long_description_content_type="text/markdown",
-    url="https://github.com/EmreTech/DisBotPy",
+    url="https://github.com/EmreTech/DisCatPy",
     project_urls = {
-        "Bug Tracker": "https://github.com/EmreTech/DisBotPy/issues",
+        "Bug Tracker": "https://github.com/EmreTech/DisCatPy/issues",
     },
     classifiers=[
         "Programming Language :: Python :: 3",

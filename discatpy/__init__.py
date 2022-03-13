@@ -22,7 +22,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-__title__   = "DisBotPy"
+__title__   = "DisCatPy"
 __author__  = "EmreTech"
 __version__ = "1.0.0-alpha0"
 __license__ = "MIT"
