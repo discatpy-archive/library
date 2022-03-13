@@ -34,7 +34,7 @@ import datetime
 
 from . import __version__
 from .types.snowflake import *
-from .errors import DisBotPyException, HTTPException
+from .errors import DisCatPyException, HTTPException
 
 __all__ = (
     "Route",
@@ -99,7 +99,7 @@ class Route:
         return f"{self.channel_id}:{self.guild_id}:{self.path}"
 
 def _get_user_agent():
-    user_agent = "DiscordBot (https://github.com/EmreTech/DisBotPy.git, {0}) Python/{1.major}.{1.minor}.{1.micro}"
+    user_agent = "DiscordBot (https://github.com/EmreTech/DisCatPy.git, {0}) Python/{1.major}.{1.minor}.{1.micro}"
     return user_agent.format(__version__, sys.version_info)
 
 class MaybeUnlock:
@@ -326,7 +326,7 @@ class HTTPClient:
         except HTTPException as e:
             self.token = old_token
             if e.status == 401:
-                raise DisBotPyException("LoginFailure: Improper token has been passed.") from e
+                raise DisCatPyException("LoginFailure: Improper token has been passed.") from e
             raise
 
         return data
@@ -356,7 +356,7 @@ class HTTPClient:
         try:
             data = await self.request(Route("GET", "/gateway/bot"))
         except HTTPException as e:
-            raise DisBotPyException("Gateway not found") from e
+            raise DisCatPyException("Gateway not found") from e
 
         if zlib:
             fmt = "{0}?v={1}&encoding={2}&compress=zlib-stream"

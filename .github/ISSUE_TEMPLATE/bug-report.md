@@ -12,6 +12,7 @@ A clear and concise description of what the bug is.
 
 **Reproduction Steps**
 Steps to reproduce the behavior:
+
 1. Go to '...'
 2. Click on '....'
 3. Scroll down to '....'
@@ -26,7 +27,7 @@ A clear and concise description of what actually happened.
 Add any traceback errors from the Terminal if there are any.
 
 **System Information**
-Run `python[3] -m disbotpy` then copy and paste the information you get under the logo.
+Run `python[3] -m discatpy` then copy and paste the information you get under the logo.
 
 **Additional Context**
 Add any other context about the problem here.

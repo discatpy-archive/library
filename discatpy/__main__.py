@@ -24,30 +24,21 @@ DEALINGS IN THE SOFTWARE.
 
 import sys
 
-import disbotpy
+import discatpy
 import platform
+import aiohttp
 
 def neofetch():
     print(
-    """
-d8888b       **                d88888b.                       d888888b.  
-88    `8D    **      .d8888.   88     8D                      88    `8D  
-88     88            88'   YP  88     8D    .d88b.      00    88     8D  88     88
-88     88    88      `8bo.     88oooooY'   88     88  888888  88oodD'    '88  88'
-88     88    88        Y8b.    88     b.   88     88   '88'   88           '88'
-88    .8D   .88.   db    8D    88     8D   88     88    88    88           88
-Y88888D    888888   `8888Y'    Y8888P'      'Y88P'      'YP   88         YP
-
-----------------------------------------------------------------------------------
-----------------------------------------------------------------------------------
+    f"""
+\033[31;40md8888b. d888888b .d8888.  .o88b.  .d8b.  d888888b d8888b. db    db\033[0m      Version: {discatpy.__version__}
+\033[32;40m88  `8D   `88'   88'  YP d8P  Y8 d8' `8b    88    88  `8D `8b  d8'\033[0m      Python Version: {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}-{sys.version_info.releaselevel}
+\033[33;40m88   88    88    `8bo.   8P      88ooo88    88    88oodD'  `8bd8' \033[0m      System Information: {platform.uname().system} {platform.uname().release} {platform.uname().version}
+\033[34;40m88   88    88      `Y8b. 8b      88   88    88    88         88   \033[0m      aiohttp Version: {aiohttp.__version__}
+\033[35;40m88  .8D   .88.   db   8D Y8b  d8 88   88    88    88         88   \033[0m 
+\033[36;40mY8888D' Y888888P `8888Y'  `Y88P' YP   YP    YP    88         YP   \033[0m
     """
     )
-
-    entries = []
-    entries.append("Python Version: {0.major}.{0.minor}.{0.micro}-{0.releaselevel}".format(sys.version_info))
-    entries.append("DisBotPy Version: {}".format(disbotpy.__version__))
-    entries.append("System Information: {0.system} {0.release} {0.version}".format(platform.uname()))
-    print('\n'.join(entries))
 
 if __name__ == '__main__':
     neofetch()

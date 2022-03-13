@@ -66,7 +66,7 @@ class Client:
     def token(self):
         """
         The bot's token. 
-        Shortcut for `disbotpy.Client.http.token`.
+        Shortcut for `discatpy.Client.http.token`.
         """
         return self.http.token
 

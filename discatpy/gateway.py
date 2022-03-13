@@ -42,8 +42,8 @@ ZLIB_SUFFIX = b'\x00\x00\xff\xff'
 
 _identify_connection_properties = {
     "$os": platform.uname().system,
-    "$browser": "disbotpy",
-    "$device": "disbotpy",
+    "$browser": "discatpy",
+    "$device": "discatpy",
 }
 
 def _map_dict_to_gateway_payload(d: Dict[str, Any]):
