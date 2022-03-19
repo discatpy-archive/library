@@ -64,10 +64,7 @@ class Message(APIType, SnowflakeMixin):
         pinned: bool = d.get("pinned")
         type: int = d.get("type")
         # TODO: application, application_id
-        raw_activity: Dict[str, Any] = d.get("activity")
-        activity: MessageActivity = MessageActivity()
-        activity.type = raw_activity.get("type")
-        activity.party_id = raw_activity.get("party_id")
+        activity: MessageActivity = to_message_activity(d.get("activity"))
         # TODO: message reference
         flags: Optional[int] = d.get("flags")
         referenced_message: Optional[Message] = cls.from_dict(d.get("referenced_message")) if d.get("referenced_message") is not None else None
