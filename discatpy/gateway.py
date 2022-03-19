@@ -32,7 +32,7 @@ import zlib
 from typing import Any, Dict, List, Union, Optional
 
 from .types.activities import Activity
-from .types.gateway import GatewayPayload, GatewayOpcode
+from .types.gateway import GatewayPayload, GatewayOpcode, to_gateway_payload
 
 __all__ = (
     "GatewayClient",
@@ -45,14 +45,6 @@ _identify_connection_properties = {
     "$browser": "discatpy",
     "$device": "discatpy",
 }
-
-def _map_dict_to_gateway_payload(d: Dict[str, Any]):
-    output: GatewayPayload = GatewayPayload()
-    output.op = d.get("op", -1)
-    output.d = d.get("d")
-    output.s = d.get("s")
-    output.t = d.get("t")
-    return output
 
 def decompress_msg(inflator, msg: bytes):
     """
@@ -187,7 +179,6 @@ class GatewayClient:
                 await self.close(code=1008)
 
             try:
-                # maybe re-add timeout?
                 msg = await self.ws.receive()
             except asyncio.TimeoutError:
                 # try to re-establish the connection with the Gateway
@@ -197,7 +188,7 @@ class GatewayClient:
                 # we should be able to say that the type of the message is binary and its compressed
                 inflated_msg = decompress_msg(self.inflator, msg.data)
                 inflated_msg = json.loads(inflated_msg)
-                self.recent_gp = _map_dict_to_gateway_payload(inflated_msg)
+                self.recent_gp = to_gateway_payload(inflated_msg)
 
                 self.seq_num = self.recent_gp.s
                 await self.poll_event()
@@ -213,12 +204,7 @@ class GatewayClient:
         """
         # Manages all event dispatches
         if self.recent_gp.op == GatewayOpcode.DISPATCH:
-            # TODO: Make the READY event a callback
-            if self.recent_gp.t == "READY":
-                self.session_id = self.recent_gp.d["session_id"]
-                # TODO: Add (unavailable) guilds to the client cache
-            else:
-                await self.poll_dispatched_event()
+            await self.poll_dispatched_event()
 
         # Attempts to reconnect to the Gateway when prompted
         if self.recent_gp.op == GatewayOpcode.RECONNECT:

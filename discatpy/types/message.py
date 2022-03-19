@@ -22,7 +22,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from .snowflake import *
 
@@ -33,6 +33,9 @@ __all__ = (
     "MessageFlags",
     "PartialEmoji",
     "Reaction",
+    "to_message_activity",
+    "to_partial_emoji",
+    "to_reaction",
 )
 
 class MessageActivityType:
@@ -90,3 +93,36 @@ class Reaction:
     count: int
     me: bool
     emoji: PartialEmoji
+
+def to_message_activity(d: Dict[str, Any]):
+    type: int = d.get("type")
+    party_id: Optional[str] = d.get("party_id")
+
+    msg_activ = MessageActivity()
+    msg_activ.type = type
+    msg_activ.party_id = party_id
+
+    return msg_activ
+
+# TODO: Move this somewhere else
+def to_partial_emoji(d: Dict[str, Any]):
+    id: Optional[Snowflake] = d.get("id")
+    name: Optional[str] = d.get("name")
+
+    partial_emoji = PartialEmoji()
+    partial_emoji.id = id
+    partial_emoji.name = name
+
+    return partial_emoji
+
+def to_reaction(d: Dict[str, Any]):
+    count: int = d.get("count")
+    me: bool = d.get("me")
+    emoji: PartialEmoji = to_partial_emoji(d.get("emoji"))
+
+    reaction = Reaction()
+    reaction.count = count
+    reaction.me = me
+    reaction.emoji = emoji
+
+    return reaction

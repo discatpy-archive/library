@@ -22,13 +22,17 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from typing import Optional
+from typing import Any, Dict, Optional
 
 __all__ = (
     "EmbedFooter",
     "EmbedAttribute",
     "EmbedAuthor",
     "EmbedField",
+    "to_embed_footer",
+    "to_embed_attribute",
+    "to_embed_author",
+    "to_embed_field",
 )
 
 class EmbedFooter:
@@ -51,4 +55,56 @@ class EmbedAuthor:
 class EmbedField:
     name: str
     value: str
-    inline: bool = False
+    inline: bool
+
+def to_embed_footer(d: Dict[str, Any]):
+    text: str = d.get("text")
+    icon_url: Optional[str] = d.get("icon_url")
+    proxy_icon_url: Optional[str] = d.get("proxy_icon_url")
+
+    embed_foot = EmbedFooter()
+    embed_foot.text = text
+    embed_foot.icon_url = icon_url
+    embed_foot.proxy_icon_url = proxy_icon_url
+
+    return embed_foot
+
+def to_embed_attribute(d: Dict[str, Any]):
+    url: str = d.get("url")
+    proxy_url: Optional[str] = d.get("proxy_url")
+    height: Optional[int] = d.get("height")
+    width: Optional[int] = d.get("width")
+
+    embed_attr = EmbedAttribute()
+    embed_attr.url = url
+    embed_attr.proxy_url = proxy_url
+    embed_attr.height = height
+    embed_attr.width = width
+
+    return embed_attr
+
+def to_embed_author(d: Dict[str, Any]):
+    name: str = d.get("name")
+    url: Optional[str] = d.get("url")
+    icon_url: Optional[str] = d.get("icon_url")
+    proxy_icon_url: Optional[str] = d.get("proxy_icon_url")
+
+    embed_auth = EmbedAuthor()
+    embed_auth.name = name
+    embed_auth.url = url
+    embed_auth.icon_url = icon_url
+    embed_auth.proxy_icon_url = proxy_icon_url
+
+    return embed_auth
+
+def to_embed_field(d: Dict[str, Any]):
+    name: str = d.get("name")
+    value: str = d.get("value")
+    inline: bool = d.get("inline", False)
+
+    embed_field = EmbedField()
+    embed_field.name = name
+    embed_field.value = value
+    embed_field.inline = inline
+
+    return embed_field

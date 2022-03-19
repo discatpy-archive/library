@@ -23,13 +23,24 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from typing import Optional
+from typing import Any, Dict, Optional
 from ..user import User
 
 __all__ = (
     "GuildBan",
+    "to_guild_ban",
 )
 
 class GuildBan:
     reason: Optional[str]
     user: User
+
+def to_guild_ban(d: Dict[str, Any]):
+    reason: Optional[str] = d.get("reason")
+    user: User = User.from_dict(d.get("user"))
+
+    guild_ban = GuildBan()
+    guild_ban.reason = reason
+    guild_ban.user = user
+
+    return guild_ban

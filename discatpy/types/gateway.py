@@ -28,6 +28,7 @@ __all__ = (
     "GatewayPayload",
     "GatewayOpcode",
     "GatewayIntents",
+    "to_gateway_payload",
 )
 
 class GatewayPayload:
@@ -69,3 +70,17 @@ class GatewayIntents:
     DIRECT_MESSAGE_TYPING = 1 << 14
     GUILD_MESSAGE_CONTENT = 1 << 15
     GUILD_SCHEDULED_EVENTS = 1 << 16
+
+def to_gateway_payload(d: Dict[str, Any]):
+    op: int = d.get("op")
+    gd: Any = d.get("d")
+    s: Optional[int] = d.get("s")
+    t: Optional[str] = d.get("t")
+
+    gateway_pload = GatewayPayload()
+    gateway_pload.op = op
+    gateway_pload.d = gd
+    gateway_pload.s = s
+    gateway_pload.t = t
+
+    return gateway_pload
