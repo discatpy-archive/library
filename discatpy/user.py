@@ -130,7 +130,6 @@ class User(APIType, SnowflakeMixin):
     public_flags: :type:`int`
         The public flags for this user
     """
-
     def __init__(
         self, 
         id: Snowflake,

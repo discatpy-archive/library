@@ -24,7 +24,7 @@ DEALINGS IN THE SOFTWARE.
 
 from typing import Any, Dict, List, Optional
 
-from .types.channel import ChannelOverwrite, ChannelType
+from .types.channel import ChannelOverwrite, ChannelType, to_channel_overwrite
 from .types.snowflake import *
 from .abs import APIType
 from .mixins import SnowflakeMixin
@@ -111,22 +111,11 @@ class GuildChannel(RawChannel):
         name: str = d.get("name")
         position: int = d.get("position")
         nsfw: bool = d.get("nsfw")
-        raw_perm_ows: List[Dict[str, Any]] = d.get("permission_overwrites")
         permission_overwrites: List[ChannelOverwrite] = []
 
+        raw_perm_ows: List[Dict[str, Any]] = d.get("permission_overwrites")
         for i in raw_perm_ows:
-            id: Snowflake = i.get("id")
-            type: int = i.get("type")
-            allow: str = i.get("allow")
-            deny: str = i.get("deny")
-
-            overwrite = ChannelOverwrite()
-            overwrite.id = id
-            overwrite.type = type
-            overwrite.allow = allow
-            overwrite.deny = deny
-
-            permission_overwrites.append(overwrite)
+            permission_overwrites.append(to_channel_overwrite(i))
 
         return cls(d, guild_id, name, position, nsfw, permission_overwrites)
 

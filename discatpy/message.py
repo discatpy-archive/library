@@ -32,6 +32,10 @@ from .mixins import SnowflakeMixin
 from .user import User
 
 class Message(APIType, SnowflakeMixin):
+    """
+    Represents a message in a Text Channel (guild and DM). This shouldn't be 
+    initalized manually, the rest of the API should take care of that for you.
+    """
     @classmethod
     def from_dict(cls, d: Dict[str, Any]):
         id: Snowflake = d.get("id")
@@ -52,14 +56,7 @@ class Message(APIType, SnowflakeMixin):
         if raw_reactions:
             reactions = []
             for i in raw_reactions:
-                reaction = Reaction()
-                reaction.count = i.get("count")
-                reaction.me = i.get("me")
-                reaction.emoji = PartialEmoji()
-                reaction.emoji.id = i.get("emoji").get("id")
-                reaction.emoji.name = i.get("emoji").get("name")
-
-                reactions.append(reaction)
+                reactions.append(to_reaction(i))
 
         pinned: bool = d.get("pinned")
         type: int = d.get("type")
