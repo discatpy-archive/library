@@ -41,13 +41,6 @@ class SnowflakeMixin:
         """
         return self.raw_id
 
-    @id.setter
-    def id(self, new_id: Snowflake):
-        """
-        Alias for the raw Snowflake ID of this object.
-        """
-        self.raw_id = new_id
-
     @property
     def snowflake_timestamp(self):
         """

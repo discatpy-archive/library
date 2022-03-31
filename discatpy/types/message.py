@@ -33,9 +33,11 @@ __all__ = (
     "MessageFlags",
     "PartialEmoji",
     "Reaction",
+    "MessageReference",
     "to_message_activity",
     "to_partial_emoji",
     "to_reaction",
+    "to_message_reference",
 )
 
 class MessageActivityType:
@@ -94,6 +96,12 @@ class Reaction:
     me: bool
     emoji: PartialEmoji
 
+class MessageReference:
+    message_id: Snowflake
+    channel_id: Optional[Snowflake]
+    guild_id: Snowflake
+    fail_if_not_exists: bool = True
+
 def to_message_activity(d: Dict[str, Any]):
     type: int = d.get("type")
     party_id: Optional[str] = d.get("party_id")
@@ -126,3 +134,17 @@ def to_reaction(d: Dict[str, Any]):
     reaction.emoji = emoji
 
     return reaction
+
+def to_message_reference(d: Dict[str, Any]):
+    message_id: Snowflake = d.get("message_id")
+    channel_id: Optional[Snowflake] = d.get("channel_id")
+    guild_id: Snowflake = d.get("guild_id")
+    fail_if_not_exists: bool = d.get("fail_if_not_exists")
+
+    msg_ref = MessageReference()
+    msg_ref.message_id = message_id
+    msg_ref.channel_id = channel_id
+    msg_ref.guild_id = guild_id
+    msg_ref.fail_if_not_exists = fail_if_not_exists
+
+    return msg_ref

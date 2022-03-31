@@ -29,10 +29,7 @@ __all__ = (
     "Dispatcher",
 )
 
-CoroT = TypeVar("CoroT", bound=Callable[..., Coroutine[Any, Any, Any]])
-T = TypeVar("T")
-Coro = Coroutine[Any, Any, T]
-CoroFunc = Callable[..., Coro[Any]]
+CoroFunc = Callable[..., Coroutine[Any, Any, Any]]
 
 class Dispatcher:
     """
@@ -42,14 +39,7 @@ class Dispatcher:
     def __init__(self):
         pass
 
-    async def run(
-        self, 
-        coro: CoroFunc, 
-        name: str, 
-        one_shot: bool, 
-        *args: Any, 
-        **kwargs: Any
-    ):
+    async def run(self, coro: CoroFunc, name: str, one_shot: bool, *args: Any, **kwargs: Any):
         """
         Runs the given coroutine. Do not run this yourself, `dispatch` takes care of that.
 

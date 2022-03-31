@@ -163,11 +163,8 @@ class User(APIType, SnowflakeMixin):
         avatar: UserAvatar = UserAvatar(d.get("avatar"), id, discriminator)
         bot: bool = d.get("bot", False)
         tfa_enabled: bool = d.get("mfa_enabled", False)
-        banner: UserBanner = UserBanner(
-            d.get("banner"), 
-            int(d.get("accent_color")) if d.get("accent_color") is not None else None, 
-            id
-        )
+        accent_color: Optional[int] = int(d.get("accent_color")) if d.get("accent_color") is not None else None
+        banner: UserBanner = UserBanner(d.get("banner"), accent_color, id)
         # TODO: Locales
         flags: int = d.get("flags", UserFlags.NONE)
         premium_type: int = d.get("premium_type", PremiumTypes.NONE)

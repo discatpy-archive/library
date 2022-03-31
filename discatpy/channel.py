@@ -96,8 +96,7 @@ class GuildChannel(RawChannel):
         self = RawChannel.from_dict(d)
 
         if self.type == ChannelType.DM or self.type == ChannelType.GROUP_DM:
-            # TODO: Rephase this to be clearer
-            raise TypeError("Expecting GuildChannel, got DMChannel instead")
+            raise TypeError("Expecting Guild channel type, got DM channel type instead")
 
         self.guild_id = guild_id
         self.name = name
@@ -111,11 +110,7 @@ class GuildChannel(RawChannel):
         name: str = d.get("name")
         position: int = d.get("position")
         nsfw: bool = d.get("nsfw")
-        permission_overwrites: List[ChannelOverwrite] = []
-
-        raw_perm_ows: List[Dict[str, Any]] = d.get("permission_overwrites")
-        for i in raw_perm_ows:
-            permission_overwrites.append(to_channel_overwrite(i))
+        permission_overwrites: List[ChannelOverwrite] = [to_channel_overwrite(i) for i in d.get("permission_overwrites")] if d.get("permission_overwrites") is not None else []
 
         return cls(d, guild_id, name, position, nsfw, permission_overwrites)
 
