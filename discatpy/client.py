@@ -32,6 +32,8 @@ from .user import User
 
 __all__ = (
     "Client",
+    "set_global_client",
+    "get_global_client",
 )
 
 class Client:
@@ -66,7 +68,7 @@ class Client:
     def token(self):
         """
         The bot's token. 
-        Shortcut for `discatpy.Client.http.token`.
+        Shortcut for `Client.http.token`.
         """
         return self.http.token
 
@@ -108,8 +110,9 @@ class Client:
                     # we cannot reconnect, so we must stop the program
                     self.running = False
             except KeyboardInterrupt:
-                await self.gateway.close(reconnect=False)
                 self.running = False
+
+        await self.gateway.close(reconnect=False)
 
     async def _run(self, token: str):
         await self.login(token)
@@ -124,8 +127,38 @@ class Client:
         token: :type:`str`
             The token for the bot user
         """
-        try:
-            asyncio.run(self._run(token))
-        except KeyboardInterrupt:
-            pass
-        
+        asyncio.run(self._run(token))
+
+global_client: Client = None
+
+def set_global_client(client: Client) -> None:
+    """
+    Sets the global client used throughout the library.
+
+    Parameters
+    ----------
+    client: :type:`Client`
+        The client to set as the global client
+    """
+    global global_client
+
+    if global_client is not None:
+        raise RuntimeError("Global Client is already set")
+
+    global_client = client
+
+def get_global_client() -> Client:
+    """
+    Gets the global client used throughout the library.
+
+    Returns
+    -------
+    :type:`Client`
+        The global client
+    """
+    global global_client
+
+    if global_client is None:
+        raise RuntimeError("Global Client is not set")
+
+    return global_client

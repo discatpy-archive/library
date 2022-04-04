@@ -27,12 +27,14 @@ from datetime import date, datetime
 
 from .types.snowflake import Snowflake
 from .types.message import *
-from .abs import APIType
+from .abs import APIType, Messageable
+from .client import get_global_client
 from .embed import Embed
+from .http import Route
 from .mixins import SnowflakeMixin
 from .user import User
 
-class Message(APIType, SnowflakeMixin):
+class Message(APIType, SnowflakeMixin, Messageable):
     """
     Represents a message in a Text Channel (guild and DM). This shouldn't be 
     initalized manually, the rest of the API should take care of that for you.
@@ -100,6 +102,10 @@ class Message(APIType, SnowflakeMixin):
         flags: Optional[int],
         referenced_message: Optional[Any], # this is supposed to be of Message type
     ) -> None:
+        # since it doesn't make sense to "send" a message from a message, we delete the send function from Messageable
+        # instead, we implement a similar version of send called "reply" that automatically replies to the message
+        del self.send
+
         self.raw_id = id
         self.channel_id = channel_id
         self.guild_id = guild_id
@@ -172,3 +178,38 @@ class Message(APIType, SnowflakeMixin):
             flags, 
             referenced_message
         )
+
+    async def __send(self, json_data: Dict[str, Any]):
+        await get_global_client().http.request(Route(
+            "POST", "/{channel_id}/messages", channel_id=self.channel_id
+        ), json=json_data)
+
+    async def reply(
+        self,
+        content: str,
+        /,
+        embed: Optional[Embed] = None,
+        embeds: Optional[List[Embed]] = None,
+        tts: bool = False,
+    ):
+        """
+        Sends a reply message to this message.
+
+        Parameters
+        ----------
+        content: :type:`str`
+            The content of the reply
+        embed: :type:`Embed`
+            The embed of the reply. You cannot specify both this and embeds.
+        embeds: :type:`List[Embed]`
+            The embeds of the reply. You cannot specify both this and embed.
+        tts: :type:`bool`
+            Whether or not the reply should be TTS
+        """
+        message_reference = MessageReference()
+        message_reference.message_id = self.raw_id
+        # to validify the message reference
+        message_reference.channel_id = self.channel_id
+        message_reference.guild_id = self.guild_id
+
+        await self._send(content, embed=embed, embeds=embeds, message_reference=message_reference, tts=tts)

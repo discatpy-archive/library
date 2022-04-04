@@ -22,10 +22,14 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
+
+from .types.message import MessageReference
+from .embed import Embed
 
 __all__ = (
     "APIType",
+    "Messageable",
 )
 
 class APIType:
@@ -51,6 +55,66 @@ class APIType:
         """
         raise NotImplementedError
 
-# TODO: Add Messageable abstraction where the bot can send messages to
-# For example, sending a DM to someone or sending a message in a text channel
+def _message_reference_to_dict(mr: MessageReference) -> Dict[str, Any]:
+    ret_dict: Dict[str, Any] = {
+        "message_id": mr.message_id,
+        "fail_if_not_exists": mr.fail_if_not_exists,
+    }
 
+    if mr.channel_id:
+        ret_dict["channel_id"] = mr.channel_id
+
+    if mr.guild_id:
+        ret_dict["guild_id"] = mr.guild_id
+
+    return ret_dict
+
+class Messageable:
+    """
+    An abstract type for API types that can send messages.
+    """
+    __slots__ = ()
+    
+    # Has to be implemented by the child class
+    async def __send(self, json_data: Dict[str, Any]):
+        raise NotImplementedError
+
+    async def _send(
+        self,
+        content: str,
+        /,
+        embed: Optional[Embed] = None,
+        embeds: Optional[List[Embed]] = None,
+        message_reference: Optional[MessageReference] = None,
+        tts: bool = False,
+        # TODO: components, stickers, files/attachments
+    ):
+        json_data: Dict[str, Any] = {
+            "content": content,
+            "tts": tts,
+        }
+
+        if embed and embeds:
+            raise RuntimeError("Both embed and embeds are specified!")
+
+        if embed:
+            json_data["embeds"] = [embed.to_dict()]
+
+        if embeds:
+            json_data["embeds"] = [e.to_dict() for e in embeds]
+
+        if message_reference:
+            json_data["message_reference"] = _message_reference_to_dict(message_reference)
+
+        await self.__send(json_data)
+
+    async def send(
+        self,
+        content: str,
+        /,
+        embed: Optional[Embed] = None,
+        embeds: Optional[List[Embed]] = None,
+        tts: bool = False,
+        # TODO: components, stickers, files/attachments
+    ):
+        await self._send(content, embed=embed, embeds=embeds, tts=tts)

@@ -25,7 +25,6 @@ DEALINGS IN THE SOFTWARE.
 from typing import Any, Dict, Optional, List
 
 from .types.embed import *
-from .abs import APIType
 from .errors import DisCatPyException
 
 __all__ = (
@@ -81,7 +80,7 @@ def _field_to_dict(field: EmbedField) -> Dict[str, Any]:
 
     return ret_dict
 
-class Embed(APIType):
+class Embed:
     """
     Represents an embed type. Embeds are to be included with messages 
     and nothing else.

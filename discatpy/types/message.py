@@ -99,8 +99,8 @@ class Reaction:
 class MessageReference:
     message_id: Snowflake
     channel_id: Optional[Snowflake]
-    guild_id: Snowflake
-    fail_if_not_exists: bool = True
+    guild_id: Optional[Snowflake]
+    fail_if_not_exists: bool = False
 
 def to_message_activity(d: Dict[str, Any]):
     type: int = d.get("type")
