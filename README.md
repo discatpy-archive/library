@@ -1,10 +1,10 @@
+![Banner for DisCatPy](./assets/banner.png)
+
 # DisCatPy
 
-![Logo for DisCayPy](./logo_small.png)
-
-[Discord Server](https://discord.gg/v7r9hNqQJb)
-
 A high level, asynchronous Discord API wrapper made completely from scratch.
+
+[![Discord Server invite](https://img.shields.io/discord/947409224361738250?label=discord&style=for-the-badge&logo=discord&color=5865F2&logoColor=white)](https://discord.gg/v7r9hNqQJb)
 
 ## Features
 
