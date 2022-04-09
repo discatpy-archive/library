@@ -23,7 +23,7 @@ DEALINGS IN THE SOFTWARE.
 """
 
 import asyncio
-from typing import Any, Callable, Coroutine, Optional, TypeVar
+from typing import Any, Callable, Coroutine, Optional
 
 __all__ = (
     "Dispatcher",

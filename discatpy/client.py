@@ -88,6 +88,10 @@ class Client:
         # TODO: Support setting the initial presence
         self.me.presence = None
 
+    async def _end_run(self):
+        await self.gateway.close(reconnect=False)
+        await self.http.close()
+
     async def gateway_run(self):
         """
         Runs the Gateway Client code and reconnects when prompted.
@@ -106,13 +110,17 @@ class Client:
                 # if we get here, then we probably have to reconnect
                 if self._gateway_reconnect.is_set():
                     self.gateway.ws = await self.http.ws_connect(gateway_url)
+                    self._gateway_reconnect.clear()
                 else:
                     # we cannot reconnect, so we must stop the program
                     self.running = False
-            except KeyboardInterrupt:
+            except Exception as e:
                 self.running = False
+                await self._end_run()
 
-        await self.gateway.close(reconnect=False)
+        # the code is not expected to reach here since the only way to stop the code is
+        # with a keyboard interrupt, which will raise an exception
+        await self._end_run()
 
     async def _run(self, token: str):
         await self.login(token)

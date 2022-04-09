@@ -23,14 +23,13 @@ DEALINGS IN THE SOFTWARE.
 """
 
 from typing import Any, Dict, List, Optional
-from datetime import date, datetime
+from datetime import datetime
 
 from .types.snowflake import Snowflake
 from .types.message import *
 from .abs import APIType, Messageable
 from .client import get_global_client
 from .embed import Embed
-from .http import Route
 from .mixins import SnowflakeMixin
 from .user import User
 
@@ -105,8 +104,10 @@ class Message(APIType, SnowflakeMixin, Messageable):
         # since it doesn't make sense to "send" a message from a message, we delete the send function from Messageable
         # instead, we implement a similar version of send called "reply" that automatically replies to the message
         del self.send
+        self.client = get_global_client()
 
         self.raw_id = id
+        self.message_id = self.raw_id
         self.channel_id = channel_id
         self.guild_id = guild_id
         self.author = author
@@ -179,11 +180,6 @@ class Message(APIType, SnowflakeMixin, Messageable):
             referenced_message
         )
 
-    async def __send(self, json_data: Dict[str, Any]):
-        await get_global_client().http.request(Route(
-            "POST", "/{channel_id}/messages", channel_id=self.channel_id
-        ), json=json_data)
-
     async def reply(
         self,
         content: str,
@@ -191,6 +187,7 @@ class Message(APIType, SnowflakeMixin, Messageable):
         embed: Optional[Embed] = None,
         embeds: Optional[List[Embed]] = None,
         tts: bool = False,
+        # TODO: components, stickers, files/attachments
     ):
         """
         Sends a reply message to this message.
@@ -213,3 +210,31 @@ class Message(APIType, SnowflakeMixin, Messageable):
         message_reference.guild_id = self.guild_id
 
         await self._send(content, embed=embed, embeds=embeds, message_reference=message_reference, tts=tts)
+
+    async def edit(
+        self,
+        content: str,
+        /,
+        embed: Optional[Embed] = None,
+        embeds: Optional[List[Embed]] = None,
+        # TODO: components, stickers, files/attachments
+    ):
+        """
+        Edits this message.
+
+        Parameters
+        ----------
+        content: str
+            The new content of the message.
+        embed: Optional[Embed]
+            The new embed of the message.
+        embeds: Optional[List[Embed]]
+            The new embeds of the message.
+        """
+        await self.client.http.edit_message(
+            self.message_id,
+            self.channel_id,
+            content,
+            embed=embed,
+            embeds=embeds,
+        )

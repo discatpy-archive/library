@@ -32,7 +32,7 @@ from .mixins import SnowflakeMixin
 class RawChannel(APIType, SnowflakeMixin):
     """
     Represents the base for all channel types. Do not implement this yourself,
-    instead use `TextChannel`, `VoiceChannel`, or `Thread`.
+    instead use `TextChannel`, `VoiceChannel`, `DMChannel`, or `Thread`.
 
     Attributes
     ----------

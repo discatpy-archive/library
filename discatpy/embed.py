@@ -93,7 +93,20 @@ class Embed:
         The description of this Embed
     url: :type:`Optional[str]`
         The url of this Embed
-    
+    color: :type:`Optional[int]`
+        The color of this Embed
+    footer: :type:`Optional[EmbedFooter]`
+        The footer of this Embed
+    image: :type:`Optional[EmbedAttribute]`
+        The image of this Embed
+    thumbnail: :type:`Optional[EmbedAttribute]`
+        The thumbnail of this Embed
+    video: :type:`Optional[EmbedAttribute]`
+        The video of this Embed
+    author: :type:`Optional[EmbedAuthor]`
+        The author of this Embed
+    fields: :type:`List[EmbedField]`
+        The fields of this Embed
     """
     def __init__(
         self, 
@@ -191,8 +204,6 @@ class Embed:
         if self.author is not None:
             ret_dict["author"] = _author_to_dict(self.author)
         if len(self.fields) > 0:
-            ret_dict["fields"] = []
-            for i in self.fields:
-                ret_dict["fields"].append(_field_to_dict(i))
+            ret_dict["fields"] = [_field_to_dict(i) for i in self.fields]
 
         return ret_dict

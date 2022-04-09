@@ -23,7 +23,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 from urllib.parse import quote as urlquote
 import sys
 import asyncio
@@ -34,6 +34,8 @@ import datetime
 
 from . import __version__
 from .types.snowflake import *
+from .types.message import MessageReference
+from .embed import Embed
 from .errors import DisCatPyException, HTTPException
 
 __all__ = (
@@ -126,6 +128,20 @@ def _parse_ratelimit_header(headers: Dict[str, Any]):
         return (reset - now).total_seconds()
     else:
         return float(reset_after)
+
+def _message_reference_to_dict(mr: MessageReference) -> Dict[str, Any]:
+    ret_dict: Dict[str, Any] = {
+        "message_id": mr.message_id,
+        "fail_if_not_exists": mr.fail_if_not_exists,
+    }
+
+    if mr.channel_id:
+        ret_dict["channel_id"] = mr.channel_id
+
+    if mr.guild_id:
+        ret_dict["guild_id"] = mr.guild_id
+
+    return ret_dict
 
 class HTTPClient:
     """
@@ -304,6 +320,8 @@ class HTTPClient:
         """
         return await self._session.close()
 
+    # Self HTTP functions
+
     async def login(self, token: str):
         """
         Logs into the bot account by initalizing the aiohttp.ClientSession then
@@ -366,9 +384,19 @@ class HTTPClient:
         return data["shards"], fmt.format(data["url"], API_VERSION, encoding)
 
     async def modify_current_user(self, username: str):
+        """
+        Modifies the current bot's user account.
+
+        Parameters
+        ----------
+        username: :type:`str`
+            The new username for the bot.
+        """
         # TODO: add the ability to modify the avatar
         json_req: Dict[str, Any] = {"username": username}
         return await self.request(Route("PATCH", "/users/@me"), json=json_req)
+
+    # User HTTP functions
 
     async def get_user(self, user_id: Snowflake):
         """
@@ -381,30 +409,11 @@ class HTTPClient:
         """
         return await self.request(Route("GET", "/users/{user_id}", user_id=user_id))
 
-    async def modify_dm_channel(self, channel_id: Snowflake, new_channel: Dict[str, Any]):
-        """
-        Modifies a Group DM channel with the given channel (in Dict form).
+    # Channel HTTP functions
 
-        Parameters
-        ----------
-        channel_id: :type:`Snowflake`
-            The id of the channel to modify
-        new_channel: :type:`Dict[str, Any]`
-            The updated channel. Outputted from `DMChannel.to_dict()`
+    async def modify_channel(self, channel_id: Snowflake, new_channel: Dict[str, Any]):
         """
-        name = new_channel.get("name")
-        icon = new_channel.get("icon")
-        return await self.request(
-            Route("PATCH", "/channels/{channel_id}", channel_id=channel_id),
-            json={
-                "name": name,
-                "icon": icon
-            }
-        )
-
-    async def modify_guild_channel(self, channel_id: Snowflake, new_channel: Dict[str, Any]):
-        """
-        Modifies a guild channel with the given channel (in Dict form).
+        Modifies a channel with the given channel (in Dict form).
 
         Parameters
         ----------
@@ -436,6 +445,8 @@ class HTTPClient:
             The id of the channel to delete/close
         """
         return await self.request(Route("DELETE", "/channels/{channel_id}", channel_id=channel_id))
+
+    # Message HTTP functions
 
     async def get_messages(self, channel_id: Snowflake, around: Optional[Snowflake] = None, before: Optional[Snowflake] = None, after: Optional[Snowflake] = None, limit: int = 50):
         """
@@ -481,3 +492,86 @@ class HTTPClient:
             The id of the message to grab
         """
         return await self.request(Route("GET", "/channels/{channel_id}/messages/{message_id}", channel_id=channel_id, message_id=message_id))  
+
+    async def send_message(
+        self, 
+        channel_id: Snowflake, 
+        content: str, 
+        embed: Optional[Embed] = None, 
+        embeds: Optional[List[Embed]] = None,
+        msg_reference: Optional[MessageReference] = None,
+        tts: bool = False
+    ):
+        """
+        Sends a message to a channel.
+
+        Parameters
+        ----------
+        channel_id: :type:`Snowflake`
+            The id of the channel to send the message to
+        content: :type:`str`
+            The content of the message to send
+        embed: :type:`Optional[Embed]`
+            The embed to send. Set to None by default
+        embeds: :type:`Optional[List[Embed]]`
+            The embeds to send. Set to None by default
+        msg_reference: :type:`Optional[MessageReference]`
+            The message reference to send. Set to None by default
+        tts: :type:`bool`
+            Whether the message should be sent in text-to-speech. Set to False by default
+        """
+        json_data: Dict[str, Any] = {"content": content, "tts": tts}
+
+        if embed and embeds:
+            raise ValueError("Cannot send both embed and embeds")
+
+        if embed:
+            json_data["embeds"] = [embed.to_dict()]
+
+        if embeds:
+            json_data["embeds"] = [e.to_dict() for e in embeds]
+
+        if msg_reference:
+            json_data["message_reference"] = _message_reference_to_dict(msg_reference)
+
+        return await self.request(Route("POST", "/channels/{channel_id}/messages", channel_id=channel_id), json=json_data)
+
+    async def edit_message(
+        self,
+        msg_id: Snowflake,
+        channel_id: Snowflake,
+        content: str,
+        embed: Optional[Embed] = None, 
+        embeds: Optional[List[Embed]] = None
+    ):
+        """
+        Edits an existing message.
+
+        Parameters
+        ----------
+        msg_id: :type:`Snowflake`
+            The id of the message to edit
+        channel_id: :type:`Snowflake`
+            The id of the channel where the message is from
+        content: :type:`str`
+            The new content of the message to edit
+        embed: :type:`Optional[Embed]`
+            The new embed of the message to edit. Set to None by default
+        embeds: :type:`Optional[List[Embed]]`
+            The new embeds of the message to edit. Set to None by default
+        """
+        json_data: Dict[str, Any] = {"content": content}
+
+        if embed and embeds:
+            raise ValueError("Cannot send both embed and embeds")
+
+        if embed:
+            json_data["embeds"] = [embed.to_dict()]
+
+        if embeds:
+            json_data["embeds"] = [e.to_dict() for e in embeds]
+
+        return await self.request(
+            Route("PATCH", "/channels/{channel_id}/messages/{message_id}", channel_id=channel_id, message_id=msg_id), 
+            json=json_data
+        )

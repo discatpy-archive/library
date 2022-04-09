@@ -24,6 +24,7 @@ DEALINGS IN THE SOFTWARE.
 
 from typing import Any, Dict, List, Optional
 
+from .types.snowflake import *
 from .types.message import MessageReference
 from .embed import Embed
 
@@ -55,30 +56,15 @@ class APIType:
         """
         raise NotImplementedError
 
-def _message_reference_to_dict(mr: MessageReference) -> Dict[str, Any]:
-    ret_dict: Dict[str, Any] = {
-        "message_id": mr.message_id,
-        "fail_if_not_exists": mr.fail_if_not_exists,
-    }
-
-    if mr.channel_id:
-        ret_dict["channel_id"] = mr.channel_id
-
-    if mr.guild_id:
-        ret_dict["guild_id"] = mr.guild_id
-
-    return ret_dict
-
 class Messageable:
     """
     An abstract type for API types that can send messages.
     """
-    __slots__ = ()
-    
-    # Has to be implemented by the child class
-    async def __send(self, json_data: Dict[str, Any]):
-        raise NotImplementedError
+    client = None
+    channel_id: Snowflake
+    message_id: Snowflake
 
+    # this is for Message since it implements reply which is pretty much send but with a message reference
     async def _send(
         self,
         content: str,
@@ -89,24 +75,14 @@ class Messageable:
         tts: bool = False,
         # TODO: components, stickers, files/attachments
     ):
-        json_data: Dict[str, Any] = {
-            "content": content,
-            "tts": tts,
-        }
-
-        if embed and embeds:
-            raise RuntimeError("Both embed and embeds are specified!")
-
-        if embed:
-            json_data["embeds"] = [embed.to_dict()]
-
-        if embeds:
-            json_data["embeds"] = [e.to_dict() for e in embeds]
-
-        if message_reference:
-            json_data["message_reference"] = _message_reference_to_dict(message_reference)
-
-        await self.__send(json_data)
+        await self.client.http.send_message(
+            self.channel_id,
+            content,
+            embed=embed,
+            embeds=embeds,
+            msg_reference=message_reference,
+            tts=tts
+        )
 
     async def send(
         self,
@@ -117,4 +93,18 @@ class Messageable:
         tts: bool = False,
         # TODO: components, stickers, files/attachments
     ):
+        """
+        Sends a message.
+
+        Parameters
+        ----------
+        content: str
+            The content of the message.
+        embed: Optional[Embed]
+            The embed to send.
+        embeds: Optional[List[Embed]]
+            A list of embeds to send.
+        tts: bool
+            Whether the message should be sent using text-to-speech.
+        """
         await self._send(content, embed=embed, embeds=embeds, tts=tts)
