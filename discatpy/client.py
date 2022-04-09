@@ -26,6 +26,7 @@ import asyncio
 from typing import Optional
 
 from .internal.dispatcher import *
+from .internal.events import *
 from .gateway import GatewayClient
 from .http import HTTPClient
 from .user import User
@@ -34,7 +35,7 @@ __all__ = (
     "Client",
 )
 
-class Client:
+class Client(EventsMixin):
     """
     The main client that joins the developer's code and the Discord API together.
 
