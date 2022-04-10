@@ -41,5 +41,4 @@ DisCatPy is licensed under the MIT License. Please read the [LICENSE](./LICENSE)
 
 If you use a portion of DisCatPy's code in your own code, please credit the following authors:
 
-- EmreTech 2022-present (Made most of the code)
-- Rapptz 2015-2021 (Portions of `http.py` are from his discord.py library)
+- EmreTech 2022-present (Made all of the code so far)

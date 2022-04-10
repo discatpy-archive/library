@@ -23,6 +23,7 @@ DEALINGS IN THE SOFTWARE.
 """
 
 import asyncio
+import inspect
 from typing import Any, Callable, Coroutine, Optional
 
 __all__ = (
@@ -39,7 +40,7 @@ class Dispatcher:
     def __init__(self):
         pass
 
-    async def run(self, coro: CoroFunc, name: str, one_shot: bool, *args: Any, **kwargs: Any):
+    async def run(self, coro: CoroFunc, *args: Any, **kwargs: Any):
         """
         Runs the given coroutine. Do not run this yourself, `dispatch` takes care of that.
 
@@ -47,19 +48,11 @@ class Dispatcher:
         ----------
         coro: :type:`Callable[..., Coroutine[Any, Any, Any]]`
             The coroutine to run
-        name: :type:`str`
-            The name of the event
-        one_shot: :type:`bool`
-            If the event containing the coroutine should be deleted or not
-            after execution
         *args: :type:`Any`
             Arguments to pass into the coroutine
         **kwargs: :type:`Any`
             More arguments to pass into the coroutine
         """
-        if one_shot:
-            self.remove_listener(name)
-
         try:
             await coro(*args, **kwargs)
         except asyncio.CancelledError:
@@ -86,18 +79,20 @@ class Dispatcher:
         funcs = event.get("callback")
         one_shot = event.get("one_shot", False)
 
-        await self.run(funcs.get("original"), name, one_shot, *args, **kwargs)
+        await self.run(funcs.get("original"), *args, **kwargs)
 
-        overloaded_func = funcs.get("overloaded")
-        if overloaded_func:
-            await self.run(overloaded_func, name, one_shot, *args, **kwargs)
+        overloaded_funcs = funcs.get("overloads")
+        if overloaded_funcs:
+            for f in overloaded_funcs:
+                await self.run(f, *args, **kwargs)
 
-    def add_listener(self, func: CoroFunc, overloaded_func: Optional[CoroFunc], name: Optional[str] = None, one_shot: bool = False):
+        # this ensures that the listener gets removed after all of the callbacks are called
+        if one_shot:
+            self.remove_listener(name)
+
+    def add_listener(self, func: CoroFunc, name: Optional[str] = None, one_shot: bool = False):
         """
-        Adds a new listener for an event. This listener can have an 
-        overloaded variant that performs different operations, 
-        however it must have the same name and accept the same 
-        parameters.
+        Adds a new listener for an event.
 
         Parameters
         ----------
@@ -114,15 +109,33 @@ class Dispatcher:
         """
         if not asyncio.iscoroutinefunction(func):
             raise TypeError("Function provided is not a coroutine.")
-        
-        if overloaded_func is not None:
-            if not asyncio.iscoroutinefunction(overloaded_func):
-                raise TypeError("Overloaded function provided is not a coroutine.")
-            if not name and (overloaded_func.__name__ != func.__name__):
-                raise RuntimeError("Overloaded function does not have the same name as the original function!")
 
         event_name = func.__name__ if not name else name
-        setattr(self, event_name, {"callback": {"original": func, "overloaded": overloaded_func}, "one_shot": one_shot})
+        setattr(self, event_name, {"callback": {"original": func, "overloads": []}, "one_shot": one_shot})
+
+    def add_listener_overload(self, func: CoroFunc):
+        """
+        Adds a new overloaded callback for a listener. This will automatically
+        check if the name and parameters are the same as the original callback.
+
+        Parameters
+        ----------
+        func: :type:`Callable[..., Coroutine[Any, Any, Any]]`
+            The overloaded callback function for this listener
+        """
+        if not asyncio.iscoroutinefunction(func):
+            raise TypeError("Function provided is not a coroutine.")
+        
+        if not hasattr(self, func.__name__):
+            raise Exception(f"There is no original callback with the name {func.__name__}.")
+
+        original_func_signature = inspect.signature(getattr(self, func.__name__)["callback"]["original"])
+        overload_func_signature = inspect.signature(func)
+
+        if original_func_signature.parameters != overload_func_signature.parameters:
+            raise TypeError("Overloaded function does not have the same parameters as original function.")
+
+        getattr(self, func.__name__)["callback"]["overloads"].append(func)
 
     def remove_listener(self, name: str):
         """
