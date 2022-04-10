@@ -188,6 +188,7 @@ class HTTPClient:
         if data is not None:
             headers["Content-Type"] = "application/json"
             kwargs["data"] = json.dumps(data, separators=(",", ":"), ensure_ascii=True)
+            kwargs.pop("json")
 
         # TODO: Manage Audit log reason
 
@@ -202,6 +203,11 @@ class HTTPClient:
         if self._global_ratelimit.is_set():
             delta = _calculate_ratelimit_delta(self._global_ratelimit.data)
             _log.debug("We are being ratelimited globally. Trying again in %s seconds.", delta)
+
+            if delta <= 0:
+                _log.debug("Global ratelimit is over now. Skipping over this ratelimit.")
+                pass
+
             await asyncio.sleep(delta)
 
         ratelimited = self._bucket_ratelimits.get(bucket)
@@ -214,6 +220,11 @@ class HTTPClient:
             if ratelimited.is_set():
                 delta = _calculate_ratelimit_delta(ratelimited.data)
                 _log.debug("This bucket is being ratelimited. Trying again in %s seconds.", delta)
+
+                if delta <= 0:
+                    _log.debug("Bucket ratelimit is over now. Skipping over this ratelimit.")
+                    pass
+
                 await asyncio.sleep(delta)
 
         response: Optional[aiohttp.ClientResponse] = None
@@ -221,8 +232,11 @@ class HTTPClient:
 
         for tries in range(5):
             async with self._session.request(method, route.url, **kwargs) as response:
-                data = await response.json(encoding="utf-8")
                 resp_code = response.status
+                data = None
+                
+                if not resp_code == 204: # 204 means empty content, aiohttp throws an error when trying to parse empty context as json
+                    data = await response.json(encoding="utf-8")
 
                 _bucket = response.headers.get("X-RateLimit-Bucket")
                 remaining_req = response.headers.get("X-RateLimit-Remaining")
@@ -236,21 +250,29 @@ class HTTPClient:
 
                     if not ratelimited.is_set():
                         # we are the first request with this bucket to hit a ratelimit
-                        _log.debug("Ratelimit bucket exhausted, trying again in %s seconds.", _calculate_ratelimit_delta(reset_timestamp))
+                        delta = _calculate_ratelimit_delta(reset_timestamp)
+                        _log.debug("Ratelimit bucket exhausted, trying again in %s seconds.", delta)
 
-                        ratelimited.set(reset_timestamp)
+                        if delta > 0:
+                            ratelimited.set(reset_timestamp)
 
-                        async def unlock():
-                            await asyncio.sleep(_calculate_ratelimit_delta(reset_timestamp))
-                            ratelimited.clear()
+                            async def unlock():
+                                await asyncio.sleep(delta)
+                                ratelimited.clear()
 
-                        ratelimit_task = asyncio.create_task(unlock())
-                        await ratelimit_task
+                            ratelimit_task = asyncio.create_task(unlock())
+                            await ratelimit_task
+                        else:
+                            _log.debug("Ratelimit bucket is already good to go. Skipping.")
                     else:
                         # we are not the first request with this bucket to hit a ratelimit
-                        _log.debug("Ratelimit bucket exhausted, trying again in %s seconds.", _calculate_ratelimit_delta(ratelimited.data))
+                        delta = _calculate_ratelimit_delta(ratelimited.data)
+                        _log.debug("Ratelimit bucket exhausted, trying again in %s seconds.", delta)
 
-                        await asyncio.sleep(_calculate_ratelimit_delta(ratelimited.data))
+                        if delta > 0:
+                            await asyncio.sleep(_calculate_ratelimit_delta(ratelimited.data))
+                        else:
+                            _log.debug("Ratelimit bucket is already good to go. Skipping.")
 
                 if resp_code >= 200 and resp_code < 300:
                     _log.debug("Connection to \"%s\" succeeded!", route.url)
