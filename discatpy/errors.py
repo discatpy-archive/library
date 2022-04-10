@@ -95,5 +95,7 @@ class HTTPException(DisCatPyException):
         if self.text:
             format += ": {3}"
 
+        format += ")"
+
         super().__init__(format.format(response.status, response.reason, self.code, self.text))
 

@@ -23,7 +23,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 from urllib.parse import quote as urlquote
 import sys
 import asyncio
@@ -35,6 +35,7 @@ import datetime
 from . import __version__
 from .types.snowflake import *
 from .errors import DisCatPyException, HTTPException
+from .utils import DataEvent
 
 __all__ = (
     "Route",
@@ -67,10 +68,6 @@ class Route:
         The channel id if it's specified in parameters
     guild_id: :type:`Optional[Snowflake]`
         The guild id if it's specified in parameters
-    webhook_id: :type:`Optional[Snowflake]`
-        The webhook id if it's specified in parameters
-    webhook_token: :type:`Optional[str]`
-        The webhook token if it's specified in parameters
     """
 
     def __init__(self, method: str, path: str, **parameters: Any) -> None:
@@ -84,48 +81,26 @@ class Route:
         # some major parameters
         self.channel_id: Optional[Snowflake] = parameters.get("channel_id")
         self.guild_id: Optional[Snowflake] = parameters.get("guild_id")
-        self.webhook_id: Optional[Snowflake] = parameters.get("webhook_id")
-        self.webhook_token: Optional[str] = parameters.get("webhook_token")
 
     @property
     def base(self) -> str:
         return "https://discord.com/api/v{0}".format(API_VERSION)
 
     @property
-    def bucket(self) -> str:
-        """
-        Returns the current ratelimit bucket for this Route.
-        """
-        return f"{self.channel_id}:{self.guild_id}:{self.path}"
+    def endpoint(self) -> str:
+        return "{0}:{1}".format(self.method, self.path)
+
+    def get_bucket(self, shared_bucket_hash: str) -> str:
+        return f"{self.guild_id}:{self.channel_id}:{self.path}" if shared_bucket_hash is None else f"{self.guild_id}:{self.channel_id}:{shared_bucket_hash}"
 
 def _get_user_agent():
     user_agent = "DiscordBot (https://github.com/EmreTech/DisCatPy.git, {0}) Python/{1.major}.{1.minor}.{1.micro}"
     return user_agent.format(__version__, sys.version_info)
 
-class MaybeUnlock:
-    def __init__(self, lock: asyncio.Lock):
-        self.lock: asyncio.Lock = lock
-        self._unlock: bool = True
-
-    def __enter__(self):
-        return self
-
-    def defer(self):
-        self._unlock = False
-
-    def __exit__(self, exc_type, exc, traceback):
-        if self._unlock:
-            self.lock.release()
-
-def _parse_ratelimit_header(headers: Dict[str, Any]):
-    reset_after: Optional[str] = headers.get("X-RateLimit-Reset-After")
-    if not reset_after:
-        utc = datetime.timezone.utc
-        now = datetime.datetime.now(utc)
-        reset = datetime.datetime.fromtimestamp(headers.get("X-RateLimit-Reset"))
-        return (reset - now).total_seconds()
-    else:
-        return float(reset_after)
+def _calculate_ratelimit_delta(reset_timestamp: float) -> float:
+    now = datetime.datetime.now()
+    reset = datetime.datetime.fromtimestamp(float(reset_timestamp))
+    return (reset - now).total_seconds()
 
 class HTTPClient:
     """
@@ -153,9 +128,9 @@ class HTTPClient:
     def __init__(self, connector: Optional[aiohttp.BaseConnector] = None):
         self.connector = connector
         self._session: Optional[aiohttp.ClientSession] = None # initalized later by login
-        self._global_ratelimit_over: asyncio.Event = asyncio.Event()
-        self._global_ratelimit_over.set()
-        self._bucket_locks: weakref.WeakValueDictionary = weakref.WeakValueDictionary()
+        self._global_ratelimit: DataEvent = DataEvent()
+        self._bucket_ratelimits: Dict[str, DataEvent] = {}
+        self._buckets: Dict[str, str] = {}
         self.token: Optional[str] = None
 
         self.user_agent: str = _get_user_agent()
@@ -200,17 +175,6 @@ class HTTPClient:
         json: :type:`Dict[str, Any]`
             Any content we should send along with the request
         """
-        bucket = route.bucket
-        url = route.url
-        method = route.method
-
-        lock = self._bucket_locks.get(bucket)
-        if lock is None:
-            # lock for this bucket has not been initalized
-            lock = asyncio.Lock()
-            if bucket is not None:
-                self._bucket_locks[bucket] = lock
-
         headers: Dict[str, Any] = {
             "User-Agent": self.user_agent
         }
@@ -227,71 +191,95 @@ class HTTPClient:
 
         kwargs["headers"] = headers
 
-        if not self._global_ratelimit_over.is_set():
-            # global ratelimit is not over, wait
-            await self._global_ratelimit_over.wait()
+        url = route.url
+        method = route.method
+        bucket = route.get_bucket(self._buckets.get(route.endpoint))
+
+        # first we do a global ratelimit as that affects all requests
+        # then we do a bucket ratelimit
+
+        if self._global_ratelimit.is_set():
+            await asyncio.sleep(_calculate_ratelimit_delta(self._global_ratelimit.data))
+
+        ratelimited = self._bucket_ratelimits.get(bucket)
+        if ratelimited is None:
+            # ratelimit for this bucket has not been initalized
+            ratelimited = DataEvent()
+            if bucket is not None:
+                self._bucket_ratelimits[bucket] = ratelimited
+        else:
+            if ratelimited.is_set():
+                await asyncio.sleep(_calculate_ratelimit_delta(ratelimited.data))
 
         response: Optional[aiohttp.ClientResponse] = None
         data: Optional[Union[Dict[str, Any], str]] = None
 
-        # wait for the bucket lock to be unlocked, then lock it again
-        await lock.acquire()
-        with MaybeUnlock(lock) as m_lock:
-            # try to connect 5 times before giving up
-            for tries in range(5):
-                async with self._session.request(method, url, **kwargs) as response:
-                    data = await response.json(encoding="utf-8")
-                    resp_code = response.status
+        for tries in range(5):
+            async with self._session.request(method, url, **kwargs) as response:
+                data = await response.json(encoding="utf-8")
+                resp_code = response.status
 
-                    remaining_req = response.headers.get("X-RateLimit-Remaining")
-                    if remaining_req == "0" and resp_code != 429:
-                        # this means that the current ratelimit bucket has been exhausted
-                        delta = _parse_ratelimit_header(response.headers)
-                        m_lock.defer()
+                _bucket = response.headers.get("X-RateLimit-Bucket")
+                remaining_req = response.headers.get("X-RateLimit-Remaining")
+                reset_timestamp = response.headers.get("X-RateLimit-Reset")
+                print("reset:", reset_timestamp)
+
+                if _bucket is not None:
+                    self._buckets[route.endpoint] = _bucket
+
+                if remaining_req == "0" and resp_code != 429:
+                    # this means that the current ratelimit bucket has been exhausted
+
+                    if not ratelimited.is_set():
+                        # we are the first request with this bucket to hit a ratelimit
+                        ratelimited.set(reset_timestamp)
 
                         async def unlock():
-                            await asyncio.sleep(delta)
-                            lock.release()
+                            await asyncio.sleep(_calculate_ratelimit_delta(reset_timestamp))
+                            ratelimited.clear()
 
                         ratelimit_task = asyncio.create_task(unlock())
                         await ratelimit_task
+                    else:
+                        # we are not the first request with this bucket to hit a ratelimit
+                        await asyncio.sleep(_calculate_ratelimit_delta(ratelimited.data))
 
-                    if resp_code >= 200 and resp_code < 300:
-                        print("Connection to \"{0}\" succeeded!".format(route.url))
-                        return data
+                if resp_code >= 200 and resp_code < 300:
+                    print("Connection to \"{0}\" succeeded!".format(route.url))
+                    return data
 
-                    # we are being ratelimited
-                    if resp_code == 429:
-                        if response.headers.get("Via") or isinstance(data, str):
-                            # probably banned by CloudFlare
-                            raise HTTPException(response, data)
-
-                        retry_after = data["retry_after"]
-                        is_global = data.get("global", False)
-                        if is_global:
-                            # unset global ratelimit over event
-                            self._global_ratelimit_over.clear()
-
-                        # wait then try again
-                        await asyncio.sleep(retry_after)
-
-                        if is_global:
-                            self._global_ratelimit_over.set()
-
-                        continue
-                    
-                    # server error, retry after waiting
-                    if resp_code in {500, 502, 504}:
-                        await asyncio.sleep(1 + tries * 2)
-                        continue
-
-                    # other error cases
-                    if resp_code >= 400:
+                # we are being ratelimited
+                if resp_code == 429:
+                    if response.headers.get("Via") or isinstance(data, str):
+                        # probably banned by CloudFlare
                         raise HTTPException(response, data)
 
-            # exhausted retries
-            if response is not None:
-                raise HTTPException(response, data)
+                    retry_after = data["retry_after"]
+                    is_global = data.get("global", False)
+
+                    if is_global:
+                        self._global_ratelimit.set(reset_timestamp)
+
+                    # wait then try again
+                    await asyncio.sleep(retry_after)
+
+                    if is_global:
+                        self._global_ratelimit.clear()
+
+                    continue
+                    
+                # server error, retry after waiting
+                if resp_code in {500, 502, 504}:
+                    await asyncio.sleep(1 + tries * 2)
+                    continue
+
+                # other error cases
+                if resp_code >= 400:
+                    raise HTTPException(response, data)
+
+        # exhausted retries
+        if response is not None:
+            raise HTTPException(response, data)
 
         raise RuntimeError("Got to unreachable section of HTTPClient.request")
 
