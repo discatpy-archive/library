@@ -23,14 +23,14 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Optional, Union
 from urllib.parse import quote as urlquote
 import sys
 import asyncio
-import weakref
 import aiohttp
 import json
 import datetime
+import logging
 
 from . import __version__
 from .types.snowflake import *
@@ -41,6 +41,8 @@ __all__ = (
     "Route",
     "HTTPClient"
 )
+
+_log = logging.getLogger(__name__)
 
 API_VERSION = 9
 
@@ -191,7 +193,6 @@ class HTTPClient:
 
         kwargs["headers"] = headers
 
-        url = route.url
         method = route.method
         bucket = route.get_bucket(self._buckets.get(route.endpoint))
 
@@ -199,7 +200,9 @@ class HTTPClient:
         # then we do a bucket ratelimit
 
         if self._global_ratelimit.is_set():
-            await asyncio.sleep(_calculate_ratelimit_delta(self._global_ratelimit.data))
+            delta = _calculate_ratelimit_delta(self._global_ratelimit.data)
+            _log.debug("We are being ratelimited globally. Trying again in %s seconds.", delta)
+            await asyncio.sleep(delta)
 
         ratelimited = self._bucket_ratelimits.get(bucket)
         if ratelimited is None:
@@ -209,20 +212,21 @@ class HTTPClient:
                 self._bucket_ratelimits[bucket] = ratelimited
         else:
             if ratelimited.is_set():
-                await asyncio.sleep(_calculate_ratelimit_delta(ratelimited.data))
+                delta = _calculate_ratelimit_delta(ratelimited.data)
+                _log.debug("This bucket is being ratelimited. Trying again in %s seconds.", delta)
+                await asyncio.sleep(delta)
 
         response: Optional[aiohttp.ClientResponse] = None
         data: Optional[Union[Dict[str, Any], str]] = None
 
         for tries in range(5):
-            async with self._session.request(method, url, **kwargs) as response:
+            async with self._session.request(method, route.url, **kwargs) as response:
                 data = await response.json(encoding="utf-8")
                 resp_code = response.status
 
                 _bucket = response.headers.get("X-RateLimit-Bucket")
                 remaining_req = response.headers.get("X-RateLimit-Remaining")
                 reset_timestamp = response.headers.get("X-RateLimit-Reset")
-                print("reset:", reset_timestamp)
 
                 if _bucket is not None:
                     self._buckets[route.endpoint] = _bucket
@@ -232,6 +236,8 @@ class HTTPClient:
 
                     if not ratelimited.is_set():
                         # we are the first request with this bucket to hit a ratelimit
+                        _log.debug("Ratelimit bucket exhausted, trying again in %s seconds.", _calculate_ratelimit_delta(reset_timestamp))
+
                         ratelimited.set(reset_timestamp)
 
                         async def unlock():
@@ -242,20 +248,25 @@ class HTTPClient:
                         await ratelimit_task
                     else:
                         # we are not the first request with this bucket to hit a ratelimit
+                        _log.debug("Ratelimit bucket exhausted, trying again in %s seconds.", _calculate_ratelimit_delta(ratelimited.data))
+
                         await asyncio.sleep(_calculate_ratelimit_delta(ratelimited.data))
 
                 if resp_code >= 200 and resp_code < 300:
-                    print("Connection to \"{0}\" succeeded!".format(route.url))
+                    _log.debug("Connection to \"%s\" succeeded!", route.url)
                     return data
 
                 # we are being ratelimited
                 if resp_code == 429:
+                    _log.debug("We are being ratelimited!")
+
                     if response.headers.get("Via") or isinstance(data, str):
                         # probably banned by CloudFlare
                         raise HTTPException(response, data)
 
                     retry_after = data["retry_after"]
                     is_global = data.get("global", False)
+                    _log.debug("Global Ratelimit: %s", is_global)
 
                     if is_global:
                         self._global_ratelimit.set(reset_timestamp)
