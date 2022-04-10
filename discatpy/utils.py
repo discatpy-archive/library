@@ -43,7 +43,6 @@ __all__ = (
 )
 
 # Data Event taken from here: https://gist.github.com/vcokltfre/69bef173a015d08a44e93fd4cbdaadd8
-# TODO: Might wanna remove data event since Gateway events will be handled differently
 
 class Unset:
     pass
@@ -62,7 +61,12 @@ class DataEvent(asyncio.Event, Generic[T]):
         return self.data
 
     def set(self, data: T) -> None:
+        super().set()
         self.data = data
+
+    def clear(self) -> None:
+        super().clear()
+        self.data = Unset()
 
 def _ensure_snowflake_is_int(sf: Snowflake) -> int:
     ret_id = sf

@@ -83,7 +83,7 @@ class HTTPException(DisCatPyException):
             errors = data.get("errors")
             if errors:
                 errors = _shorten_error_dict(errors)
-                helpful_msg = '\n'.join("In {0}: {0}".format(t for t in errors.items()))
+                helpful_msg = "In {0}: {0}".format(t for t in errors.items())
                 self.text = f"{base}\n{helpful_msg}"
             else:
                 self.text = base
@@ -94,6 +94,8 @@ class HTTPException(DisCatPyException):
         format = "{0} {1} (error code: {2}"
         if self.text:
             format += ": {3}"
+
+        format += ")"
 
         super().__init__(format.format(response.status, response.reason, self.code, self.text))
 
