@@ -118,6 +118,7 @@ class Client(EventsMixin):
             except Exception as e:
                 self.running = False
                 await self._end_run()
+                raise e
 
         # the code is not expected to reach here since the only way to stop the code is
         # with a keyboard interrupt, which will raise an exception

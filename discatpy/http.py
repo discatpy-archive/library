@@ -595,3 +595,32 @@ class HTTPClient:
             Route("PATCH", "/channels/{channel_id}/messages/{message_id}", channel_id=channel_id, message_id=msg_id), 
             json=json_data
         )
+
+    async def delete_message(self, msg_id: Snowflake, channel_id: Snowflake):
+        """
+        Deletes an existing message from a channel.
+
+        Parameters
+        ----------
+        msg_id: :type:`Snowflake`
+            The id of the message to delete
+        channel_id: :type:`Snowflake`
+            The id of the channel where the message is from
+        """
+        return await self.request(Route("DELETE", "/channels/{channel_id}/messages/{message_id}", channel_id=channel_id, message_id=msg_id))
+
+    async def bulk_delete_messages(self, messages: List[Snowflake], channel_id: Snowflake):
+        """
+        Bulk deletes messages from a channel.
+
+        Parameters
+        ----------
+        messages: :type:`List[Snowflake]`
+            A list of the id of the messages to delete
+        channel_id: :type:`Snowflake`
+            The id of the channel where the messages are from
+        """
+        return await self.request(
+            Route("POST", "/channels/{channel_id}/messages/bulk-delete", channel_id=channel_id),
+            json={"messages":messages}
+        )

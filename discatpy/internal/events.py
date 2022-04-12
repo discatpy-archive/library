@@ -118,23 +118,20 @@ class EventsMixin:
             if name not in self.valid_events:
                 raise ValueError("Event name provided is not a valid event!")
 
-            self.dispatcher.add_listener(func, None, name=name)
+            self.dispatcher.add_listener(func, name=name)
             return func
 
         return wrapper
 
-    def listen_function_name(self):
+    def event(self, func):
         """
         Similar to `EventsMixin.listen()` except that it checks if the function name is
         a valid event.
 
         This function is a decorator.
         """
-        def wrapper(func):
-            if func.__name__ not in self.valid_events:
-                raise ValueError("Event name provided is not a valid event!")
+        if func.__name__ not in self.valid_events:
+            raise ValueError("Event name provided is not a valid event!")
 
-            self.dispatcher.add_listener(func, None)
-            return func
-
-        return wrapper
+        self.dispatcher.add_listener(func)
+        return func
