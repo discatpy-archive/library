@@ -37,14 +37,34 @@ class APIType:
     """
     A raw API type. 
     All types here from the Discord API use this as a base.
+
+    Attributes
+    ----------
+    client: :type:`Client`
+        The parent client of this type.
+    d: :type:`Dict[str, Any]`
+        The raw data from the API.
     """
+    client = None
+    d: Dict[str, Any] 
+
+    def __init__(self, d: Dict[str, Any], client):
+        self.client = client
+        self.d = d
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]):
+    def from_dict(cls, client, d: Dict[str, Any]):
         """
         Returns this API type from a provided Dict.
 
         Usually used to convert types directly from the API.
+
+        Parameters
+        ----------
+        client: :type:`Client`
+            The parent client of this type.
+        d: :type:`Dict[str, Any]`
+            The raw data from the API.
         """
         raise NotImplementedError
 

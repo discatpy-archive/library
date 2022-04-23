@@ -22,14 +22,12 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from turtle import pos
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional
 from datetime import datetime
 
 from .types.channel import ChannelOverwrite, ChannelType, to_channel_overwrite
 from .types.snowflake import *
 from .abs import APIType, Messageable
-from .client import get_global_client
 from .mixins import SnowflakeMixin
 
 class RawChannel(APIType, SnowflakeMixin):
@@ -39,23 +37,21 @@ class RawChannel(APIType, SnowflakeMixin):
 
     Attributes
     ----------
-    id: :type:`Snowflake`
-        The id of this channel
     type: :type:`int`
-        The type of this channel. Look at the `ChannelType` enum to see what
-        numbers mean what.
+        The type of this channel. Look at the `ChannelType` enum to see what the
+        valid values are.
     """
-    type: int
+    def __init__(self, d: Dict[str, Any], client, id: Snowflake, type: int):
+        super().__init__(d, client)
+        self.raw_id = id
+        self.type = type
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]):
+    def from_dict(cls, client, d: Dict[str, Any]):
         id: Snowflake = d.get("id")
         type: int = d.get("type")
 
-        ret_cls = cls()
-        ret_cls.raw_id = id
-        ret_cls.type = type
-        return ret_cls
+        return cls(d, client, id, type)
 
     def to_dict(self) -> Dict[str, Any]:
         ret_dict: Dict[str, Any] = {
@@ -96,8 +92,9 @@ class GuildChannel(RawChannel):
         The permission overwrites for this channel
     """
     def __init__(
-        self, 
+        self,
         d: Dict[str, Any],
+        client,
         guild_id: Snowflake,
         name: str,
         position: int,
@@ -105,7 +102,7 @@ class GuildChannel(RawChannel):
         permission_overwrites: List[ChannelOverwrite],
         parent_id: Snowflake
     ) -> None:
-        self = RawChannel.from_dict(d)
+        self = RawChannel.from_dict(client, d)
 
         if self.type == ChannelType.DM or self.type == ChannelType.GROUP_DM:
             raise TypeError("Expecting Guild channel type, got DM channel type instead")
@@ -118,7 +115,7 @@ class GuildChannel(RawChannel):
         self.parent_id = parent_id
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]):
+    def from_dict(cls, client, d: Dict[str, Any]):
         guild_id: Snowflake = d.get("guild_id")
         name: str = d.get("name")
         position: int = d.get("position")
@@ -126,7 +123,7 @@ class GuildChannel(RawChannel):
         permission_overwrites: List[ChannelOverwrite] = [to_channel_overwrite(i) for i in d.get("permission_overwrites")] if d.get("permission_overwrites") is not None else []
         parent_id = d.get("parent_id")
 
-        return cls(d, guild_id, name, position, nsfw, permission_overwrites, parent_id)
+        return cls(d, client, guild_id, name, position, nsfw, permission_overwrites, parent_id)
 
     def to_dict(self) -> Dict[str, Any]:
         ret_dict: Dict[str, Any] = RawChannel.to_dict()
@@ -147,13 +144,7 @@ class GuildChannel(RawChannel):
     def mention(self) -> Optional[str]:
         """
         Returns a string that can mention this Guild Channel.
-
-        This does type checking to make sure the Guild Channel is not
-        a voice or stage channel.
         """
-        if self.type == ChannelType.GUILD_VOICE or self.type == ChannelType.GUILD_STAGE_VOICE:
-            return None
-
         return f"<#{self.id}>"
 
 class TextChannel(GuildChannel, Messageable):
@@ -188,14 +179,14 @@ class TextChannel(GuildChannel, Messageable):
     def __init__(
         self,
         d: Dict[str, Any],
+        client,
         topic: Optional[str],
         cooldown: int,
         last_message_id: Optional[Snowflake],
         last_pin_timestamp: Optional[datetime],
         permissions: Optional[str]
     ) -> None:
-        self = GuildChannel.from_dict(d)
-        self.client = get_global_client()
+        self = GuildChannel.from_dict(client, d)
 
         self.channel_id = self.raw_id
         self.topic = topic
@@ -205,14 +196,14 @@ class TextChannel(GuildChannel, Messageable):
         self.permissions = permissions
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]):
+    def from_dict(cls, client, d: Dict[str, Any]):
         topic: Optional[str] = d.get("topic")
         cooldown: int = d.get("rate_limit_per_user", 0)
         last_message_id: Optional[Snowflake] = d.get("last_message_id")
         last_pin_timestamp: Optional[datetime] = datetime.fromisoformat(d.get("last_pin_timestamp")) if d.get("last_pin_timestamp") is not None else None
         permissions: Optional[str] = d.get("permissions")
 
-        return cls(d, topic, cooldown, last_message_id, last_pin_timestamp, permissions)
+        return cls(d, client, topic, cooldown, last_message_id, last_pin_timestamp, permissions)
 
     def to_dict(self) -> Dict[str, Any]:
         ret_dict: Dict[str, Any] = GuildChannel.to_dict()
@@ -256,8 +247,6 @@ class TextChannel(GuildChannel, Messageable):
             self.nsfw = nsfw
 
         if cooldown:
-            if cooldown < 0:
-                raise ValueError("Cooldown cannot be below 0 seconds!")
             self.cooldown = cooldown
 
         if permission_overwrites:
@@ -265,5 +254,110 @@ class TextChannel(GuildChannel, Messageable):
 
         if parent_id:
             self.parent_id = parent_id
+
+        await self.client.http.modify_channel(self.id, self.to_dict())
+
+class VoiceChannel(GuildChannel):
+    """
+    Represents a voice channel used in a guild.
+
+    This is a child of :class:`GuildChannel`.
+
+    Parameters
+    ----------
+    d: :type:`Dict[str, Any]`
+        The dictionary from the Discord API that represents this 
+        channel. 
+        
+        This is passed in in order to initalize the 
+        type with the :meth:`GuildChannel.from_dict()` function
+
+    Attributes
+    ----------
+    bitrate: :type:`int`
+        The bitrate of this voice channel
+    user_limit: :type:`int`
+        The user limit of this voice channel
+    rtc_region: :type:`Optional[str]`
+        The region of this voice channel
+    automatic_rtc_region: :type:`bool`
+        Whether or not this voice channel has automatic regions
+    video_quality_mode: :type:`int`
+        The video quality of this voice channel
+    """
+    def __init__(
+        self, 
+        d: Dict[str, Any], 
+        client, 
+        bitrate: int,
+        user_limit: int,
+        rtc_region: Optional[str],
+        automatic_rtc_region: bool,
+        video_quality_mode: int
+    ):
+        self = GuildChannel.from_dict(client, d)
+
+        self.bitrate = bitrate
+        self.user_limit = user_limit
+        self.rtc_region = rtc_region
+        self.automatic_rtc_region = automatic_rtc_region
+        self.video_quality_mode = video_quality_mode
+
+    @classmethod
+    def from_dict(cls, client, d: Dict[str, Any]):
+        bitrate: int = d.get("bitrate")
+        user_limit: int = d.get("user_limit")
+        rtc_region: Optional[str] = d.get("rtc_region")
+        automatic_rtc_region: bool = rtc_region is None
+        video_quality_mode: int = d.get("video_quality_mode", 1)
+
+        return cls(d, client, bitrate, user_limit, rtc_region, automatic_rtc_region, video_quality_mode)
+
+    def to_dict(self) -> Dict[str, Any]:
+        ret_dict: Dict[str, Any] = GuildChannel.to_dict()
+        ret_dict.update({
+            "bitrate": self.bitrate,
+            "user_limit": self.user_limit,
+            "rtc_region": self.rtc_region,
+            "video_quality_mode": self.video_quality_mode
+        })
+
+        return ret_dict
+
+    async def edit(
+        self, 
+        /, 
+        name: Optional[str] = None, 
+        position: Optional[int] = None, 
+        bitrate: Optional[int] = None,
+        user_limit: Optional[int] = None,
+        permission_overwrites: Optional[List[ChannelOverwrite]] = None,
+        parent_id: Optional[Snowflake] = None,
+        rtc_region: Optional[str] = None,
+        video_quality_mode: Optional[int] = None
+    ):
+        if name:
+            self.name = name
+
+        if position:
+            self.position = position
+
+        if bitrate:
+            self.bitrate = bitrate
+
+        if user_limit:
+            self.user_limit = user_limit
+
+        if permission_overwrites:
+            self.permission_overwrites = permission_overwrites
+
+        if parent_id:
+            self.parent_id = parent_id
+
+        if rtc_region:
+            self.rtc_region = rtc_region
+
+        if video_quality_mode:
+            self.video_quality_mode = video_quality_mode
 
         await self.client.http.modify_channel(self.id, self.to_dict())

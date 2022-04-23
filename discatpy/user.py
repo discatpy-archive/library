@@ -132,6 +132,8 @@ class User(APIType, SnowflakeMixin):
     """
     def __init__(
         self, 
+        d: Dict[str, Any],
+        client,
         id: Snowflake,
         name: str,
         discrim: str,
@@ -143,6 +145,8 @@ class User(APIType, SnowflakeMixin):
         premium_type: int,
         public_flags: int
     ) -> None:
+        super().__init__(d, client)
+
         self.raw_id = id
         self.name = name
         self.discriminator = discrim
@@ -156,7 +160,7 @@ class User(APIType, SnowflakeMixin):
         self.public_flags = public_flags
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]):
+    def from_dict(cls, client, d: Dict[str, Any]):
         id: Snowflake = d.get("id")
         name: str = d.get("username")
         discriminator: str = d.get("discriminator")
@@ -170,7 +174,20 @@ class User(APIType, SnowflakeMixin):
         premium_type: int = d.get("premium_type", PremiumTypes.NONE)
         public_flags: int = d.get("public_flags", UserFlags.NONE)
 
-        return cls(id, name, discriminator, avatar, bot, tfa_enabled, banner, flags, premium_type, public_flags)
+        return cls(
+            d, 
+            client, 
+            id, 
+            name, 
+            discriminator, 
+            avatar, 
+            bot, 
+            tfa_enabled, 
+            banner, 
+            flags, 
+            premium_type, 
+            public_flags
+        )
 
     @property
     def mention(self) -> str:

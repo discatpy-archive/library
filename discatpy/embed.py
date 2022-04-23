@@ -161,7 +161,7 @@ class Embed:
             field.value = value
             field.inline = inline
 
-            self.fields.append(field)
+            self.add_field(field)
         else:
             raise DisCatPyException("Exceeded the number of embed fields (max 25)")
 

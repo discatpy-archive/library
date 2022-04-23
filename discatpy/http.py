@@ -32,6 +32,7 @@ import datetime
 import logging
 
 from . import __version__
+from .types.channel import ChannelType
 from .types.snowflake import *
 from .types.message import MessageReference
 from .embed import Embed
@@ -44,8 +45,6 @@ __all__ = (
 )
 
 _log = logging.getLogger(__name__)
-
-API_VERSION = 9
 
 class Route:
     """
@@ -87,7 +86,7 @@ class Route:
 
     @property
     def base(self) -> str:
-        return "https://discord.com/api/v{0}".format(API_VERSION)
+        return "https://discord.com/api/v{0}"
 
     @property
     def endpoint(self) -> str:
@@ -142,13 +141,14 @@ class HTTPClient:
         Do not modify this
     """
 
-    def __init__(self, connector: Optional[aiohttp.BaseConnector] = None):
+    def __init__(self, api_version: Optional[int] = None, connector: Optional[aiohttp.BaseConnector] = None):
         self.connector = connector
         self._session: Optional[aiohttp.ClientSession] = None # initalized later by login
         self._global_ratelimit: DataEvent = DataEvent()
         self._bucket_ratelimits: Dict[str, DataEvent] = {}
         self._buckets: Dict[str, str] = {}
         self.token: Optional[str] = None
+        self.api_version: int = api_version if api_version is not None else 9
 
         self.user_agent: str = _get_user_agent()
 
@@ -210,6 +210,7 @@ class HTTPClient:
         kwargs["headers"] = headers
 
         method = route.method
+        url = route.url.format(self.api_version)
         bucket = route.get_bucket(self._buckets.get(route.endpoint))
 
         # first we do a global ratelimit as that affects all requests
@@ -246,7 +247,7 @@ class HTTPClient:
         data: Optional[Union[Dict[str, Any], str]] = None
 
         for tries in range(5):
-            async with self._session.request(method, route.url, **kwargs) as response:
+            async with self._session.request(method, url, **kwargs) as response:
                 resp_code = response.status
                 data = None
                 
@@ -290,7 +291,7 @@ class HTTPClient:
                             _log.debug("Ratelimit bucket is already good to go. Skipping.")
 
                 if resp_code >= 200 and resp_code < 300:
-                    _log.debug("Connection to \"%s\" succeeded!", route.url)
+                    _log.debug("Connection to \"%s\" succeeded!", url)
                     return data
 
                 # we are being ratelimited
@@ -401,7 +402,7 @@ class HTTPClient:
         else:
             fmt = "{0}?v={1}&encoding={2}"
 
-        return data["shards"], fmt.format(data["url"], API_VERSION, encoding)
+        return data["shards"], fmt.format(data["url"], self.api_version, encoding)
 
     async def modify_current_user(self, username: str):
         """
@@ -466,6 +467,84 @@ class HTTPClient:
         """
         return await self.request(Route("DELETE", "/channels/{channel_id}", channel_id=channel_id))
 
+    async def start_thread_from_message(
+        self, 
+        channel_id: Snowflake, 
+        msg_id: Snowflake, 
+        name: str, 
+        auto_archive_duration: Optional[int] = None, 
+        cooldown: int = 0
+    ):
+        """
+        Starts a thread with a provided message id.
+
+        Parameters
+        ----------
+        channel_id: :type:`Snowflake`
+            The id of the channel where the thread should be made
+        msg_id: :type:`Snowflake`
+            The id of the message to create the thread from
+        name: :type:`str`
+            The name of this thread
+        auto_archive_duration: :type:`Optional[int]`
+            The duration until this thread will be auto archived
+        cooldown: :type:`int`
+            The cooldown (rate limit per user) of this thread
+        """
+        json_req: Dict[str, Any] = {"name":name}
+
+        if auto_archive_duration:
+            json_req["auto_archive_duration"] = auto_archive_duration
+        
+        if cooldown:
+            json_req["rate_limit_per_user"] = cooldown
+
+        return await self.request(
+            Route("POST", "/channels/{channel_id}/messages/{message_id}/threads", channel_id=channel_id, message_id=msg_id),
+            json=json_req
+        )
+
+    async def start_thread_without_message(
+        self, 
+        channel_id: Snowflake, 
+        name: str, 
+        auto_archive_duration: Optional[int] = None, 
+        type: int = ChannelType.GUILD_PRIVATE_THREAD,
+        invitable: bool = True,
+        cooldown: int = 0
+    ):
+        """
+        Starts a thread without a provided message id.
+
+        Parameters
+        ----------
+        channel_id: :type:`Snowflake`
+            The id of the channel where the thread should be made
+        name: :type:`str`
+            The name of this thread
+        auto_archive_duration: :type:`Optional[int]`
+            The duration until this thread will be auto archived
+        type: :type:`int`
+            The type of this thread. The only valid values is `GUILD_NEWS_THREAD`,
+            `GUILD_PUBLIC_THREAD`, and `GUILD_PRIVATE_THREAD`.
+        invitable: :type:`bool`
+            Whether or not non-moderators can add other non-moderators to a thread
+        cooldown: :type:`int`
+            The cooldown (rate limit per user) of this thread
+        """
+        json_req: Dict[str, Any] = {"name":name, "rate_limit_per_user":cooldown, "type":type}
+
+        if type == ChannelType.GUILD_PRIVATE_THREAD:
+            json_req["invitable"] = invitable
+
+        if auto_archive_duration:
+            json_req["auto_archive_duration"] = auto_archive_duration
+
+        return await self.request(
+            Route("POST", "/channels/{channel_id}/threads", channel_id=channel_id),
+            json=json_req
+        )
+
     # Message HTTP functions
 
     async def get_messages(self, channel_id: Snowflake, around: Optional[Snowflake] = None, before: Optional[Snowflake] = None, after: Optional[Snowflake] = None, limit: int = 50):
@@ -511,7 +590,9 @@ class HTTPClient:
         message_id: :type:`Snowflake`
             The id of the message to grab
         """
-        return await self.request(Route("GET", "/channels/{channel_id}/messages/{message_id}", channel_id=channel_id, message_id=message_id))  
+        return await self.request(
+            Route("GET", "/channels/{channel_id}/messages/{message_id}", channel_id=channel_id, message_id=message_id)
+        )  
 
     async def send_message(
         self, 
@@ -624,3 +705,29 @@ class HTTPClient:
             Route("POST", "/channels/{channel_id}/messages/bulk-delete", channel_id=channel_id),
             json={"messages":messages}
         )
+
+    async def pin_message(self, msg_id: Snowflake, channel_id: Snowflake):
+        """
+        Pins a new message to the provided channel id.
+
+        Parameters
+        ----------
+        msg_id: :type:`Snowflake`
+            The id of the message to pin
+        channel_id: :type:`Snowflake`
+            The id of the channel to pin the message to
+        """
+        return await self.request(Route("PUT", "/channels/{channel_id}/pins/{message_id}", channel_id=channel_id, message_id=msg_id))
+
+    async def unpin_message(self, msg_id: Snowflake, channel_id: Snowflake):
+        """
+        Unpins a message to the provided channel id.
+
+        Parameters
+        ----------
+        msg_id: :type:`Snowflake`
+            The id of the message to unpin
+        channel_id: :type:`Snowflake`
+            The id of the channel to unpin the message from
+        """
+        return await self.request(Route("DELETE", "/channels/{channel_id}/pins/{message_id}", channel_id=channel_id, message_id=msg_id))

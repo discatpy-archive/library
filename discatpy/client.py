@@ -41,6 +41,12 @@ class Client(EventsMixin):
     """
     The main client that joins the developer's code and the Discord API together.
 
+    Parameters
+    ----------
+    api_version: :type:`Optional[int]`
+        The api version of the HTTP Client.
+        This is automatically set to `None`, which will be set to `9`.
+
     Attributes
     ----------
     gateway: :type:`Optional[GatewayClient]`
@@ -56,9 +62,9 @@ class Client(EventsMixin):
     dispatcher: :type:`Dispatcher`
         The event dispatcher for Gateway events
     """
-    def __init__(self, intents: int):
+    def __init__(self, intents: int, api_version: Optional[int] = None):
         self.gateway: Optional[GatewayClient] = None # initalized later
-        self.http: HTTPClient = HTTPClient()
+        self.http: HTTPClient = HTTPClient(api_version=api_version)
         self.me: Optional[User] = None
         self._gateway_reconnect = asyncio.Event()
         self.running: bool = False
@@ -68,10 +74,18 @@ class Client(EventsMixin):
     @property
     def token(self):
         """
-        The bot's token. 
-        Shortcut for `Client.http.token`.
+        The bot's token.
+        Shortcut for :attr:`Client.http.token`.
         """
         return self.http.token
+
+    @property
+    def api_version(self):
+        """
+        The api version the HTTP Client is using.
+        Shortcut for :attr:`Client.http.api_version`.
+        """
+        return self.http.api_version
 
     async def login(self, token: str):
         """
@@ -153,7 +167,7 @@ def set_global_client(client: Client) -> None:
     global global_client
 
     if global_client is not None:
-        raise RuntimeError("Global Client is already set")
+        raise ValueError("Global Client is already set")
 
     global_client = client
 
@@ -169,6 +183,6 @@ def get_global_client() -> Client:
     global global_client
 
     if global_client is None:
-        raise RuntimeError("Global Client is not set")
+        raise ValueError("Global Client is not set")
 
     return global_client

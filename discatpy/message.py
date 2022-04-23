@@ -28,7 +28,6 @@ from datetime import datetime
 from .types.snowflake import Snowflake
 from .types.message import *
 from .abs import APIType, Messageable
-from .client import get_global_client
 from .embed import Embed
 from .mixins import SnowflakeMixin
 from .user import User
@@ -81,6 +80,8 @@ class Message(APIType, SnowflakeMixin, Messageable):
     """
     def __init__(
         self,
+        d: Dict[str, Any],
+        client,
         id: Snowflake,
         channel_id: Snowflake,
         guild_id: Optional[Snowflake],
@@ -101,10 +102,11 @@ class Message(APIType, SnowflakeMixin, Messageable):
         flags: Optional[int],
         referenced_message: Optional[Any], # this is supposed to be of Message type
     ) -> None:
+        super().__init__(d, client)
+
         # since it doesn't make sense to "send" a message from a message, we delete the send function from Messageable
         # instead, we implement a similar version of send called "reply" that automatically replies to the message
         del self.send
-        self.client = get_global_client()
 
         self.raw_id = id
         self.message_id = self.raw_id
@@ -132,7 +134,7 @@ class Message(APIType, SnowflakeMixin, Messageable):
             raise TypeError(f"referenced_message should be of type Message, not {type(referenced_message)}")
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]):
+    def from_dict(cls, client, d: Dict[str, Any]):
         id: Snowflake = d.get("id")
         channel_id: Snowflake = d.get("channel_id")
         guild_id: Optional[Snowflake] = d.get("guild_id")
@@ -159,6 +161,8 @@ class Message(APIType, SnowflakeMixin, Messageable):
         # TODO: interaction & components, thread, sticker_items
 
         return cls(
+            d,
+            client,
             id, 
             channel_id, 
             guild_id, 
@@ -204,7 +208,7 @@ class Message(APIType, SnowflakeMixin, Messageable):
             Whether or not the reply should be TTS
         """
         message_reference = MessageReference()
-        message_reference.message_id = self.raw_id
+        message_reference.message_id = self.id
         # to validify the message reference
         message_reference.channel_id = self.channel_id
         message_reference.guild_id = self.guild_id
@@ -232,9 +236,21 @@ class Message(APIType, SnowflakeMixin, Messageable):
             The new embeds of the message.
         """
         await self.client.http.edit_message(
-            self.message_id,
+            self.id,
             self.channel_id,
             content,
             embed=embed,
             embeds=embeds,
         )
+
+    async def pin(self):
+        """
+        Pins this message.
+        """
+        await self.client.http.pin_message(self.id, self.channel_id)
+
+    async def unpin(self):
+        """
+        Unpins this message.
+        """
+        await self.client.http.unpin_message(self.id, self.channel_id)
