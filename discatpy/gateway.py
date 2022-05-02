@@ -184,9 +184,14 @@ class GatewayClient:
                 # try to re-establish the connection with the Gateway
                 await self.close(code=1012)
 
-            if msg.type == aiohttp.WSMsgType.BINARY:
-                # we should be able to say that the type of the message is binary and its compressed
-                inflated_msg = decompress_msg(self.inflator, msg.data)
+            if msg.type == aiohttp.WSMsgType.BINARY or msg.type == aiohttp.WSMsgType.TEXT:
+                if msg.type == aiohttp.WSMsgType.BINARY:
+                    # compression was used, decompress the message
+                    inflated_msg = decompress_msg(self.inflator, msg.data)
+                else:
+                    # compression wasn't used
+                    inflated_msg = msg.data
+                
                 inflated_msg = json.loads(inflated_msg)
                 self.recent_gp = to_gateway_payload(inflated_msg)
 

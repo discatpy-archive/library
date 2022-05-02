@@ -28,11 +28,14 @@ __version__ = "1.0.0-alpha0"
 __license__ = "MIT"
 
 from .abs import *
+from .asset import *
+from .cache import *
 from .channel import *
 from .client import *
 from .embed import *
 from .errors import *
 from .gateway import *
+from .guild import *
 from .http import *
 from .message import *
 from .mixins import *

@@ -81,28 +81,7 @@ class Messageable:
     An abstract type for API types that can send messages.
     """
     client = None
-    channel_id: Snowflake
-    message_id: Snowflake
-
-    # this is for Message since it implements reply which is pretty much send but with a message reference
-    async def _send(
-        self,
-        content: str,
-        /,
-        embed: Optional[Embed] = None,
-        embeds: Optional[List[Embed]] = None,
-        message_reference: Optional[MessageReference] = None,
-        tts: bool = False,
-        # TODO: components, stickers, files/attachments
-    ):
-        await self.client.http.send_message(
-            self.channel_id,
-            content,
-            embed=embed,
-            embeds=embeds,
-            msg_reference=message_reference,
-            tts=tts
-        )
+    raw_id: Snowflake
 
     async def send(
         self,
@@ -127,4 +106,11 @@ class Messageable:
         tts: bool
             Whether the message should be sent using text-to-speech.
         """
-        await self._send(content, embed=embed, embeds=embeds, tts=tts)
+        await self.client.http.send_message(
+            self.raw_id,
+            content,
+            embed=embed,
+            embeds=embeds,
+            msg_reference=None,
+            tts=tts
+        )

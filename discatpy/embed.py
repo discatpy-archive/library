@@ -139,6 +139,7 @@ class Embed:
 
         return True
 
+    # TODO: Fix this since overriding doesn't work like this in Python
     def add_field(self, name: str, value: str, inline: bool = False):
         """
         Adds a new field to this Embed. This function will

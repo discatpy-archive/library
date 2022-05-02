@@ -27,12 +27,12 @@ from datetime import datetime
 
 from .types.snowflake import Snowflake
 from .types.message import *
-from .abs import APIType, Messageable
+from .abs import APIType
 from .embed import Embed
 from .mixins import SnowflakeMixin
 from .user import User
 
-class Message(APIType, SnowflakeMixin, Messageable):
+class Message(APIType, SnowflakeMixin):
     """
     Represents a message in a Text Channel (guild and DM). This shouldn't be 
     initalized manually, the rest of the API should take care of that for you.
@@ -104,14 +104,11 @@ class Message(APIType, SnowflakeMixin, Messageable):
     ) -> None:
         super().__init__(d, client)
 
-        # since it doesn't make sense to "send" a message from a message, we delete the send function from Messageable
-        # instead, we implement a similar version of send called "reply" that automatically replies to the message
-        del self.send
-
         self.raw_id = id
-        self.message_id = self.raw_id
         self.channel_id = channel_id
+        self.channel = None # initalized later by the cache
         self.guild_id = guild_id
+        self.guild = None # initalized later by the cache
         self.author = author
         self.webhook_author = webhook_author
         self.is_author_webhook = is_author_webhook
@@ -213,7 +210,14 @@ class Message(APIType, SnowflakeMixin, Messageable):
         message_reference.channel_id = self.channel_id
         message_reference.guild_id = self.guild_id
 
-        await self._send(content, embed=embed, embeds=embeds, message_reference=message_reference, tts=tts)
+        await self.client.http.send_message(
+            self.channel_id,
+            content,
+            embed=embed,
+            embeds=embeds,
+            msg_reference=message_reference,
+            tts=tts
+        )
 
     async def edit(
         self,

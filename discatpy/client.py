@@ -27,6 +27,7 @@ from typing import Optional
 
 from .internal.dispatcher import *
 from .internal.events import *
+from .cache import ClientCache
 from .gateway import GatewayClient
 from .http import HTTPClient
 from .user import User
@@ -53,6 +54,8 @@ class Client(EventsMixin):
         The gateway client that handles connections with the gateway
     http: :type:`HTTPClient`
         The http client that handles connections with the REST API
+    cache: :type:`ClientCache`
+        The client's internal cache used for storing objects from the API/Gateway.
     me: :type:`User`
         The bot user
     running: :type:`bool`
@@ -65,6 +68,7 @@ class Client(EventsMixin):
     def __init__(self, intents: int, api_version: Optional[int] = None):
         self.gateway: Optional[GatewayClient] = None # initalized later
         self.http: HTTPClient = HTTPClient(api_version=api_version)
+        self.cache: ClientCache = ClientCache(self)
         self.me: Optional[User] = None
         self._gateway_reconnect = asyncio.Event()
         self.running: bool = False
@@ -99,7 +103,7 @@ class Client(EventsMixin):
             The token for the bot user
         """
         user_dict = await self.http.login(token)
-        self.me = User.from_dict(user_dict)
+        self.me = User.from_dict(self, user_dict)
         # TODO: Support setting the initial presence
         self.me.presence = None
 

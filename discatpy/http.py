@@ -75,10 +75,7 @@ class Route:
     def __init__(self, method: str, path: str, **parameters: Any) -> None:
         self.method: str = method
         self.path: str = path
-        url: str = self.base + self.path
-        if parameters:
-            url = url.format_map({k: urlquote(v) if isinstance(v, str) else v for k, v in parameters.items()})
-        self.url: str = url
+        self._parameters = parameters
 
         # some major parameters
         self.channel_id: Optional[Snowflake] = parameters.get("channel_id")
@@ -94,6 +91,13 @@ class Route:
 
     def get_bucket(self, shared_bucket_hash: str) -> str:
         return f"{self.guild_id}:{self.channel_id}:{self.path}" if shared_bucket_hash is None else f"{self.guild_id}:{self.channel_id}:{shared_bucket_hash}"
+
+    def grab_url(self, api_version: str) -> str:
+        url = self.base.format(api_version) + self.path
+        if self._parameters:
+            url = url.format_map({k: urlquote(v) if isinstance(v, str) else v for k, v in self._parameters.items()})
+
+        return url
 
 def _get_user_agent():
     user_agent = "DiscordBot (https://github.com/EmreTech/DisCatPy.git, {0}) Python/{1.major}.{1.minor}.{1.micro}"
@@ -210,7 +214,7 @@ class HTTPClient:
         kwargs["headers"] = headers
 
         method = route.method
-        url = route.url.format(self.api_version)
+        url = route.grab_url(self.api_version)
         bucket = route.get_bucket(self._buckets.get(route.endpoint))
 
         # first we do a global ratelimit as that affects all requests
@@ -731,3 +735,12 @@ class HTTPClient:
             The id of the channel to unpin the message from
         """
         return await self.request(Route("DELETE", "/channels/{channel_id}/pins/{message_id}", channel_id=channel_id, message_id=msg_id))
+
+    # Misc HTTP functions
+
+    async def get_from_cdn(self, url: str) -> bytes:
+        async with self._session.get(url) as resp:
+            if resp.status == 200:
+                return await resp.read()
+            
+            raise HTTPException(resp, f"failed to grab Asset with url {url}")

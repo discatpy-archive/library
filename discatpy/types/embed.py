@@ -55,7 +55,7 @@ class EmbedAuthor:
 class EmbedField:
     name: str
     value: str
-    inline: bool
+    inline: bool = False
 
 def to_embed_footer(d: Dict[str, Any]):
     text: str = d.get("text")

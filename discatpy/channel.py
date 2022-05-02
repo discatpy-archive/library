@@ -41,17 +41,10 @@ class RawChannel(APIType, SnowflakeMixin):
         The type of this channel. Look at the `ChannelType` enum to see what the
         valid values are.
     """
-    def __init__(self, d: Dict[str, Any], client, id: Snowflake, type: int):
+    def __init__(self, d: Dict[str, Any], client):
         super().__init__(d, client)
-        self.raw_id = id
-        self.type = type
-
-    @classmethod
-    def from_dict(cls, client, d: Dict[str, Any]):
-        id: Snowflake = d.get("id")
-        type: int = d.get("type")
-
-        return cls(d, client, id, type)
+        self.raw_id = d.get("id")
+        self.type: int = d.get("type")
 
     def to_dict(self) -> Dict[str, Any]:
         ret_dict: Dict[str, Any] = {
@@ -67,15 +60,6 @@ class GuildChannel(RawChannel):
     or :class:`Thread`.
 
     This is a child of :class:`RawChannel`.
-
-    Parameters
-    ----------
-    d: :type:`Dict[str, Any]`
-        The dictionary from the Discord API that represents this 
-        channel. 
-        
-        This is passed in in order to initalize the 
-        type with the :meth:`RawChannel.from_dict()` function
 
     Attributes
     ----------
@@ -94,39 +78,24 @@ class GuildChannel(RawChannel):
     def __init__(
         self,
         d: Dict[str, Any],
-        client,
-        guild_id: Snowflake,
-        name: str,
-        position: int,
-        nsfw: bool,
-        permission_overwrites: List[ChannelOverwrite],
-        parent_id: Snowflake
+        client
     ) -> None:
-        self = RawChannel.from_dict(client, d)
+        super(RawChannel, self).__init__(d, client)
 
         if self.type == ChannelType.DM or self.type == ChannelType.GROUP_DM:
             raise TypeError("Expecting Guild channel type, got DM channel type instead")
 
-        self.guild_id = guild_id
-        self.name = name
-        self.position = position
-        self.nsfw = nsfw
-        self.permission_overwrites = permission_overwrites
-        self.parent_id = parent_id
-
-    @classmethod
-    def from_dict(cls, client, d: Dict[str, Any]):
-        guild_id: Snowflake = d.get("guild_id")
-        name: str = d.get("name")
-        position: int = d.get("position")
-        nsfw: bool = d.get("nsfw", False)
-        permission_overwrites: List[ChannelOverwrite] = [to_channel_overwrite(i) for i in d.get("permission_overwrites")] if d.get("permission_overwrites") is not None else []
-        parent_id = d.get("parent_id")
-
-        return cls(d, client, guild_id, name, position, nsfw, permission_overwrites, parent_id)
+        self.guild_id: Snowflake = d.get("guild_id")
+        self.guild = None # initalized later by the cache
+        self.name: str = d.get("name")
+        self.position: int = d.get("position")
+        self.nsfw: bool = d.get("nsfw", False)
+        self.permission_overwrites: List[ChannelOverwrite] = [to_channel_overwrite(i) for i in d.get("permission_overwrites")] if d.get("permission_overwrites") is not None else []
+        self.parent_id = d.get("parent_id")
+        self.parent = None # initalized later by the cache
 
     def to_dict(self) -> Dict[str, Any]:
-        ret_dict: Dict[str, Any] = RawChannel.to_dict()
+        ret_dict: Dict[str, Any] = super(RawChannel, self).to_dict()
         ret_dict.update({
             "guild_id": self.guild_id,
             "name": self.name,
@@ -153,15 +122,6 @@ class TextChannel(GuildChannel, Messageable):
 
     This is a child of both :class:`GuildChannel` and :class:`Messageable`.
 
-    Parameters
-    ----------
-    d: :type:`Dict[str, Any]`
-        The dictionary from the Discord API that represents this 
-        channel. 
-        
-        This is passed in in order to initalize the 
-        type with the :meth:`GuildChannel.from_dict()` function
-
     Attributes
     ----------
     topic: :type:`Optional[str]`
@@ -186,7 +146,7 @@ class TextChannel(GuildChannel, Messageable):
         last_pin_timestamp: Optional[datetime],
         permissions: Optional[str]
     ) -> None:
-        self = GuildChannel.from_dict(client, d)
+        super(GuildChannel, self).__init__(d, client)
 
         self.channel_id = self.raw_id
         self.topic = topic
@@ -206,7 +166,7 @@ class TextChannel(GuildChannel, Messageable):
         return cls(d, client, topic, cooldown, last_message_id, last_pin_timestamp, permissions)
 
     def to_dict(self) -> Dict[str, Any]:
-        ret_dict: Dict[str, Any] = GuildChannel.to_dict()
+        ret_dict: Dict[str, Any] = super(GuildChannel, self).to_dict()
         ret_dict.update({
             "rate_limit_per_user": self.cooldown
         })
@@ -263,15 +223,6 @@ class VoiceChannel(GuildChannel):
 
     This is a child of :class:`GuildChannel`.
 
-    Parameters
-    ----------
-    d: :type:`Dict[str, Any]`
-        The dictionary from the Discord API that represents this 
-        channel. 
-        
-        This is passed in in order to initalize the 
-        type with the :meth:`GuildChannel.from_dict()` function
-
     Attributes
     ----------
     bitrate: :type:`int`
@@ -295,7 +246,7 @@ class VoiceChannel(GuildChannel):
         automatic_rtc_region: bool,
         video_quality_mode: int
     ):
-        self = GuildChannel.from_dict(client, d)
+        super(GuildChannel, self).__init__(d, client)
 
         self.bitrate = bitrate
         self.user_limit = user_limit
@@ -314,7 +265,7 @@ class VoiceChannel(GuildChannel):
         return cls(d, client, bitrate, user_limit, rtc_region, automatic_rtc_region, video_quality_mode)
 
     def to_dict(self) -> Dict[str, Any]:
-        ret_dict: Dict[str, Any] = GuildChannel.to_dict()
+        ret_dict: Dict[str, Any] = super(GuildChannel, self).to_dict()
         ret_dict.update({
             "bitrate": self.bitrate,
             "user_limit": self.user_limit,
