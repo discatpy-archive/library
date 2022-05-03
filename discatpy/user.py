@@ -83,7 +83,7 @@ class User(APIType, SnowflakeMixin):
         self.raw_id = id
         self.name = name
         self.discriminator = discrim
-        self.avatar = Asset.from_user_avatar(client, self.raw_id, avatar_hash) if avatar_hash else Asset.from_default_user_avatar(client, self.discriminator)
+        self.avatar = Asset.from_user_avatar(client, self.raw_id, avatar_hash) if avatar_hash else Asset.from_default_user_avatar(client, int(self.discriminator))
         self.bot = bot
         self.tfa_enabled = tfa_enabled
         self.banner = Asset.from_user_banner(client, self.raw_id, banner_hash) if banner_hash else None
