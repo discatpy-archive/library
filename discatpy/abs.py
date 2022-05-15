@@ -22,11 +22,13 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, overload, TYPE_CHECKING
 
 from .types.snowflake import *
-from .types.message import MessageReference
 from .embed import Embed
+
+if TYPE_CHECKING:
+    from .client import Client
 
 __all__ = (
     "APIType",
@@ -45,12 +47,21 @@ class APIType:
     d: :type:`Dict[str, Any]`
         The raw data from the API.
     """
+    if TYPE_CHECKING:
+        client: Client
+
     client = None
     d: Dict[str, Any] 
 
     def __init__(self, d: Dict[str, Any], client):
         self.client = client
         self.d = d
+
+    if TYPE_CHECKING:
+        @overload
+        @classmethod
+        def from_dict(cls, client: Client, d: Dict[str, Any]):
+            ...
 
     @classmethod
     def from_dict(cls, client, d: Dict[str, Any]):

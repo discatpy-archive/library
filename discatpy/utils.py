@@ -37,9 +37,6 @@ __all__ = (
     "snowflake_iwid",
     "snowflake_ipid",
     "snowflake_increment",
-    "get_avatar_url",
-    "get_default_avatar_url",
-    "get_banner_url",
 )
 
 # Data Event taken from here: https://gist.github.com/vcokltfre/69bef173a015d08a44e93fd4cbdaadd8

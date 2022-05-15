@@ -22,14 +22,18 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, overload, TYPE_CHECKING
 import asyncio
 
 from .types.channel import ChannelType
 from .types.snowflake import *
-from .channel import RawChannel, TextChannel, VoiceChannel
+from .channel import GuildChannel, RawChannel, TextChannel, VoiceChannel
+from .guild import Guild
 from .message import Message
 from .user import User
+
+if TYPE_CHECKING:
+    from .client import Client
 
 __all__ = (
     "ClientCache",
@@ -57,9 +61,18 @@ class ClientCache:
     _obj_cache: :type:`Dict[Snowflake, Any]`
         The internal cache that stores objects received from the Discord API.
     """
+    if TYPE_CHECKING:
+        client: Client
+
+        @overload
+        def __init__(self, client: Client):
+            ...
+
     def __init__(self, client) -> None:
         self.client = client
         self._obj_cache: Dict[Snowflake, Any] = {}
+
+        # TODO: Remove this, there are some "contraditions"
         self.message_ids: List[Snowflake] = []
         self.channel_ids: List[Snowflake] = []
         self.user_ids: List[Snowflake] = []
@@ -135,6 +148,16 @@ class ClientCache:
         channel_obj: :type:`RawChannel`
             The channel object to add.
         """
+        if isinstance(channel_obj, GuildChannel):
+            channel_guild = self.get(channel_obj.guild_id)
+
+            if channel_guild is None:
+                loop = asyncio.get_event_loop()
+                channel_guild = loop.run_in_executor(self.client.http.get_guild(channel_obj.guild_id))
+                channel_guild = Guild.from_dict(channel_guild)
+            
+            channel_obj.guild = channel_guild
+
         self._add(channel_obj)
         self.channel_ids.append(channel_obj.id)
 
@@ -150,7 +173,17 @@ class ClientCache:
         self._add(user_obj)
         self.user_ids.append(user_obj.id)
 
-    # TODO: add_guild function
+    def add_guild(self, guild_obj: Guild):
+        """
+        Adds a guild object to the cache.
+
+        Parameters
+        ----------
+        guild_obj: :type:`Guild`
+            The guild object to add.
+        """
+        self._add(guild_obj)
+        self.guild_ids.append(guild_obj.id)
 
     def remove(self, id: Snowflake):
         """

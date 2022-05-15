@@ -28,12 +28,57 @@ from ..user import User
 
 __all__ = (
     "GuildBan",
+    "VerificationLevel",
+    "MessageNotificationLevel",
+    "ExplicitContentFilterLevel",
+    "MFALevel",
+    "NSFWLevel",
+    "PremiumTier",
+    "SystemChannelFlags",
     "to_guild_ban",
 )
 
 class GuildBan:
     reason: Optional[str]
     user: User
+
+class VerificationLevel:
+    NONE = 0
+    LOW = 1
+    MEDIUM = 2
+    HIGH = 3
+    VERY_HIGH = 4
+
+class MessageNotificationLevel:
+    ALL_MESSAGES = 0
+    ONLY_MENTIONS = 1
+
+class ExplicitContentFilterLevel:
+    DISABLED = 0
+    MEMBERS_WITHOUT_ROLES = 1
+    ALL_MEMBERS = 2
+
+class MFALevel:
+    NONE = 0
+    ELEVATED = 1
+
+class NSFWLevel:
+    DEFAULT = 0
+    EXPLICIT = 1
+    SAFE = 2
+    AGE_RESTRICTED = 3
+
+class PremiumTier:
+    NONE = 0
+    TIER_1 = 1
+    TIER_2 = 2
+    TIER_3 = 3
+
+class SystemChannelFlags:
+    SUPPRESS_JOIN_NOTIFICATIONS = 1 << 0
+    SUPPRESS_PREMIUM_SUBSCRIPTIONS = 1 << 1
+    SUPPRESS_GUILD_REMINDER_NOTIFICATIONS = 1 << 2
+    SUPPRESS_JOIN_NOTIFICATION_REPLIES = 1 << 3
 
 def to_guild_ban(d: Dict[str, Any]):
     reason: Optional[str] = d.get("reason")

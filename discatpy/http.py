@@ -336,16 +336,7 @@ class HTTPClient:
 
         raise RuntimeError("Got to unreachable section of HTTPClient.request")
 
-    async def close(self):
-        """
-        Closes the internal session. 
-        
-        Required when the client is done in order to stop 
-        aiohttp from complaining.
-        """
-        return await self._session.close()
-
-    # Self HTTP functions
+    # Misc HTTP functions
 
     async def login(self, token: str):
         """
@@ -365,25 +356,23 @@ class HTTPClient:
 
         try:
             # get info about ourselves
-            data = await self.request(Route("GET", "/users/@me"))
+            me = await self.get_current_user()
         except HTTPException as e:
             self.token = old_token
             if e.status == 401:
                 raise DisCatPyException("LoginFailure: Improper token has been passed.") from e
             raise
 
-        return data
+        return me
 
-    async def leave_guild(self, guild_id: Snowflake):
+    async def close(self):
         """
-        Makes the bot leave a guild with the provided guild id.
-
-        Parameters
-        ----------
-        guild_id: :type:`Snowflake`
-            The id of the guild to leave
+        Closes the internal session. 
+        
+        Required when the client is done in order to stop 
+        aiohttp from complaining.
         """
-        return await self.request(Route("DELETE", "/users/@me/guilds/{guild_id}", guild_id=guild_id))
+        return await self._session.close()
 
     async def get_gateway_bot(self, *, encoding: str = "json", zlib: bool = True):
         """
@@ -408,18 +397,12 @@ class HTTPClient:
 
         return data["shards"], fmt.format(data["url"], self.api_version, encoding)
 
-    async def modify_current_user(self, username: str):
-        """
-        Modifies the current bot's user account.
-
-        Parameters
-        ----------
-        username: :type:`str`
-            The new username for the bot.
-        """
-        # TODO: add the ability to modify the avatar
-        json_req: Dict[str, Any] = {"username": username}
-        return await self.request(Route("PATCH", "/users/@me"), json=json_req)
+    async def get_from_cdn(self, url: str) -> bytes:
+        async with self._session.get(url) as resp:
+            if resp.status == 200:
+                return await resp.read()
+            
+            raise HTTPException(resp, f"failed to grab Asset with url {url}")
 
     # User HTTP functions
 
@@ -434,7 +417,116 @@ class HTTPClient:
         """
         return await self.request(Route("GET", "/users/{user_id}", user_id=user_id))
 
+    async def get_current_user(self):
+        """
+        Grabs the current user object.
+        """
+        return await self.request(Route("GET", "/users/@me"))
+
+    async def modify_current_user(self, username: str):
+        """
+        Modifies the current bot's user account.
+
+        Parameters
+        ----------
+        username: :type:`str`
+            The new username for the bot.
+        """
+        # TODO: add the ability to modify the avatar
+        json_req: Dict[str, Any] = {"username": username}
+        return await self.request(Route("PATCH", "/users/@me"), json=json_req)
+
+    # Guild HTTP functions
+
+    async def get_guild(self, guild_id: Snowflake, with_counts: bool = False):
+        return await self.request(Route("GET", "/guilds/{guild_id}", guild_id=guild_id), json={"with_counts":with_counts})
+
+    async def get_guild_preview(self, guild_id: Snowflake):
+        return await self.request(Route("GET", "/guilds/{guild_id}/preview", guild_id=guild_id))
+
+    async def create_guild(
+        self, 
+        name: str,
+        icon: Optional[str] = None,
+        verification_level: Optional[int] = None,
+        default_message_notifications: Optional[int] = None,
+        explicit_content_filter: Optional[int] = None,
+        roles: Optional[List[Dict[str, Any]]] = None,
+        channels: Optional[List[Dict[str, Any]]] = None,
+        afk_channel_id: Optional[Snowflake] = None,
+        afk_timeout: Optional[int] = None,
+        system_channel_id: Optional[Snowflake] = None,
+        system_channel_flags: Optional[int] = None
+    ):
+        json_req: Dict[str, Any] = {"name": name}
+
+        if icon:
+            json_req["icon"] = f"data:image/jpeg;base64,{icon}"
+
+        if verification_level:
+            json_req["verification_level"] = verification_level
+
+        if default_message_notifications:
+            json_req["default_message_notifications"] = default_message_notifications
+
+        if explicit_content_filter:
+            json_req["explicit_content_filter"] = explicit_content_filter
+
+        if roles:
+            json_req["roles"] = roles
+
+        if channels:
+            json_req["channels"] = channels
+
+        if afk_channel_id:
+            json_req["afk_channel_id"] = afk_channel_id
+
+        if afk_timeout:
+            json_req["afk_timeout"] = afk_timeout
+
+        if system_channel_id:
+            json_req["system_channel_id"] = system_channel_id
+
+        if system_channel_flags:
+            json_req["system_channel_flags"] = system_channel_flags
+
+        return await self.request(Route("POST", "/guilds"), json=json_req)
+
+    async def modify_guild(self, guild_id: Snowflake, new_guild: Dict[str, Any]):
+        return await self.request(Route("PATCH", "/guilds/{guild_id}", guild_id=guild_id), json=new_guild)
+    
+    async def leave_guild(self, guild_id: Snowflake):
+        """
+        Makes the bot leave a guild with the provided guild id.
+
+        Parameters
+        ----------
+        guild_id: :type:`Snowflake`
+            The id of the guild to leave
+        """
+        return await self.request(Route("DELETE", "/users/@me/guilds/{guild_id}", guild_id=guild_id))
+
     # Channel HTTP functions
+
+    async def get_channel(self, channel_id: Snowflake):
+        """
+        Grabs a channel from its id.
+
+        Parameters
+        ----------
+        channel_id: :type:`Snowflake`
+            The id of the channel to grab
+        """
+        return await self.request(Route("GET", "/channels/{channel_id}", channel_id=channel_id))
+
+    async def get_channels(self, guild_id: Snowflake):
+        return await self.request(Route("GET", "/guilds/{guild_id}/channels", guild_id=guild_id))
+
+    async def get_active_threads(self, guild_id: Snowflake):
+        return await self.request(Route("GET", "/guilds/{guild_id}/threads/active", guild_id=guild_id))
+
+    async def create_channel(self, guild_id: Snowflake, new_channel: Dict[str, Any]):
+        return await self.request(Route("POST", "/guilds/{guild_id}/channels", guild_id=guild_id), json=new_channel)
 
     async def modify_channel(self, channel_id: Snowflake, new_channel: Dict[str, Any]):
         """
@@ -449,16 +541,21 @@ class HTTPClient:
         """
         return await self.request(Route("PATCH", "/channels/{channel_id}", channel_id=channel_id), json=new_channel)
 
-    async def get_channel(self, channel_id: Snowflake):
-        """
-        Grabs a channel from its id.
+    async def modify_channel_positions(self, guild_id: Snowflake, channel_id: Snowflake, /, position: Optional[int] = None, lock_permissions: Optional[bool] = None, parent_id: Optional[Snowflake] = None):
+        json_req: Dict[str, Any] = {
+            "id": channel_id
+        }
 
-        Parameters
-        ----------
-        channel_id: :type:`Snowflake`
-            The id of the channel to grab
-        """
-        return await self.request(Route("GET", "/channels/{channel_id}", channel_id=channel_id))
+        if position is not None:
+            json_req["position"] = position
+
+        if lock_permissions is not None:
+            json_req["lock_permissions"] = lock_permissions
+
+        if parent_id:
+            json_req["parent_id"] = parent_id
+
+        return await self.request(Route("PATCH", "/guilds/{guild_id}/channels", guild_id=guild_id), json=json_req)
 
     async def delete_channel(self, channel_id: Snowflake):
         """
@@ -548,6 +645,36 @@ class HTTPClient:
             Route("POST", "/channels/{channel_id}/threads", channel_id=channel_id),
             json=json_req
         )
+
+    # Guild Member HTTP functions
+
+    async def get_guild_member(self, guild_id: Snowflake, user_id: Snowflake):
+        return await self.request(Route("GET", "/guilds/{guild_id}/members/{user_id}", guild_id=guild_id, user_id=user_id))
+
+    async def get_guild_members(self, guild_id: Snowflake, limit: int = 1, after: Snowflake = 0):
+        json_req: Dict[str, Any] = {"limit":limit, "after":after}
+        return await self.request(Route("GET", "/guilds/{guild_id}/members", guild_id=guild_id), json=json_req)
+
+    async def find_guild_members(self, guild_id: Snowflake, query: str, limit: int = 1):
+        json_req: Dict[str, Any] = {"query":query, "limit":limit}
+        return await self.request(Route("GET", "/guilds/{guild_id}/members/search", guild_id=guild_id), json=json_req)
+
+    # TODO: Determine whether to add add_guild_member function (requires extra OAuth2 token)
+
+    async def modify_guild_member(self, guild_id: Snowflake, user_id: Snowflake, new_guild_member: Dict[str, Any]):
+        return await self.request(Route("PATCH", "/guilds/{guild_id}/members/{user_id}", guild_id=guild_id, user_id=user_id), json=new_guild_member)
+
+    async def modify_current_guild_member(self, guild_id: Snowflake, nick: str):
+        return await self.request(Route("PATCH", "/guilds/{guild_id}/members/@me", guild_id=guild_id), json={"nick":nick})
+
+    async def remove_guild_member(self, guild_id: Snowflake, user_id: Snowflake):
+        return await self.request(Route("DELETE", "/guilds/{guild_id}/members/{user_id}", guild_id=guild_id, user_id=user_id))
+
+    async def add_guild_member_role(self, guild_id: Snowflake, user_id: Snowflake, role_id: Snowflake):
+        return await self.request(Route("PUT", "/guilds/{guild_id}/members/{user_id}/roles/{role_id}", guild_id=guild_id, user_id=user_id, role_id=role_id))
+
+    async def remove_guild_member_role(self, guild_id: Snowflake, user_id: Snowflake, role_id: Snowflake):
+        return await self.request(Route("DELETE", "/guilds/{guild_id}/members/{user_id}/roles/{role_id}", guild_id=guild_id, user_id=user_id, role_id=role_id))
 
     # Message HTTP functions
 
@@ -735,12 +862,3 @@ class HTTPClient:
             The id of the channel to unpin the message from
         """
         return await self.request(Route("DELETE", "/channels/{channel_id}/pins/{message_id}", channel_id=channel_id, message_id=msg_id))
-
-    # Misc HTTP functions
-
-    async def get_from_cdn(self, url: str) -> bytes:
-        async with self._session.get(url) as resp:
-            if resp.status == 200:
-                return await resp.read()
-            
-            raise HTTPException(resp, f"failed to grab Asset with url {url}")
