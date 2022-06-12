@@ -22,15 +22,15 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from typing import Any, Dict, List, overload, TYPE_CHECKING
+from typing import Any, Callable, Coroutine, List, overload, TYPE_CHECKING
 import asyncio
 
-from .types.channel import ChannelType
 from .types.snowflake import *
-from .channel import GuildChannel, RawChannel, TextChannel, VoiceChannel
+from .channel import RawChannel, GuildChannel, _convert_dict_to_channel
 from .guild import Guild
 from .message import Message
 from .user import User
+from .utils import MultipleValuesDict
 
 if TYPE_CHECKING:
     from .client import Client
@@ -38,16 +38,6 @@ if TYPE_CHECKING:
 __all__ = (
     "ClientCache",
 )
-
-def _convert_dict_to_channel(client, channel_dict: Dict[str, Any]):
-    channel_type = channel_dict.get("type")
-
-    if channel_type == ChannelType.GUILD_TEXT or channel_type == ChannelType.GUILD_NEWS:
-        return TextChannel.from_dict(client, channel_dict)
-    elif channel_type == ChannelType.GUILD_VOICE or channel_type == ChannelType.GUILD_STAGE_VOICE:
-        return VoiceChannel.from_dict(client, channel_dict)
-
-    return TypeError("Invalid channel dict provided")
 
 class ClientCache:
     """
@@ -58,29 +48,22 @@ class ClientCache:
     ----------
     client: :type:`Client`
         A reference to the client.
-    _obj_cache: :type:`Dict[Snowflake, Any]`
+    _obj_cache: :type:`MultipleValuesDict[Snowflake, Any]`
         The internal cache that stores objects received from the Discord API.
     """
     if TYPE_CHECKING:
         client: Client
 
         @overload
-        def __init__(self, client: Client):
+        def __init__(self, client: Client) -> None:
             ...
 
-    def __init__(self, client) -> None:
+    def __init__(self, client: Any) -> None:
         self.client = client
-        self._obj_cache: Dict[Snowflake, Any] = {}
-
-        # TODO: Remove this, there are some "contraditions"
-        self.message_ids: List[Snowflake] = []
-        self.channel_ids: List[Snowflake] = []
-        self.user_ids: List[Snowflake] = []
-        self.guild_ids: List[Snowflake] = []
+        self._obj_cache: MultipleValuesDict[Snowflake, Any] = MultipleValuesDict()
     
     def find(self, id: Snowflake) -> bool:
-        """
-        Checks if there is an object with that id in the cache.
+        """Checks if there is an object with that id in the cache.
 
         Parameters
         ----------
@@ -95,10 +78,8 @@ class ClientCache:
         _obj = self._obj_cache.get(id)
         return _obj is not None
 
-    def get(self, id: Snowflake) -> Any:
-        """
-        Attempts to grab an object from the cache.
-        This will first check if there is any such object in the cache.
+    def get(self, id: Snowflake) -> "List[Any] | Any | None":
+        """Grabs all objects with the provided id from the cache.
 
         Parameters
         ----------
@@ -107,41 +88,57 @@ class ClientCache:
 
         Returns
         -------
-        :type:`Any`
-            The object found, `None` if it doesn't exist.
+        :type:`Optional[Union[List[Any], Any]]`
+            All objects found with that id, None if not found.
         """
         return self._obj_cache.get(id)
 
-    def _add(self, obj: Any):
-        # the obj variable is expected to be mixed in with the Snowflake Mixin
-        if not hasattr(obj, "id"):
-            raise ValueError("obj is expected to have id attribute")
-        
-        self._obj_cache[obj.id] = obj
+    def get_type(self, id: Snowflake, t: type) -> "Any | None":
+        """Grabs an object with a specific type.
+
+        Parameters
+        ----------
+        id: :type:`Snowflake`
+            The id of the object to get.
+        t: :type:`Any`
+            The type of the object to get.
+
+        Returns
+        -------
+        :type:`Optional[Any]`
+            The object found with that type, None if not found.
+        """
+        objs = self.get(id)
+        if objs and isinstance(objs, list):
+            ret_obj: List[Any] = [o for o in objs if isinstance(o, t)]
+            return ret_obj[0] if len(ret_obj) > 0 else None
+
+        return objs
+
+    def _get_fetch_object(self, id: Snowflake, type_to_grab: type, fetch_function: Coroutine[Any, Any, Any], dict_conversion: Callable[..., Any]):
+        obj_to_get = self.get_type(id, type_to_grab)
+
+        if obj_to_get is None:
+            obj_to_get = asyncio.get_running_loop().run_in_executor(fetch_function)
+            obj_to_get = dict_conversion(self.client, obj_to_get)
+
+        return obj_to_get
 
     def add_message(self, message_obj: Message):
-        """
-        Adds a message object to the cache.
+        """Adds a message object to the cache.
 
         Parameters
         ----------
         message_obj: :type:`Message`
             The message object to add.
         """
-        message_channel = self.get(message_obj.channel_id)
-
-        if message_channel is None:
-            loop = asyncio.get_running_loop()
-            message_channel = loop.run_in_executor(self.client.http.get_channel(message_obj.channel_id))
-            message_channel = _convert_dict_to_channel(self.client, message_channel)
-
-        message_obj.channel = message_channel
-        self._add(message_obj)
-        self.message_ids.append(message_obj.id)
+        message_obj._set_channel(self._get_fetch_object(
+            message_obj.channel_id, RawChannel, self.client.http.get_channel(message_obj.channel_id), _convert_dict_to_channel
+        ))
+        self._obj_cache[message_obj.id] = message_obj
 
     def add_channel(self, channel_obj: RawChannel):
-        """
-        Adds a channel object to the cache.
+        """Adds a channel object to the cache.
 
         Parameters
         ----------
@@ -149,65 +146,53 @@ class ClientCache:
             The channel object to add.
         """
         if isinstance(channel_obj, GuildChannel):
-            channel_guild = self.get(channel_obj.guild_id)
+            # TODO: Consider removing this since all guilds the bot is in should already exist in the cache
+            channel_obj._set_guild(self._get_fetch_object(
+                channel_obj._guild_id, Guild, self.client.http.get_guild(channel_obj._guild_id), Guild.from_dict
+            ))
 
-            if channel_guild is None:
-                loop = asyncio.get_event_loop()
-                channel_guild = loop.run_in_executor(self.client.http.get_guild(channel_obj.guild_id))
-                channel_guild = Guild.from_dict(channel_guild)
-            
-            channel_obj.guild = channel_guild
+            if channel_obj._parent_id is not None:
+                channel_obj._set_parent(self._get_fetch_object(
+                    channel_obj._parent_id, GuildChannel, self.client.http.get_channel(channel_obj._parent_id), _convert_dict_to_channel
+                ))
 
-        self._add(channel_obj)
-        self.channel_ids.append(channel_obj.id)
+        self._obj_cache[channel_obj.id] = channel_obj
 
     def add_user(self, user_obj: User):
-        """
-        Adds a user object to the cache.
+        """Adds a user object to the cache.
 
         Parameters
         ----------
         user_obj: :type:`User`
             The user object to add.
         """
-        self._add(user_obj)
-        self.user_ids.append(user_obj.id)
+        self._obj_cache[user_obj.id] = user_obj
+
+    # TODO: Add guild member?
 
     def add_guild(self, guild_obj: Guild):
-        """
-        Adds a guild object to the cache.
+        """Adds a guild object to the cache.
 
         Parameters
         ----------
         guild_obj: :type:`Guild`
             The guild object to add.
         """
-        self._add(guild_obj)
-        self.guild_ids.append(guild_obj.id)
+        self._obj_cache[guild_obj.id] = guild_obj
 
-    def remove(self, id: Snowflake):
-        """
-        Removes an object from the cache with the provided id.
-
-        Parameters
-        ----------
-        id: :type:`Snowflake`
-            The id of the object to remove.
-        """
-        del self._obj_cache[id]
-
-    def modify(self, obj: Any):
-        """
-        Modifies an object from the cache by removing then adding it back.
-
+    def remove(self, obj: Any):
+        """Removes an object from the cache.
+        
         Parameters
         ----------
         obj: :type:`Any`
-            The modified object.
+            The object to remove from the cache.
         """
-        # the obj variable is expected to be mixed in with the Snowflake Mixin
-        if not hasattr(obj, "id"):
-            raise ValueError("obj is expected to have id attribute")
-
-        self.remove(obj.id)
-        self._add(obj)
+        objs = self._obj_cache[obj.id]
+        if isinstance(objs, list):
+            for o in objs:
+                if o == obj:
+                    self._obj_cache[obj.id].pop(obj)
+        else:
+            if objs == obj:
+                self._obj_cache.pop(obj)

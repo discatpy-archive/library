@@ -27,6 +27,7 @@ from typing import Optional
 
 from .internal.dispatcher import *
 from .internal.events import *
+from .types.snowflake import Snowflake
 from .cache import ClientCache
 from .gateway import GatewayClient
 from .http import HTTPClient
@@ -34,8 +35,6 @@ from .user import User
 
 __all__ = (
     "Client",
-    "set_global_client",
-    "get_global_client",
 )
 
 class Client(EventsMixin):
@@ -142,10 +141,6 @@ class Client(EventsMixin):
         # with a keyboard interrupt, which will raise an exception
         await self._end_run()
 
-    async def _run(self, token: str):
-        await self.login(token)
-        await self.gateway_run()
-
     def run(self, token: str):
         """
         Logs into the bot user then starts the Gateway client.
@@ -155,38 +150,27 @@ class Client(EventsMixin):
         token: :type:`str`
             The token for the bot user
         """
-        asyncio.run(self._run(token))
+        async def wrapped():
+            await self.login(token)
+            await self.gateway_run()
 
-global_client: Client = None
+        asyncio.run(wrapped())
 
-def set_global_client(client: Client) -> None:
-    """
-    Sets the global client used throughout the library.
+    def grab(self, id: Snowflake, _type: type):
+        """Grabbing an object is attempting to get it from the cache then fetching it from
+        the API if it doesn't exist in the cache.
+        
+        Parameters
+        ----------
+        id: :type:`Snowflake`
+            The id of the object to grab.
+        _type: :type:`type`
+            The type of the object to grab.
+        """
+        obj = self.cache.get_type(id, _type)
 
-    Parameters
-    ----------
-    client: :type:`Client`
-        The client to set as the global client
-    """
-    global global_client
+        if obj is None:
+            # TODO: Fetch from API
+            print("hi")
 
-    if global_client is not None:
-        raise ValueError("Global Client is already set")
-
-    global_client = client
-
-def get_global_client() -> Client:
-    """
-    Gets the global client used throughout the library.
-
-    Returns
-    -------
-    :type:`Client`
-        The global client
-    """
-    global global_client
-
-    if global_client is None:
-        raise ValueError("Global Client is not set")
-
-    return global_client
+        return obj

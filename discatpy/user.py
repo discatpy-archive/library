@@ -26,15 +26,15 @@ from typing import Any, Dict, Optional
 
 from .types.snowflake import *
 from .types.user import *
-from .abs import APIType
 from .asset import Asset
 from .mixins import SnowflakeMixin
+from .object import DiscordObject
 
 __all__ = (
     "User",
 )
 
-class User(APIType, SnowflakeMixin):
+class User(DiscordObject, SnowflakeMixin):
     """
     Represents a User type. This shouldn't be initalized manually, the rest of the API
     should take care of that for you.

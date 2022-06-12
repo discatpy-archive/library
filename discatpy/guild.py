@@ -23,21 +23,48 @@ DEALINGS IN THE SOFTWARE.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from .types.snowflake import Snowflake
-from .abs import APIType
 from .asset import Asset
+from .channel import _convert_dict_to_channel
 from .mixins import SnowflakeMixin
+from .object import DiscordObject
 from .user import User
 
 __all__ = (
     "GuildRole",
+    "GuildEmoji",
     "GuildMember",
     "Guild",
 )
 
-class GuildRole(APIType, SnowflakeMixin):
+class GuildRole(DiscordObject, SnowflakeMixin):
+    """Represents a role contained in a guild.
+    
+    Attributes
+    ----------
+    guild: :type:`Guild`
+        The guild this role is tied to.
+    name: :type:`str`
+        The name of this role.
+    color: :type:`str`
+        The hexadecimal id of the color of this role.
+    pinned: :type:`bool`
+        Whether or not this role is pinned.
+    icon: :type:`Optional[Asset]`
+        The icon of this role.
+    unicode_emoji: :type:`Optional[str]`
+        The unicode emoji for this role.
+    position: :type:`int`
+        The position of this role.
+    managed: :type:`bool`
+        Whether or not this role is managed via an integration.
+    mentionable: :type:`bool`
+        Whether or not this role can be mentioned by others.
+    """
+    guild: "Guild"
+
     def __init__(
         self, 
         d: Dict[str, Any], 
@@ -80,8 +107,105 @@ class GuildRole(APIType, SnowflakeMixin):
 
         return cls(d, client, id, name, color, pinned, icon_hash, unicode_emoji, position, managed, mentionable)
 
+    def _set_guild(self, new_guild: "Guild"):
+        self.guild = new_guild
 
-class GuildMember(APIType):
+class GuildEmoji(DiscordObject, SnowflakeMixin):
+    """Represents a custom emoji contained in a guild.
+    
+    Attributes
+    ----------
+    guild: :type:`Guild`
+        The guild this emoji is tied to.
+    name: :type:`str`
+        The name of this custom emoji.
+    roles: :type:`List[GuildRole]`
+        The roles that can use this emoji.
+    creator: :type:`User`
+        The user object that added this emoji to the guild.
+    require_colons: :type:`bool`
+        Whether or not this emoji requires colons to be used.
+    managed: :type:`bool`
+        Whether or not this emoji is managed.
+    animated: :type:`bool`
+        Whether or not this emoji is animated.
+    available: :type:`bool`
+        Whether or not members can use this emoji. This can be False if
+        the guild loses a boost level and loses extra emoji slots.
+    """
+    guild: "Guild"
+
+    def __init__(
+        self, 
+        d: Dict[str, Any], 
+        client, 
+        id: Snowflake,
+        name: str,
+        roles: List[Snowflake],
+        creator: User,
+        require_colons: bool,
+        managed: bool,
+        animated: bool,
+        available: bool
+    ):
+        super().__init__(d, client)
+
+        self.raw_id = id
+        self.name = name
+        self._roles = roles
+        self.creator = creator
+        self.require_colons = require_colons
+        self.managed = managed
+        self.animated = animated
+        self.available = available
+
+    @classmethod
+    def from_dict(cls, client, d: Dict[str, Any]):
+        id: Snowflake = d.get("id")
+        name: str = d.get("name")
+        roles: List[Snowflake] = [i for i in d.get("roles")]
+        creator: User = User.from_dict(client, d.get("user"))
+        require_colons: bool = d.get("require_colons")
+        managed: bool = d.get("managed")
+        animated: bool = d.get("animated")
+        available: bool = d.get("available")
+
+        return cls(d, client, id, name, roles, creator, require_colons, managed, animated, available)
+
+    def _set_guild(self, new_guild: "Guild"):
+        self.guild = new_guild
+        # TODO: initialize roles after setting new guild
+
+class GuildMember(DiscordObject):
+    """Represents a member of a guild.
+    
+    Attributes
+    ----------
+    guild: :type:`Guild`
+        The guild this member is tied to.
+    user: :type:`Optional[User]`
+        The underlying user object tied to this member. This may or may not
+        be missing.
+    nick: :type:`Optional[str]`
+        The nickname for this member.
+    avatar: :type:`Optional[Asset]`
+        The guild specific avatar for this member.
+    joined_at: :type:`datetime`
+        The date and time when this member joined the guild it's tied to.
+    premium_since: :type:`Optional[datetime]`
+        TODO: Determine what this represents
+    deaf: :type:`bool`
+        Whether or not this member is currently deaf in a voice channel.
+    mute: :type:`bool`
+        Whether or not this member is currently muted in a voice channel.
+    pending: :type:`Optional[bool]`
+        Whether or not this member has not passed the membership screening.
+    timeout_until: :type:`Optional[datetime]`
+        The date and time of when this member will have its time out expire, if
+        they are currently timed out.
+    """
+    guild: "Guild"
+
     def __init__(
         self,
         d: Dict[str, Any],
@@ -160,12 +284,21 @@ class GuildMember(APIType):
             await self.client.http.modify_guild_member(self.guild.id, self.user.id, self.to_dict())
 
     async def add_role(self, role: GuildRole):
+        if self.guild.id != role.guild.id:
+            return
+
         await self.client.http.add_guild_member_role(self.guild.id, self.user.id, role.id)
 
     async def remove_role(self, role: GuildRole):
+        if self.guild.id != role.guild.id:
+            return
+
         await self.client.http.remove_guild_member_role(self.guild.id, self.user.id, role.id)
 
-class Guild(APIType, SnowflakeMixin):
+    async def kick(self):
+        await self.guild.kick(self)
+
+class Guild(DiscordObject, SnowflakeMixin):
     def __init__(
         self, 
         d: Dict[str, Any], 
@@ -181,6 +314,8 @@ class Guild(APIType, SnowflakeMixin):
         verification_level: int,
         default_message_notifications: int,
         explicit_content_filter: int,
+        roles: List[GuildRole],
+        emojis: List[GuildEmoji],
         features: List[str],
         mfa_level: int,
         system_channel_id: Optional[Snowflake],
@@ -208,6 +343,8 @@ class Guild(APIType, SnowflakeMixin):
         self.verification_level = verification_level
         self.default_message_notifications = default_message_notifications
         self.explicit_content_filter = explicit_content_filter
+        self.roles = roles
+        self.emojis = emojis
         self.features = features
         self.mfa_level = mfa_level
         self._system_channel_id = system_channel_id
@@ -222,6 +359,12 @@ class Guild(APIType, SnowflakeMixin):
         self.nsfw_level = nsfw_level
         self.premium_progress_bar_enabled = premium_progress_bar_enabled
 
+        for r in roles:
+            r._set_guild(self)
+
+        for e in emojis:
+            e._set_guild(self)
+            
     @classmethod
     def from_dict(cls, client, d: Dict[str, Any]):
         id: Snowflake = d.get("id")
@@ -237,7 +380,8 @@ class Guild(APIType, SnowflakeMixin):
         verification_level: int = d.get("verification_level")
         default_message_notifications: int = d.get("default_message_notifications")
         explicit_content_filter: int = d.get("explicit_content_filter")
-        # TODO: roles, emojis
+        roles: List[GuildRole] = [GuildRole.from_dict(client, r) for r in d.get("roles")]
+        emojis: List[GuildEmoji] = [GuildEmoji.from_dict(client, e) for e in d.get("emojis")]
         features: List[str] = d.get("features")
         mfa_level: int = d.get("mfa_level")
         system_channel_id: Optional[Snowflake] = d.get("system_channel_id")
@@ -270,6 +414,8 @@ class Guild(APIType, SnowflakeMixin):
             verification_level,
             default_message_notifications,
             explicit_content_filter,
+            roles,
+            emojis,
             features,
             mfa_level,
             system_channel_id,
@@ -285,15 +431,40 @@ class Guild(APIType, SnowflakeMixin):
             premium_progress_bar_enabled
         )
 
+    # TODO: Instead of grabbing directly from the API, try fetching from the cache then fetching from the API
+
     @property
     async def owner(self):
         raw_owner = await self.client.http.get_guild_member(self.id, self._owner_id)
         return GuildMember.from_dict(self.client, raw_owner)
 
+    @property
+    async def afk_channel(self):
+        raw_afk_channel = await self.client.http.get_channel(self._afk_channel_id)
+        return _convert_dict_to_channel(self.client, raw_afk_channel)
+
+    @property
+    async def system_channel(self):
+        raw_system_channel = await self.client.http.get_channel(self._system_channel_id)
+        return _convert_dict_to_channel(self.client, raw_system_channel)
+
+    @property
+    async def rules_channel(self):
+        raw_rules_channel = await self.client.http.get_channel(self._rules_channel_id)
+        return _convert_dict_to_channel(self.client, raw_rules_channel)
+
+    @property
+    async def public_updates_channel_id(self):
+        raw_public_updates_channel = await self.client.http.get_channel(self._public_updates_channel_id)
+        return _convert_dict_to_channel(self.client, raw_public_updates_channel)
+
     async def fetch_all_channels(self):
         channels = await self.client.http.get_channels(self.id)
-        # TODO: convert channels into their appropriate objects
+        return [_convert_dict_to_channel(self.client, c) for c in channels]
 
     async def fetch_all_members(self, limit: int = 1, after: Snowflake = 0):
         members = await self.client.http.get_guild_members(self.id, limit, after)
         return [GuildMember.from_dict(self.client, m) for m in members]
+
+    async def kick(self, member: Union[GuildMember, User]):
+        await self.client.http.remove_guild_member(self.id, member.id)

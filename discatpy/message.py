@@ -22,17 +22,22 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, overload, TYPE_CHECKING
 from datetime import datetime
 
 from .types.snowflake import Snowflake
+from .types.channel import ChannelType
 from .types.message import *
-from .abs import APIType
 from .embed import Embed
 from .mixins import SnowflakeMixin
+from .object import DiscordObject
 from .user import User
 
-class Message(APIType, SnowflakeMixin):
+if TYPE_CHECKING:
+    from .channel import RawChannel
+    from .guild import Guild
+
+class Message(DiscordObject, SnowflakeMixin):
     """
     Represents a message in a Text Channel (guild and DM). This shouldn't be 
     initalized manually, the rest of the API should take care of that for you.
@@ -78,6 +83,10 @@ class Message(APIType, SnowflakeMixin):
     referenced_message: :type:`Message`
         The referenced message of this message
     """
+    if TYPE_CHECKING:
+        channel: RawChannel
+        guild: Guild
+
     def __init__(
         self,
         d: Dict[str, Any],
@@ -128,7 +137,7 @@ class Message(APIType, SnowflakeMixin):
         if isinstance(referenced_message, Message) or referenced_message is None:
             self.referenced_message = referenced_message
         else:
-            raise TypeError(f"referenced_message should be of type Message, not {type(referenced_message)}")
+            raise TypeError(f"referenced_message should be of type Message or None, not {type(referenced_message)}")
 
     @classmethod
     def from_dict(cls, client, d: Dict[str, Any]):
@@ -180,6 +189,17 @@ class Message(APIType, SnowflakeMixin):
             flags, 
             referenced_message
         )
+
+    if TYPE_CHECKING:
+        @overload
+        def _set_channel(self, new_channel: RawChannel):
+            ...
+
+    def _set_channel(self, new_channel: Any):
+        self.channel = new_channel
+
+        if self.channel.type not in (ChannelType.DM, ChannelType.GROUP_DM):
+            self.guild = self.channel.guild
 
     async def reply(
         self,
@@ -248,13 +268,25 @@ class Message(APIType, SnowflakeMixin):
         )
 
     async def pin(self):
-        """
-        Pins this message.
-        """
+        """Pins this message."""
         await self.client.http.pin_message(self.id, self.channel_id)
+        self.pinned = True
 
     async def unpin(self):
-        """
-        Unpins this message.
-        """
+        """Unpins this message."""
         await self.client.http.unpin_message(self.id, self.channel_id)
+        self.pinned = False
+
+    async def pin_or_unpin(self):
+        """Pins or unpins this message depending if it's already been pinned or not."""
+        if self.pinned:
+            await self.unpin()
+        else:
+            await self.pin()
+
+    async def crosspost(self):
+        """Crossposts this message to following channels of the parent News Channel."""
+        if self.channel.type != ChannelType.GUILD_NEWS or self.channel.type != ChannelType.GUILD_NEWS_THREAD:
+            raise TypeError("Parent channel of this message must be a News Channel to crosspost!")
+
+        await self.client.http.crosspost_message(self.channel_id, self.id)
