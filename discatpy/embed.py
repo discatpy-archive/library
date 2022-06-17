@@ -22,63 +22,30 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, Optional, List, overload
 
-from .types.embed import *
 from .errors import DisCatPyException
+from discord_typings import (
+    EmbedData,
+    EmbedAuthorData,
+    EmbedFieldData,
+    EmbedFooterData,
+    EmbedImageData,
+    EmbedProviderData,
+    EmbedThumbnailData,
+    EmbedVideoData,
+)
 
 __all__ = (
     "Embed",
+    "EmbedAuthorData",
+    "EmbedFieldData",
+    "EmbedFooterData",
+    "EmbedImageData",
+    "EmbedProviderData",
+    "EmbedThumbnailData",
+    "EmbedVideoData",
 )
-
-def _footer_to_dict(footer: EmbedFooter) -> Dict[str, Any]:
-    ret_dict: Dict[str, Any] = {
-        "text": footer.text
-    }
-
-    if footer.icon_url is not None:
-        ret_dict["icon_url"] = footer.icon_url
-    if footer.proxy_icon_url is not None:
-        ret_dict["proxy_icon_url"] = footer.proxy_icon_url
-
-    return ret_dict
-
-def _attrib_to_dict(attrib: EmbedAttribute) -> Dict[str, Any]:
-    ret_dict: Dict[str, Any] = {
-        "url": attrib.url
-    }
-
-    if attrib.proxy_url is not None:
-        ret_dict["proxy_url"] = attrib.proxy_url
-    if attrib.height is not None:
-        ret_dict["height"] = attrib.height
-    if attrib.width is not None:
-        ret_dict["width"] = attrib.width
-
-    return ret_dict
-
-def _author_to_dict(author: EmbedAuthor) -> Dict[str, Any]:
-    ret_dict: Dict[str, Any] = {
-        "name": author.name
-    }
-
-    if author.url is not None:
-        ret_dict["url"] = author.url
-    if author.icon_url is not None:
-        ret_dict["icon_url"] = author.icon_url
-    if author.proxy_icon_url is not None:
-        ret_dict["proxy_icon_url"] = author.proxy_icon_url
-
-    return ret_dict
-
-def _field_to_dict(field: EmbedField) -> Dict[str, Any]:
-    ret_dict: Dict[str, Any] = {
-        "name": field.name,
-        "value": field.value,
-        "inline": field.inline
-    }
-
-    return ret_dict
 
 class Embed:
     """
@@ -95,17 +62,19 @@ class Embed:
         The url of this Embed
     color: :type:`Optional[int]`
         The color of this Embed
-    footer: :type:`Optional[EmbedFooter]`
+    footer: :type:`Optional[EmbedFooterData]`
         The footer of this Embed
-    image: :type:`Optional[EmbedAttribute]`
+    image: :type:`Optional[EmbedImageData]`
         The image of this Embed
-    thumbnail: :type:`Optional[EmbedAttribute]`
+    thumbnail: :type:`Optional[EmbedThumbnailData]`
         The thumbnail of this Embed
-    video: :type:`Optional[EmbedAttribute]`
+    video: :type:`Optional[EmbedVideoData]`
         The video of this Embed
-    author: :type:`Optional[EmbedAuthor]`
+    provider: :type:`Optional[EmbedProviderData]`
+        The provider of this Embed
+    author: :type:`Optional[EmbedAuthorData]`
         The author of this Embed
-    fields: :type:`List[EmbedField]`
+    fields: :type:`List[EmbedFieldData]`
         The fields of this Embed
     """
     def __init__(
@@ -114,13 +83,13 @@ class Embed:
         description: Optional[str] = None,
         url: Optional[str] = None,
         color: Optional[int] = None,
-        footer: Optional[EmbedFooter] = None,
-        image: Optional[EmbedAttribute] = None,
-        thumbnail: Optional[EmbedAttribute] = None,
-        video: Optional[EmbedAttribute] = None,
-        # TODO: Provider
-        author: Optional[EmbedAuthor] = None,
-        fields: Optional[List[EmbedField]] = None
+        footer: Optional[EmbedFooterData] = None,
+        image: Optional[EmbedImageData] = None,
+        thumbnail: Optional[EmbedThumbnailData] = None,
+        video: Optional[EmbedVideoData] = None,
+        provider: Optional[EmbedProviderData] = None,
+        author: Optional[EmbedAuthorData] = None,
+        fields: Optional[List[EmbedFieldData]] = None
     ):
         self.title = title
         self.description = description
@@ -130,8 +99,9 @@ class Embed:
         self.image = image
         self.thumbnail = thumbnail
         self.video = video
+        self.provider = provider
         self.author = author
-        self.fields: List[EmbedField] = fields if fields else []
+        self.fields: List[EmbedFieldData] = fields if fields else []
 
     def _field_size_check(self):
         if len(self.fields) > 25:
@@ -139,53 +109,34 @@ class Embed:
 
         return True
 
-    # TODO: Fix this since overriding doesn't work like this in Python
-    def add_field(self, name: str, value: str, inline: bool = False):
+    @overload
+    def add_field(self, /, name: str, value: str, inline: bool = False):
+        ...
+
+    @overload
+    def add_field(self, field: EmbedFieldData):
+        ...
+
+    def add_field(self, *args, **kwargs):
         """
         Adds a new field to this Embed. This function will
         automatically check if there is 25 fields, the maximum
         amount of fields.
-
-        Parameters
-        ----------
-        name: :type:`str`
-            The name of this field
-        value: :type:`str`
-            The value of this field
-        inline: :type:`bool`
-            Whether or not this field should be inline.
-            Set to False by default
         """
         if self._field_size_check():
-            field: EmbedField = EmbedField()
-            field.name = name
-            field.value = value
-            field.inline = inline
-
-            self.add_field(field)
-        else:
-            raise DisCatPyException("Exceeded the number of embed fields (max 25)")
-
-    def add_field(self, field: EmbedField):
-        """
-        Adds a new field to this Embed. This function will
-        automatically check if there is 25 fields, the maximum
-        amount of fields.
-
-        Parameters
-        ----------
-        field: :type:`EmbedField`
-            The field to add
-        """
-        if self._field_size_check():
-            self.fields.append(field)
+            if "name" in kwargs and "value" in kwargs and "inline" in kwargs:
+                field: EmbedFieldData = EmbedFieldData(name=kwargs.get("name"), value=kwargs.get("value"), inline=kwargs.get("inline"))
+                self.fields.append(field)
+            elif isinstance(args[0], EmbedFieldData):
+                self.fields.append(args[0])
         else:
             raise DisCatPyException("Exceeded the number of embed fields (max 25)")
 
     def to_dict(self) -> Dict[str, Any]:
-        ret_dict: Dict[str, Any] = {
-            "title": self.title
-        }
+        ret_dict: EmbedData = EmbedData(
+            title=self.title,
+            type="rich",
+        )
 
         if self.description is not None:
             ret_dict["description"] = self.description
@@ -194,17 +145,17 @@ class Embed:
         if self.color is not None:
             ret_dict["color"] = self.color
         if self.footer is not None:
-            ret_dict["footer"] = _footer_to_dict(self.footer)
+            ret_dict["footer"] = self.footer
         if self.image is not None:
-            ret_dict["image"] = _attrib_to_dict(self.image)
+            ret_dict["image"] = self.image
         if self.thumbnail is not None:
-            ret_dict["thumbnail"] = _attrib_to_dict(self.thumbnail)
+            ret_dict["thumbnail"] = self.thumbnail
         if self.video is not None:
-            ret_dict["video"] = _attrib_to_dict(self.video)
+            ret_dict["video"] = self.video
         # TODO: Provider
         if self.author is not None:
-            ret_dict["author"] = _author_to_dict(self.author)
+            ret_dict["author"] = self.author
         if len(self.fields) > 0:
-            ret_dict["fields"] = [_field_to_dict(i) for i in self.fields]
+            ret_dict["fields"] = [f for f in self.fields]
 
         return ret_dict

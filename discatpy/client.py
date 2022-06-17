@@ -21,21 +21,46 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
+from __future__ import annotations
 
 import asyncio
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from .internal.dispatcher import *
 from .internal.events import *
-from .types.snowflake import Snowflake
+from .types.snowflake import *
 from .cache import ClientCache
 from .gateway import GatewayClient
 from .http import HTTPClient
 from .user import User
 
+if TYPE_CHECKING:
+    from typing import Union
+
+    from .channel import RawChannel
+    from .guild import Guild
+
+    DiscordModel = Union[RawChannel, Guild, User]
+
 __all__ = (
     "Client",
 )
+
+def _fetch_function_from_type(http: HTTPClient, t: Union[type, str]):
+    t_name: str = ""
+    if isinstance(t, type):
+        t_name = t.__name__.lower()
+    else:
+        t_name = t.lower()
+
+    if "channel" in t_name:
+        return http.get_channel
+    elif t_name == "guild":
+        return http.get_guild
+    elif t_name == "user":
+        return http.get_user
+    else:
+        raise TypeError("invalid type passed in")
 
 class Client(EventsMixin):
     """
@@ -156,7 +181,7 @@ class Client(EventsMixin):
 
         asyncio.run(wrapped())
 
-    def grab(self, id: Snowflake, _type: type):
+    def grab(self, id: Snowflake, _type: Union[DiscordModel, str]):
         """Grabbing an object is attempting to get it from the cache then fetching it from
         the API if it doesn't exist in the cache.
         
@@ -170,7 +195,8 @@ class Client(EventsMixin):
         obj = self.cache.get_type(id, _type)
 
         if obj is None:
-            # TODO: Fetch from API
-            print("hi")
+            fetch_func = _fetch_function_from_type(_type)
+            d = asyncio.get_event_loop().run_in_executor(fetch_func(id))
+            obj = _type(d, self)
 
         return obj

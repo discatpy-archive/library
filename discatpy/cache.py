@@ -21,19 +21,20 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
+from __future__ import annotations
 
-from typing import Any, Callable, Coroutine, List, overload, TYPE_CHECKING
-import asyncio
+from typing import Any, List, Union, TYPE_CHECKING
 
+from .enums.channel import ChannelType
 from .types.snowflake import *
-from .channel import RawChannel, GuildChannel, _convert_dict_to_channel
-from .guild import Guild
-from .message import Message
-from .user import User
 from .utils import MultipleValuesDict
 
 if TYPE_CHECKING:
+    from .channel import RawChannel
     from .client import Client
+    from .guild import Guild
+    from .message import Message
+    from .user import User
 
 __all__ = (
     "ClientCache",
@@ -51,15 +52,8 @@ class ClientCache:
     _obj_cache: :type:`MultipleValuesDict[Snowflake, Any]`
         The internal cache that stores objects received from the Discord API.
     """
-    if TYPE_CHECKING:
-        client: Client
-
-        @overload
-        def __init__(self, client: Client) -> None:
-            ...
-
-    def __init__(self, client: Any) -> None:
-        self.client = client
+    def __init__(self, client: Client):
+        self.client: Client = client
         self._obj_cache: MultipleValuesDict[Snowflake, Any] = MultipleValuesDict()
     
     def find(self, id: Snowflake) -> bool:
@@ -78,7 +72,7 @@ class ClientCache:
         _obj = self._obj_cache.get(id)
         return _obj is not None
 
-    def get(self, id: Snowflake) -> "List[Any] | Any | None":
+    def get(self, id: Snowflake) -> Union[List[Any], Any, None]:
         """Grabs all objects with the provided id from the cache.
 
         Parameters
@@ -93,7 +87,7 @@ class ClientCache:
         """
         return self._obj_cache.get(id)
 
-    def get_type(self, id: Snowflake, t: type) -> "Any | None":
+    def get_type(self, id: Snowflake, t: type) -> Union[Any, None]:
         """Grabs an object with a specific type.
 
         Parameters
@@ -110,19 +104,10 @@ class ClientCache:
         """
         objs = self.get(id)
         if objs and isinstance(objs, list):
-            ret_obj: List[Any] = [o for o in objs if isinstance(o, t)]
+            ret_obj: List[Any] = [o for o in objs if isinstance(o, t) or issubclass(o, t)]
             return ret_obj[0] if len(ret_obj) > 0 else None
 
         return objs
-
-    def _get_fetch_object(self, id: Snowflake, type_to_grab: type, fetch_function: Coroutine[Any, Any, Any], dict_conversion: Callable[..., Any]):
-        obj_to_get = self.get_type(id, type_to_grab)
-
-        if obj_to_get is None:
-            obj_to_get = asyncio.get_running_loop().run_in_executor(fetch_function)
-            obj_to_get = dict_conversion(self.client, obj_to_get)
-
-        return obj_to_get
 
     def add_message(self, message_obj: Message):
         """Adds a message object to the cache.
@@ -132,9 +117,7 @@ class ClientCache:
         message_obj: :type:`Message`
             The message object to add.
         """
-        message_obj._set_channel(self._get_fetch_object(
-            message_obj.channel_id, RawChannel, self.client.http.get_channel(message_obj.channel_id), _convert_dict_to_channel
-        ))
+        message_obj._set_channel(self.client.grab(message_obj._channel_id, "RawChannel"))
         self._obj_cache[message_obj.id] = message_obj
 
     def add_channel(self, channel_obj: RawChannel):
@@ -145,16 +128,12 @@ class ClientCache:
         channel_obj: :type:`RawChannel`
             The channel object to add.
         """
-        if isinstance(channel_obj, GuildChannel):
+        if channel_obj.type == ChannelType.DM.value or channel_obj.type == ChannelType.GROUP_DM.value:
             # TODO: Consider removing this since all guilds the bot is in should already exist in the cache
-            channel_obj._set_guild(self._get_fetch_object(
-                channel_obj._guild_id, Guild, self.client.http.get_guild(channel_obj._guild_id), Guild.from_dict
-            ))
+            channel_obj._set_guild(self.client.grab(channel_obj._guild_id, "Guild"))
 
             if channel_obj._parent_id is not None:
-                channel_obj._set_parent(self._get_fetch_object(
-                    channel_obj._parent_id, GuildChannel, self.client.http.get_channel(channel_obj._parent_id), _convert_dict_to_channel
-                ))
+                channel_obj._set_parent(self.client.grab(channel_obj._parent_id, "RawChannel"))
 
         self._obj_cache[channel_obj.id] = channel_obj
 
@@ -167,8 +146,6 @@ class ClientCache:
             The user object to add.
         """
         self._obj_cache[user_obj.id] = user_obj
-
-    # TODO: Add guild member?
 
     def add_guild(self, guild_obj: Guild):
         """Adds a guild object to the cache.

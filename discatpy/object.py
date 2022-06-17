@@ -21,13 +21,16 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
+from __future__ import annotations
 
-from typing import Any, Dict, overload, TYPE_CHECKING
-
-from .types.snowflake import *
+from typing import Any, Dict, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .client import Client
+
+__all__ = (
+    "DiscordObject",
+)
 
 class DiscordObject:
     """
@@ -41,26 +44,16 @@ class DiscordObject:
     d: :type:`Dict[str, Any]`
         The raw data from the API.
     """
-    if TYPE_CHECKING:
-        client: Client
-
-    client = None
+    client: Client
     d: Dict[str, Any] 
 
-    def __init__(self, d: Dict[str, Any], client):
+    def __init__(self, d: Dict[str, Any], client: Client):
         self.client = client
         self.d = d
 
-    if TYPE_CHECKING:
-        @overload
-        @classmethod
-        def from_dict(cls, client: Client, d: Dict[str, Any]):
-            ...
-
     @classmethod
-    def from_dict(cls, client, d: Dict[str, Any]):
-        """
-        Returns this API type from a provided Dict.
+    def from_dict(cls, client: Client, d: Dict[str, Any]):
+        """Returns this API type from a provided Dict.
 
         Usually used to convert types directly from the API.
 
@@ -74,9 +67,11 @@ class DiscordObject:
         raise NotImplementedError
 
     def to_dict(self) -> Dict[str, Any]:
-        """
-        Returns this type converted into a Dict.
+        """Returns this type converted into a Dict.
 
         Usually used to convert types for the API.
         """
+        raise NotImplementedError
+
+    def _update(self, d: Dict[str, Any]):
         raise NotImplementedError

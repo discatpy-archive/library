@@ -22,24 +22,26 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-__title__   = "DisCatPy"
-__author__  = "EmreTech"
-__version__ = "1.0.0-alpha0"
-__license__ = "MIT"
+from enum import Enum
 
-from . import enums
-from . import types
-from . import utils
-from .abs import *
-from .asset import *
-from .cache import *
-from .channel import *
-from .client import *
-from .embed import *
-from .errors import *
-from .gateway import *
-from .guild import *
-from .http import *
-from .message import *
-from .object import *
-from .user import *
+__all__ = (
+    "ChannelType", 
+    "VideoQualityModes",
+)
+
+class ChannelType(Enum):
+    GUILD_TEXT = 0
+    DM = 1
+    GUILD_VOICE = 2
+    GROUP_DM = 3
+    GUILD_CATEGORY = 4
+    GUILD_NEWS = 5
+    GUILD_STORE = 6
+    GUILD_NEWS_THREAD = 10
+    GUILD_PUBLIC_THREAD = 11
+    GUILD_PRIVATE_THREAD = 12
+    GUILD_STAGE_VOICE = 13
+
+class VideoQualityModes(Enum):
+    AUTO = 1
+    FULL = 2

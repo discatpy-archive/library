@@ -2,6 +2,7 @@
 The MIT License (MIT)
 
 Copyright (c) 2022-present EmreTech
+Copyright (c) 2022-present AarushOS
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),
@@ -22,31 +23,45 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
+from enum import Enum
+
 __all__ = (
-    "UserFlags",
-    "PremiumTypes",
+    "VerificationLevel",
+    "MessageNotificationLevel",
+    "ExplicitContentFilterLevel",
+    "MFALevel",
+    "NSFWLevel",
+    "PremiumTier",
 )
 
-class UserFlags:
+class VerificationLevel(Enum):
     NONE = 0
-    STAFF = 1 << 0
-    PARTNER = 1 << 1
-    HYPESQUAD = 1 << 2
-    BUG_HUNTER_LEVEL_1 = 1 << 3
-    HYPESQUAD_ONLINE_HOUSE_1 = 1 << 6
-    HYPESQUAD_ONLINE_HOUSE_2 = 1 << 7
-    HYPESQUAD_ONLINE_HOUSE_3 = 1 << 8
-    PREMIUM_EARLY_SUPPORTER = 1 << 9
-    TEAM_PSEUDO_USER = 1 << 10
-    BUG_HUNTER_LEVEL_2 = 1 << 14
-    VERIFIED_BOT = 1 << 16
-    VERIFIED_DEVELOPER = 1 << 17
-    CERTIFIED_MODERATOR = 1 << 18
-    BOT_HTTP_INTERACTIONS = 1 << 19
+    LOW = 1
+    MEDIUM = 2
+    HIGH = 3
+    VERY_HIGH = 4
 
-class PremiumTypes:
+class MessageNotificationLevel(Enum):
+    ALL_MESSAGES = 0
+    ONLY_MENTIONS = 1
+
+class ExplicitContentFilterLevel(Enum):
+    DISABLED = 0
+    MEMBERS_WITHOUT_ROLES = 1
+    ALL_MEMBERS = 2
+
+class MFALevel(Enum):
     NONE = 0
-    NITRO_CLASSIC = 1
-    NITRO = 2
+    ELEVATED = 1
 
-# TODO: Add the ConnectionObject type?
+class NSFWLevel(Enum):
+    DEFAULT = 0
+    EXPLICIT = 1
+    SAFE = 2
+    AGE_RESTRICTED = 3
+
+class PremiumTier(Enum):
+    NONE = 0
+    TIER_1 = 1
+    TIER_2 = 2
+    TIER_3 = 3

@@ -21,9 +21,13 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
+from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from .types.snowflake import *
+
+if TYPE_CHECKING:
+    from .client import Client
 
 __all__ = (
     "Asset",
@@ -50,7 +54,9 @@ class Asset:
         Whether or not this Asset is animated. If it is, then :attr:`format` will 
         be set to `gif`.
     """
-    def __init__(self, client, path: str, key: str, animated: bool = False):
+    client: Client
+
+    def __init__(self, client: Client, path: str, key: str, animated: bool = False):
         self.client = client
         self.format = ".png" if not animated else ".gif"
         self.key = key

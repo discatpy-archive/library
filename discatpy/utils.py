@@ -23,13 +23,15 @@ DEALINGS IN THE SOFTWARE.
 """
 
 import asyncio
-from typing import Any, Generic, Union, TypeVar
+from typing import Any, Generic, Union, _SpecialForm, TypeVar
 
 from .types.snowflake import *
 
 __all__ = (
     "Unset",
     "DataEvent",
+    "MISSING",
+    "MaybeMissing",
     "DISCORD_EPOCH",
     "snowflake_timestamp",
     "snowflake_iwid",
@@ -65,6 +67,27 @@ class DataEvent(asyncio.Event, Generic[T]):
     def clear(self) -> None:
         super().clear()
         self.data = Unset()
+
+class _MissingDefine:
+    __name__ = "MISSING"
+
+    def __eq__(self, other) -> bool:
+        raise NotImplementedError("MISSING cannot be compared")
+
+    def __repr__(self):
+        return self.__class__.__name__
+
+    def __bool__(self):
+        raise NotImplementedError("MISSING is not True or False, it is undefined")
+
+    def __str__(self):
+        return self.__repr__()
+
+MISSING: Any = _MissingDefine()
+
+@_SpecialForm
+def MaybeMissing(self, parameters):
+    return Union[type(MISSING), parameters]
 
 def _ensure_snowflake_is_int(sf: Snowflake) -> int:
     ret_id = sf

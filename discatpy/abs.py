@@ -21,15 +21,16 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
+from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Union, overload, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 from .types.snowflake import *
-from .embed import Embed
 from .message import Message
 
 if TYPE_CHECKING:
     from .client import Client
+    from .embed import Embed
 
 __all__ = (
     "Messageable",
@@ -39,10 +40,7 @@ class Messageable:
     """
     An abstract type for API types that can send messages.
     """
-    if TYPE_CHECKING:
-        client: Client
-
-    client = None
+    client: Client
     raw_id: Snowflake
 
     async def send(
@@ -109,10 +107,10 @@ class Messageable:
                     before = msgs[0].get("id")
 
         for m in msgs:
-            yield Message.from_dict(self.client, m)
+            yield Message(m, self.client)
 
     async def pins(self):
         msgs: List[Dict[str, Any]] = await self.client.http.get_pinned_messages(self.raw_id)
 
         for m in msgs:
-            yield Message.from_dict(self.client, m)
+            yield Message(m, self.client)
