@@ -25,7 +25,11 @@ from __future__ import annotations
 
 from typing import Any, ClassVar, Dict, Tuple, Type
 
-__all__ = ("BaseFlags", "Intents",)
+__all__ = (
+    "BaseFlags",
+    "Intents",
+)
+
 
 class flag_value:
     def __init__(self, name: str, value: int):
@@ -38,12 +42,13 @@ class flag_value:
     def __set__(self, instance: BaseFlags, value: bool):
         instance._set_flag(self.value, value)
 
+
 class FlagMeta(type):
     """The metaclass for all flag classes.
 
     This metaclass takes all of the attributes from the given flag class and processes
     them so the ones that have an int value become a :class:`flag_value`. These flag values
-    along with their names are stored into a separate valid_flags dict. This also calculates 
+    along with their names are stored into a separate valid_flags dict. This also calculates
     the default value.
 
     Parameters
@@ -51,7 +56,15 @@ class FlagMeta(type):
     inverted: :type:`bool`
         Whether or not this flag class is inverted.
     """
-    def __new__(cls, name: str, bases: Tuple[type], attrs: Dict[str, Any], *, inverted: bool = False):
+
+    def __new__(
+        cls,
+        name: str,
+        bases: Tuple[type],
+        attrs: Dict[str, Any],
+        *,
+        inverted: bool = False,
+    ):
         valid_flags: Dict[str, int] = {}
         default_value = 0
 
@@ -60,20 +73,21 @@ class FlagMeta(type):
                 valid_flags[k] = v
                 flag_val = flag_value(k, v)
                 attrs[k] = flag_val
-        
+
         if inverted:
             max_bits = max(valid_flags.values()).bit_length()
-            default_value = -1 + (2 ** max_bits)
+            default_value = -1 + (2**max_bits)
 
         attrs["VALID_FLAGS"] = valid_flags
         attrs["DEFAULT_VALUE"] = default_value
 
         return super(FlagMeta, cls).__new__(cls, name, bases, attrs)
 
+
 class BaseFlags(metaclass=FlagMeta):
     """The base class for all flag classes.
     This class uses FlagMeta as its metaclass, so subclasses of this class also use that metaclass.
-    
+
     Parameters
     ----------
     VALID_FLAGS: :type:`ClassVar[Dict[str, int]]`
@@ -83,6 +97,7 @@ class BaseFlags(metaclass=FlagMeta):
     value: :type:`int`
         The current value of this flag class instance. Automatically set to the default value.
     """
+
     VALID_FLAGS: ClassVar[Dict[str, int]]
     DEFAULT_VALUE: ClassVar[int]
 
@@ -111,6 +126,7 @@ class BaseFlags(metaclass=FlagMeta):
             self.value |= v
         else:
             self.value &= ~v
+
 
 class Intents(BaseFlags):
     GUILDS = 1 << 0
@@ -152,3 +168,15 @@ class Intents(BaseFlags):
         self.GUILD_MEMBERS = False
         self.MESSAGE_CONTENT = False
         return self
+
+
+class MessageFlags(BaseFlags):
+    CROSSPOSTED = 1 << 0
+    IS_CROSSPOST = 1 << 1
+    SUPPRESS_EMBEDS = 1 << 2
+    SOURCE_MESSAGE_DELETED = 1 << 3
+    URGENT = 1 << 4
+    HAS_THREAD = 1 << 5
+    EPHEMERAL = 1 << 6
+    LOADING = 1 << 7
+    FAILED_TO_MENTION_SOME_ROLES_IN_THREAD = 1 << 8
