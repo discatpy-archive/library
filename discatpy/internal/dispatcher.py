@@ -24,16 +24,13 @@ DEALINGS IN THE SOFTWARE.
 
 import asyncio
 import inspect
-from typing import Any, Callable, Coroutine, Optional, TypeVar, overload
+from typing import Any, Callable, Coroutine, Optional
 
 __all__ = (
     "Dispatcher",
 )
 
-CoroT = TypeVar("CoroT", bound=Callable[..., Coroutine[Any, Any, Any]])
-T = TypeVar("T")
-Coro = Coroutine[Any, Any, T]
-CoroFunc = Callable[..., Coro[Any]]
+CoroFunc = Callable[..., Coroutine[Any, Any, Any]]
 
 class Dispatcher:
     """
@@ -114,6 +111,10 @@ class Dispatcher:
             raise TypeError("Function provided is not a coroutine.")
 
         event_name = func.__name__ if not name else name
+
+        if self.has_listener(event_name):
+            raise Exception(f"A listener with the name {event_name} already exists")
+
         setattr(self, event_name, {"callback": {"original": func, "overloads": []}, "one_shot": one_shot})
 
     def add_listener_overload(self, func: CoroFunc):
@@ -129,7 +130,7 @@ class Dispatcher:
         if not asyncio.iscoroutinefunction(func):
             raise TypeError("Function provided is not a coroutine.")
         
-        if not hasattr(self, func.__name__):
+        if not self.has_listener(func.__name__):
             raise Exception(f"There is no original callback with the name {func.__name__}.")
 
         original_func_signature = inspect.signature(getattr(self, func.__name__)["callback"]["original"])
@@ -151,3 +152,34 @@ class Dispatcher:
         """
         delattr(self, name)
     
+    def remove_listener_overload(self, name: str, index: int):
+        """
+        Removes an overloaded callback for a listener.
+
+        Parameters
+        ----------
+        name: :type:`str`
+            The name of the listener to remove the overloaded callback
+        index: :type:`int`
+            The index of the overloaded callback to remove
+        """
+        if not self.has_listener(name):
+            raise Exception(f"There is no original callback with the name {name}.")
+
+        del getattr(self, name)["callback"]["overloads"][index]
+
+    def has_listener(self, name: str):
+        """
+        Check if this dispatcher already has a listener.
+
+        Parameters
+        ----------
+        name: :type:`str`
+            The name of the listener to find
+
+        Returns
+        -------
+            A bool correlating to if there is a listener with that
+            name or not.
+        """
+        return hasattr(self, name)

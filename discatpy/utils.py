@@ -23,26 +23,26 @@ DEALINGS IN THE SOFTWARE.
 """
 
 import asyncio
-from typing import Generic, Union, TypeVar
+from typing import Any, Generic, Union, _SpecialForm, TypeVar
 
 from .types.snowflake import *
-
-T = TypeVar("T")
 
 __all__ = (
     "Unset",
     "DataEvent",
+    "MISSING",
+    "MaybeMissing",
     "DISCORD_EPOCH",
     "snowflake_timestamp",
     "snowflake_iwid",
     "snowflake_ipid",
     "snowflake_increment",
-    "get_avatar_url",
-    "get_default_avatar_url",
-    "get_banner_url",
+    "MultipleValuesDict",
 )
 
 # Data Event taken from here: https://gist.github.com/vcokltfre/69bef173a015d08a44e93fd4cbdaadd8
+
+T = TypeVar("T")
 
 class Unset:
     pass
@@ -67,6 +67,27 @@ class DataEvent(asyncio.Event, Generic[T]):
     def clear(self) -> None:
         super().clear()
         self.data = Unset()
+
+class _MissingDefine:
+    __name__ = "MISSING"
+
+    def __eq__(self, other) -> bool:
+        raise NotImplementedError("MISSING cannot be compared")
+
+    def __repr__(self):
+        return self.__class__.__name__
+
+    def __bool__(self):
+        raise NotImplementedError("MISSING is not True or False, it is undefined")
+
+    def __str__(self):
+        return self.__repr__()
+
+MISSING: Any = _MissingDefine()
+
+@_SpecialForm
+def MaybeMissing(self, parameters):
+    return Union[type(MISSING), parameters]
 
 def _ensure_snowflake_is_int(sf: Snowflake) -> int:
     ret_id = sf
@@ -123,42 +144,54 @@ def snowflake_increment(id: Snowflake) -> int:
     """
     return _ensure_snowflake_is_int(id) & 0xFFF
 
-BASE_CDN_PATH = "https://cdn.discordapp.com/"
+_KT = TypeVar("_KT")
+_VT = TypeVar("_VT")
 
-def get_avatar_url(id: Snowflake, hash: str):
-    """
-    Returns the avatar url of a user.
+# TODO: Consider replacing this with the multidict from aiohttp
+class MultipleValuesDict(dict):
+    """A dictionary that supports having multiple values for one key.
 
-    Parameters
-    ----------
-    id: :type:`Snowflake`
-        The user id
-    hash: :type:`str`
-        The avatar hash
+    It does this by having the actual value in the dictionary be a list with all
+    of those values.
     """
-    return BASE_CDN_PATH + "avatars/" + str(id) + "/" + hash
+    def __setitem__(self, __k: _KT, __v: _VT) -> None:
+        val = __v
+        if __k in self:
+            old_val = self.pop(__k)
+            if not isinstance(old_val, list):
+                val = [old_val, __v]
+            else:
+                val = old_val
+                val.append(__v)
 
-def get_default_avatar_url(discrim: str):
-    """
-    Returns the default avatar url of a user.
-    This is calculated with their discriminator.
+        return super().__setitem__(__k, val)
 
-    Parameters
-    ----------
-    discrim: :type:`str`
-        The discriminator for this user
-    """
-    return BASE_CDN_PATH + "embed/avatars/" + str(int(discrim) % 5) + ".png"
+    def get_one(self, __key: _KT, __index: int, /, _type: type = None, default: Any = None):
+        """Gets one value from a key that matches index and optionally type.
 
-def get_banner_url(id: Snowflake, hash: str):
-    """
-    Returns the banner url of a user or guild.
+        If there is only one value assigned to a key, the key provided is not found, or
+        there is no value that meets the conditions provided, the default value will be returned.
+        
+        Parameters
+        ----------
+        __key: :type:`_KT`
+            The key of the value to look for.
+        __index: :type:`int`
+            The index where the value is contained, if there are multiple values assigned to the
+            key.
+        _type: :type:`type`
+            The type of the value to grab. Defaults to `None`.
+        default: :type:`Any`
+            The default value to return if getting a value failed.
+        """
+        values = self.get(__key, default)
 
-    Parameters
-    ----------
-    id: :type:`Snowflake`
-        The user/guild id
-    hash: :type:`str`
-        The banner hash
-    """
-    return BASE_CDN_PATH + "banners/" + str(id) + "/" + hash
+        if values is not default and isinstance(values, list):
+            val = [v for i, v in enumerate(values) if i == __index][0]
+
+            if _type is not None:
+                val = val if isinstance(val, _type) else default
+
+            return val
+
+        return values

@@ -22,7 +22,8 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from typing import Any, Dict, Optional, Union
+from re import M
+from typing import Any, Dict, List, Optional, Union
 from urllib.parse import quote as urlquote
 import sys
 import asyncio
@@ -30,11 +31,14 @@ import aiohttp
 import json
 import datetime
 import logging
+import discord_typings
 
 from . import __version__
+from .enums.channel import ChannelType
 from .types.snowflake import *
+from .embed import Embed
 from .errors import DisCatPyException, HTTPException
-from .utils import DataEvent
+from .utils import DataEvent, MISSING, MaybeMissing
 
 __all__ = (
     "Route",
@@ -43,7 +47,7 @@ __all__ = (
 
 _log = logging.getLogger(__name__)
 
-API_VERSION = 9
+VALID_API_VERSIONS: List[int] = [9, 10]
 
 class Route:
     """
@@ -74,10 +78,7 @@ class Route:
     def __init__(self, method: str, path: str, **parameters: Any) -> None:
         self.method: str = method
         self.path: str = path
-        url: str = self.base + self.path
-        if parameters:
-            url = url.format_map({k: urlquote(v) if isinstance(v, str) else v for k, v in parameters.items()})
-        self.url: str = url
+        self._parameters = parameters
 
         # some major parameters
         self.channel_id: Optional[Snowflake] = parameters.get("channel_id")
@@ -85,7 +86,7 @@ class Route:
 
     @property
     def base(self) -> str:
-        return "https://discord.com/api/v{0}".format(API_VERSION)
+        return "https://discord.com/api/v{0}"
 
     @property
     def endpoint(self) -> str:
@@ -93,6 +94,13 @@ class Route:
 
     def get_bucket(self, shared_bucket_hash: str) -> str:
         return f"{self.guild_id}:{self.channel_id}:{self.path}" if shared_bucket_hash is None else f"{self.guild_id}:{self.channel_id}:{shared_bucket_hash}"
+
+    def grab_url(self, api_version: str) -> str:
+        url = self.base.format(api_version) + self.path
+        if self._parameters:
+            url = url.format_map({k: urlquote(v) if isinstance(v, str) else v for k, v in self._parameters.items()})
+
+        return url
 
 def _get_user_agent():
     user_agent = "DiscordBot (https://github.com/EmreTech/DisCatPy.git, {0}) Python/{1.major}.{1.minor}.{1.micro}"
@@ -102,6 +110,24 @@ def _calculate_ratelimit_delta(reset_timestamp: float) -> float:
     now = datetime.datetime.now()
     reset = datetime.datetime.fromtimestamp(float(reset_timestamp))
     return (reset - now).total_seconds()
+
+def query_parameters(**parameters: Dict[str, Any]):
+    ret_url: str = ""
+
+    for i, k in enumerate(parameters):
+        v = parameters[k]
+
+        if v is MISSING:
+            continue
+
+        if i == 0:
+            ret_url += f"?{k}="
+        else:
+            ret_url += f"&{k}="
+
+        ret_url += urlquote(str(v))
+
+    return ret_url
 
 class HTTPClient:
     """
@@ -126,13 +152,16 @@ class HTTPClient:
         Do not modify this
     """
 
-    def __init__(self, connector: Optional[aiohttp.BaseConnector] = None):
+    def __init__(self, api_version: Optional[int] = None, connector: Optional[aiohttp.BaseConnector] = None):
         self.connector = connector
         self._session: Optional[aiohttp.ClientSession] = None # initalized later by login
         self._global_ratelimit: DataEvent = DataEvent()
         self._bucket_ratelimits: Dict[str, DataEvent] = {}
         self._buckets: Dict[str, str] = {}
         self.token: Optional[str] = None
+        self.api_version: int = api_version if api_version is not None else 9
+        if self.api_version not in VALID_API_VERSIONS:
+            raise ValueError(f"API Version {self.api_version} is invalid!")
 
         self.user_agent: str = _get_user_agent()
 
@@ -194,6 +223,7 @@ class HTTPClient:
         kwargs["headers"] = headers
 
         method = route.method
+        url = route.grab_url(self.api_version)
         bucket = route.get_bucket(self._buckets.get(route.endpoint))
 
         # first we do a global ratelimit as that affects all requests
@@ -230,7 +260,7 @@ class HTTPClient:
         data: Optional[Union[Dict[str, Any], str]] = None
 
         for tries in range(5):
-            async with self._session.request(method, route.url, **kwargs) as response:
+            async with self._session.request(method, url, **kwargs) as response:
                 resp_code = response.status
                 data = None
                 
@@ -274,7 +304,7 @@ class HTTPClient:
                             _log.debug("Ratelimit bucket is already good to go. Skipping.")
 
                 if resp_code >= 200 and resp_code < 300:
-                    _log.debug("Connection to \"%s\" succeeded!", route.url)
+                    _log.debug("Connection to \"%s\" succeeded!", url)
                     return data
 
                 # we are being ratelimited
@@ -315,14 +345,7 @@ class HTTPClient:
 
         raise RuntimeError("Got to unreachable section of HTTPClient.request")
 
-    async def close(self):
-        """
-        Closes the internal session. 
-        
-        Required when the client is done in order to stop 
-        aiohttp from complaining.
-        """
-        return await self._session.close()
+    # Misc HTTP functions
 
     async def login(self, token: str):
         """
@@ -342,25 +365,23 @@ class HTTPClient:
 
         try:
             # get info about ourselves
-            data = await self.request(Route("GET", "/users/@me"))
+            me = await self.get_current_user()
         except HTTPException as e:
             self.token = old_token
             if e.status == 401:
                 raise DisCatPyException("LoginFailure: Improper token has been passed.") from e
             raise
 
-        return data
+        return me
 
-    async def leave_guild(self, guild_id: Snowflake):
+    async def close(self):
         """
-        Makes the bot leave a guild with the provided guild id.
-
-        Parameters
-        ----------
-        guild_id: :type:`Snowflake`
-            The id of the guild to leave
+        Closes the internal session. 
+        
+        Required when the client is done in order to stop 
+        aiohttp from complaining.
         """
-        return await self.request(Route("DELETE", "/users/@me/guilds/{guild_id}", guild_id=guild_id))
+        return await self._session.close()
 
     async def get_gateway_bot(self, *, encoding: str = "json", zlib: bool = True):
         """
@@ -383,12 +404,16 @@ class HTTPClient:
         else:
             fmt = "{0}?v={1}&encoding={2}"
 
-        return data["shards"], fmt.format(data["url"], API_VERSION, encoding)
+        return data["shards"], fmt.format(data["url"], self.api_version, encoding)
 
-    async def modify_current_user(self, username: str):
-        # TODO: add the ability to modify the avatar
-        json_req: Dict[str, Any] = {"username": username}
-        return await self.request(Route("PATCH", "/users/@me"), json=json_req)
+    async def get_from_cdn(self, url: str) -> bytes:
+        async with self._session.get(url) as resp:
+            if resp.status == 200:
+                return await resp.read()
+            
+            raise HTTPException(resp, f"failed to grab Asset with url {url}")
+
+    # User HTTP functions
 
     async def get_user(self, user_id: Snowflake):
         """
@@ -401,39 +426,107 @@ class HTTPClient:
         """
         return await self.request(Route("GET", "/users/{user_id}", user_id=user_id))
 
-    async def modify_dm_channel(self, channel_id: Snowflake, new_channel: Dict[str, Any]):
+    async def get_current_user(self):
         """
-        Modifies a Group DM channel with the given channel (in Dict form).
+        Grabs the current user object.
+        """
+        return await self.request(Route("GET", "/users/@me"))
+
+    async def create_user_dm(self, recipient_id: Snowflake):
+        """
+        Creates a new DM with another user.
 
         Parameters
         ----------
-        channel_id: :type:`Snowflake`
-            The id of the channel to modify
-        new_channel: :type:`Dict[str, Any]`
-            The updated channel. Outputted from `DMChannel.to_dict()`
+        recipient_id: :type:`Snowflake`
+            The recipient of this DM.
         """
-        name = new_channel.get("name")
-        icon = new_channel.get("icon")
-        return await self.request(
-            Route("PATCH", "/channels/{channel_id}", channel_id=channel_id),
-            json={
-                "name": name,
-                "icon": icon
-            }
-        )
+        return await self.request(Route("POST", "/users/@me/channels"), json={"recipient_id":recipient_id})
 
-    async def modify_guild_channel(self, channel_id: Snowflake, new_channel: Dict[str, Any]):
+    async def modify_current_user(self, username: str):
         """
-        Modifies a guild channel with the given channel (in Dict form).
+        Modifies the current bot's user account.
 
         Parameters
         ----------
-        channel_id: :type:`Snowflake`
-            The id of the channel to modify
-        new_channel: :type:`Dict[str, Any]`
-            The updated channel. Outputted from `GuildChannel.to_dict()`
+        username: :type:`str`
+            The new username for the bot.
         """
-        return await self.request(Route("PATCH", "/channels/{channel_id}", channel_id=channel_id), json=new_channel)
+        # TODO: add the ability to modify the avatar
+        return await self.request(Route("PATCH", "/users/@me"), json={"username":username})
+
+    # Guild HTTP functions
+
+    async def get_guild(self, guild_id: Snowflake, with_counts: bool = False):
+        return await self.request(Route("GET", "/guilds/{guild_id}" + query_parameters(with_counts=with_counts), guild_id=guild_id))
+
+    async def get_guild_preview(self, guild_id: Snowflake):
+        return await self.request(Route("GET", "/guilds/{guild_id}/preview", guild_id=guild_id))
+
+    async def create_guild(
+        self, 
+        name: str,
+        icon: MaybeMissing[str] = MISSING,
+        icon_type: str = "jpeg",
+        verification_level: MaybeMissing[int] = MISSING,
+        default_message_notifications: MaybeMissing[int] = MISSING,
+        explicit_content_filter: MaybeMissing[int] = MISSING,
+        roles: MaybeMissing[List[discord_typings.RoleData]] = MISSING,
+        channels: MaybeMissing[List[discord_typings.PartialChannelData]] = MISSING,
+        afk_channel_id: MaybeMissing[Snowflake] = MISSING,
+        afk_timeout: MaybeMissing[int] = MISSING,
+        system_channel_id: MaybeMissing[Snowflake] = MISSING,
+        system_channel_flags: MaybeMissing[int] = MISSING
+    ):
+        json_req = discord_typings.GuildData(name=name)
+
+        if icon is not MISSING:
+            json_req["icon"] = f"data:image/{icon_type};base64,{icon}"
+
+        if verification_level is not MISSING:
+            json_req["verification_level"] = verification_level
+
+        if default_message_notifications is not MISSING:
+            json_req["default_message_notifications"] = default_message_notifications
+
+        if explicit_content_filter is not MISSING:
+            json_req["explicit_content_filter"] = explicit_content_filter
+
+        if roles is not MISSING:
+            json_req["roles"] = roles
+
+        if channels is not MISSING:
+            json_req["channels"] = channels
+
+        if afk_channel_id is not MISSING:
+            json_req["afk_channel_id"] = afk_channel_id
+
+        if afk_timeout is not MISSING:
+            json_req["afk_timeout"] = afk_timeout
+
+        if system_channel_id is not MISSING:
+            json_req["system_channel_id"] = system_channel_id
+
+        if system_channel_flags is not MISSING:
+            json_req["system_channel_flags"] = system_channel_flags
+
+        return await self.request(Route("POST", "/guilds"), json=json_req)
+
+    async def modify_guild(self, guild_id: Snowflake, new_guild: discord_typings.GuildData):
+        return await self.request(Route("PATCH", "/guilds/{guild_id}", guild_id=guild_id), json=new_guild)
+    
+    async def leave_guild(self, guild_id: Snowflake):
+        """
+        Makes the bot leave a guild with the provided guild id.
+
+        Parameters
+        ----------
+        guild_id: :type:`Snowflake`
+            The id of the guild to leave
+        """
+        return await self.request(Route("DELETE", "/users/@me/guilds/{guild_id}", guild_id=guild_id))
+
+    # Channel HTTP functions
 
     async def get_channel(self, channel_id: Snowflake):
         """
@@ -446,6 +539,52 @@ class HTTPClient:
         """
         return await self.request(Route("GET", "/channels/{channel_id}", channel_id=channel_id))
 
+    async def get_channels(self, guild_id: Snowflake):
+        return await self.request(Route("GET", "/guilds/{guild_id}/channels", guild_id=guild_id))
+
+    async def get_active_threads(self, guild_id: Snowflake):
+        return await self.request(Route("GET", "/guilds/{guild_id}/threads/active", guild_id=guild_id))
+
+    async def create_channel(self, guild_id: Snowflake, new_channel: discord_typings.PartialChannelData):
+        return await self.request(Route("POST", "/guilds/{guild_id}/channels", guild_id=guild_id), json=new_channel)
+
+    async def modify_channel(self, channel_id: Snowflake, new_channel: discord_typings.ChannelData):
+        """
+        Modifies a channel with the given channel (in Dict form).
+
+        Parameters
+        ----------
+        channel_id: :type:`Snowflake`
+            The id of the channel to modify
+        new_channel: :type:`Dict[str, Any]`
+            The updated channel. Outputted from `GuildChannel.to_dict()`
+        """
+        return await self.request(Route("PATCH", "/channels/{channel_id}", channel_id=channel_id), json=new_channel)
+
+    async def modify_channel_positions(
+        self, 
+        guild_id: Snowflake, 
+        channel_id: Snowflake, 
+        /, 
+        position: Optional[int] = None, 
+        lock_permissions: Optional[bool] = None, 
+        parent_id: Optional[Snowflake] = None
+    ):
+        json_req: Dict[str, Any] = {
+            "id": channel_id
+        }
+
+        if position is not None:
+            json_req["position"] = position
+
+        if lock_permissions is not None:
+            json_req["lock_permissions"] = lock_permissions
+
+        if parent_id:
+            json_req["parent_id"] = parent_id
+
+        return await self.request(Route("PATCH", "/guilds/{guild_id}/channels", guild_id=guild_id), json=json_req)
+
     async def delete_channel(self, channel_id: Snowflake):
         """
         Deletes/closes a channel.
@@ -457,37 +596,146 @@ class HTTPClient:
         """
         return await self.request(Route("DELETE", "/channels/{channel_id}", channel_id=channel_id))
 
-    async def get_messages(self, channel_id: Snowflake, around: Optional[Snowflake] = None, before: Optional[Snowflake] = None, after: Optional[Snowflake] = None, limit: int = 50):
+    async def start_thread_from_message(
+        self, 
+        channel_id: Snowflake, 
+        msg_id: Snowflake, 
+        name: str, 
+        auto_archive_duration: Optional[int] = None, 
+        cooldown: int = 0
+    ):
         """
-        Grabs all messages from a channel.
+        Starts a thread with a provided message id.
+
+        Parameters
+        ----------
+        channel_id: :type:`Snowflake`
+            The id of the channel where the thread should be made
+        msg_id: :type:`Snowflake`
+            The id of the message to create the thread from
+        name: :type:`str`
+            The name of this thread
+        auto_archive_duration: :type:`Optional[int]`
+            The duration until this thread will be auto archived
+        cooldown: :type:`int`
+            The cooldown (rate limit per user) of this thread
+        """
+        json_req: Dict[str, Any] = {"name":name}
+
+        if auto_archive_duration:
+            json_req["auto_archive_duration"] = auto_archive_duration
+        
+        if cooldown:
+            json_req["rate_limit_per_user"] = cooldown
+
+        return await self.request(
+            Route("POST", "/channels/{channel_id}/messages/{message_id}/threads", channel_id=channel_id, message_id=msg_id),
+            json=json_req
+        )
+
+    async def start_thread_without_message(
+        self, 
+        channel_id: Snowflake, 
+        name: str, 
+        auto_archive_duration: Optional[int] = None, 
+        type: int = ChannelType.GUILD_PRIVATE_THREAD,
+        invitable: bool = True,
+        cooldown: int = 0
+    ):
+        """
+        Starts a thread without a provided message id.
+
+        Parameters
+        ----------
+        channel_id: :type:`Snowflake`
+            The id of the channel where the thread should be made
+        name: :type:`str`
+            The name of this thread
+        auto_archive_duration: :type:`Optional[int]`
+            The duration until this thread will be auto archived
+        type: :type:`int`
+            The type of this thread. The only valid values is `GUILD_NEWS_THREAD`,
+            `GUILD_PUBLIC_THREAD`, and `GUILD_PRIVATE_THREAD`.
+        invitable: :type:`bool`
+            Whether or not non-moderators can add other non-moderators to a thread
+        cooldown: :type:`int`
+            The cooldown (rate limit per user) of this thread
+        """
+        json_req: Dict[str, Any] = {"name":name, "rate_limit_per_user":cooldown, "type":type}
+
+        if type == ChannelType.GUILD_PRIVATE_THREAD:
+            json_req["invitable"] = invitable
+
+        if auto_archive_duration:
+            json_req["auto_archive_duration"] = auto_archive_duration
+
+        return await self.request(
+            Route("POST", "/channels/{channel_id}/threads", channel_id=channel_id),
+            json=json_req
+        )
+
+    # Guild Member HTTP functions
+
+    async def get_guild_member(self, guild_id: Snowflake, user_id: Snowflake):
+        return await self.request(Route("GET", "/guilds/{guild_id}/members/{user_id}", guild_id=guild_id, user_id=user_id))
+
+    async def get_guild_members(self, guild_id: Snowflake, limit: int = 1, after: Snowflake = 0):
+        return await self.request(Route("GET", "/guilds/{guild_id}/members" + query_parameters(limit=limit, after=after), guild_id=guild_id))
+
+    async def find_guild_members(self, guild_id: Snowflake, query: str, limit: int = 1):
+        return await self.request(Route("GET", "/guilds/{guild_id}/members/search" + query_parameters(query=query, limit=limit), guild_id=guild_id))
+
+    async def modify_guild_member(self, guild_id: Snowflake, user_id: Snowflake, new_guild_member: Dict[str, Any]):
+        return await self.request(Route("PATCH", "/guilds/{guild_id}/members/{user_id}", guild_id=guild_id, user_id=user_id), json=new_guild_member)
+
+    async def modify_current_guild_member(self, guild_id: Snowflake, nick: str):
+        return await self.request(Route("PATCH", "/guilds/{guild_id}/members/@me", guild_id=guild_id), json={"nick":nick})
+
+    async def remove_guild_member(self, guild_id: Snowflake, user_id: Snowflake):
+        return await self.request(Route("DELETE", "/guilds/{guild_id}/members/{user_id}", guild_id=guild_id, user_id=user_id))
+
+    async def add_guild_member_role(self, guild_id: Snowflake, user_id: Snowflake, role_id: Snowflake):
+        return await self.request(Route("PUT", "/guilds/{guild_id}/members/{user_id}/roles/{role_id}", guild_id=guild_id, user_id=user_id, role_id=role_id))
+
+    async def remove_guild_member_role(self, guild_id: Snowflake, user_id: Snowflake, role_id: Snowflake):
+        return await self.request(Route("DELETE", "/guilds/{guild_id}/members/{user_id}/roles/{role_id}", guild_id=guild_id, user_id=user_id, role_id=role_id))
+
+    # Message HTTP functions
+
+    async def get_messages(
+        self, 
+        channel_id: Snowflake, 
+        /, 
+        limit: int = 50, 
+        around: MaybeMissing[Snowflake] = MISSING, 
+        before: MaybeMissing[Snowflake] = MISSING, 
+        after: MaybeMissing[Snowflake] = MISSING
+    ):
+        """Grabs all messages from a channel.
+        Only one of the around, before, and after parameters can be set.
 
         Parameters
         ----------
         channel_id: :type:`Snowflake`
             The id of the channel to grab the messages from
-        around: :type:`Optional[Snowflake]`
-            The id of the message to grab the messages around. Set to None by default
-        before: :type:`Optional[Snowflake]`
-            The id of the message to grab the messages before. Set to None by default
-        after: :type:`Optional[Snowflake]`
-            The id of the message to grab the messages after. Set to None by default
+        around: :type:`MaybeMissing[Snowflake]`
+            The id of the message to grab the messages around. Set to MISSING by default
+        before: :type:`MaybeMissing[Snowflake]`
+            The id of the message to grab the messages before. Set to MISSING by default
+        after: :type:`MaybeMissing[Snowflake]`
+            The id of the message to grab the messages after. Set to MISSING by default
         limit: :type:`int`
-            The amount of messages to grab. Set to 50 by default
+            The amount of messages to grab. The maximum is 100. Set to 50 by default
         """
         if limit < 1:
             raise ValueError("Got a limit that's smaller than 1")
         elif limit > 100:
             raise ValueError("Got a limit that's larger than 100")
 
-        json_req: Dict[str, Any] = {"limit": limit}
-        if around:
-            json_req["around"] = around
-        if before:
-            json_req["before"] = before
-        if after:
-            json_req["after"] = after
+        if (before and after and around) or (before and after) or (after and around) or (before and around):
+            raise ValueError("Only one of before, around, and after can be set.") 
 
-        return await self.request(Route("GET", "/channels/{channel_id}/messages", channel_id=channel_id), json=json_req)
+        return await self.request(Route("GET", "/channels/{channel_id}/messages" + query_parameters(limit=limit, around=around, before=before, after=after), channel_id=channel_id))
 
     async def get_message(self, channel_id: Snowflake, message_id: Snowflake):
         """
@@ -500,4 +748,174 @@ class HTTPClient:
         message_id: :type:`Snowflake`
             The id of the message to grab
         """
-        return await self.request(Route("GET", "/channels/{channel_id}/messages/{message_id}", channel_id=channel_id, message_id=message_id))  
+        return await self.request(
+            Route("GET", "/channels/{channel_id}/messages/{message_id}", channel_id=channel_id, message_id=message_id)
+        )  
+
+    async def get_pinned_messages(self, channel_id: Snowflake):
+        """
+        Gets all pinned messages from a channel.
+
+        Parameters
+        ----------
+        channel_id: :type:`Snowflake`
+            The id of the channel to grab the pinned messages from.
+        """
+        return await self.request(Route("GET", "/channels/{channel_id}/pins", channel_id=channel_id))
+
+    async def send_message(
+        self, 
+        channel_id: Snowflake, 
+        /,
+        content: str, 
+        embed: Optional[Embed] = None, 
+        embeds: Optional[List[Embed]] = None,
+        msg_reference: Optional[discord_typings.MessageReferenceData] = None,
+        tts: bool = False,
+        # TODO: components, stickers, files/attachments
+    ):
+        """
+        Sends a message to a channel.
+
+        Parameters
+        ----------
+        channel_id: :type:`Snowflake`
+            The id of the channel to send the message to
+        content: :type:`str`
+            The content of the message to send
+        embed: :type:`Optional[Embed]`
+            The embed to send. Set to None by default
+        embeds: :type:`Optional[List[Embed]]`
+            The embeds to send. Set to None by default
+        msg_reference: :type:`Optional[MessageReference]`
+            The message reference to send. Set to None by default
+        tts: :type:`bool`
+            Whether the message should be sent in text-to-speech. Set to False by default
+        """
+        json_data: Dict[str, Any] = {"content": content, "tts": tts}
+
+        if embed and embeds:
+            raise ValueError("Cannot send both embed and embeds")
+
+        if embed:
+            json_data["embeds"] = [embed.to_dict()]
+
+        if embeds:
+            json_data["embeds"] = [e.to_dict() for e in embeds]
+
+        if msg_reference:
+            json_data["message_reference"] = msg_reference
+
+        return await self.request(Route("POST", "/channels/{channel_id}/messages", channel_id=channel_id), json=json_data)
+
+    async def crosspost_message(self, channel_id: Snowflake, message_id: Snowflake):
+        """Crossposts this message to all channel followers.
+        This only works if the base channel the messsage was sent in is a News Channel.
+
+        Parameters
+        ----------
+        channel_id: :type:`Snowflake`
+            The channel to crosspost from.
+        message_id: :type:`Snowflake`
+            The message to crosspost.        
+        """
+        return await self.request(Route("POST", "/channels/{channel_id}/messages/{message_id}/crosspost", channel_id=channel_id, message_id=message_id))
+
+    async def edit_message(
+        self,
+        msg_id: Snowflake,
+        channel_id: Snowflake,
+        /,
+        content: str,
+        embed: Optional[Embed] = None, 
+        embeds: Optional[List[Embed]] = None
+    ):
+        """
+        Edits an existing message.
+
+        Parameters
+        ----------
+        msg_id: :type:`Snowflake`
+            The id of the message to edit
+        channel_id: :type:`Snowflake`
+            The id of the channel where the message is from
+        content: :type:`str`
+            The new content of the message to edit
+        embed: :type:`Optional[Embed]`
+            The new embed of the message to edit. Set to None by default
+        embeds: :type:`Optional[List[Embed]]`
+            The new embeds of the message to edit. Set to None by default
+        """
+        json_data: Dict[str, Any] = {"content": content}
+
+        if embed and embeds:
+            raise ValueError("Cannot send both embed and embeds")
+
+        if embed:
+            json_data["embeds"] = [embed.to_dict()]
+
+        if embeds:
+            json_data["embeds"] = [e.to_dict() for e in embeds]
+
+        return await self.request(
+            Route("PATCH", "/channels/{channel_id}/messages/{message_id}", channel_id=channel_id, message_id=msg_id), 
+            json=json_data
+        )
+
+    async def delete_message(self, msg_id: Snowflake, channel_id: Snowflake):
+        """
+        Deletes an existing message from a channel.
+
+        Parameters
+        ----------
+        msg_id: :type:`Snowflake`
+            The id of the message to delete
+        channel_id: :type:`Snowflake`
+            The id of the channel where the message is from
+        """
+        return await self.request(Route("DELETE", "/channels/{channel_id}/messages/{message_id}", channel_id=channel_id, message_id=msg_id))
+
+    async def bulk_delete_messages(self, messages: List[Snowflake], channel_id: Snowflake):
+        """
+        Bulk deletes messages from a channel.
+
+        Parameters
+        ----------
+        messages: :type:`List[Snowflake]`
+            A list of the id of the messages to delete
+        channel_id: :type:`Snowflake`
+            The id of the channel where the messages are from
+        """
+        return await self.request(
+            Route("POST", "/channels/{channel_id}/messages/bulk-delete", channel_id=channel_id),
+            json={"messages":messages}
+        )
+
+    async def pin_message(self, msg_id: Snowflake, channel_id: Snowflake):
+        """
+        Pins a new message to the provided channel id.
+
+        Parameters
+        ----------
+        msg_id: :type:`Snowflake`
+            The id of the message to pin
+        channel_id: :type:`Snowflake`
+            The id of the channel to pin the message to
+        """
+        return await self.request(Route("PUT", "/channels/{channel_id}/pins/{message_id}", channel_id=channel_id, message_id=msg_id))
+
+    async def unpin_message(self, msg_id: Snowflake, channel_id: Snowflake):
+        """
+        Unpins a message to the provided channel id.
+
+        Parameters
+        ----------
+        msg_id: :type:`Snowflake`
+            The id of the message to unpin
+        channel_id: :type:`Snowflake`
+            The id of the channel to unpin the message from
+        """
+        return await self.request(Route("DELETE", "/channels/{channel_id}/pins/{message_id}", channel_id=channel_id, message_id=msg_id))
+
+    # Message Reaction HTTP functions
+

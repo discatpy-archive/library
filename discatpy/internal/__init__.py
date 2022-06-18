@@ -23,3 +23,4 @@ DEALINGS IN THE SOFTWARE.
 """
 
 from .dispatcher import *
+from .events import *

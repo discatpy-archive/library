@@ -21,36 +21,96 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
+from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
+
+from .types.snowflake import *
+from .message import Message
+
+if TYPE_CHECKING:
+    from .client import Client
+    from .embed import Embed
 
 __all__ = (
-    "APIType",
+    "Messageable",
 )
 
-class APIType:
+class Messageable:
     """
-    A raw API type. 
-    All types here from the Discord API use this as a base.
+    An abstract type for API types that can send messages.
     """
+    client: Client
+    raw_id: Snowflake
 
-    @classmethod
-    def from_dict(cls, d: Dict[str, Any]):
+    async def send(
+        self,
+        content: str,
+        /,
+        embed: Optional[Embed] = None,
+        embeds: Optional[List[Embed]] = None,
+        tts: bool = False,
+        # TODO: components, stickers, files/attachments
+    ):
         """
-        Returns this API type from a provided Dict.
+        Sends a message.
 
-        Usually used to convert types directly from the API.
+        Parameters
+        ----------
+        content: str
+            The content of the message.
+        embed: Optional[Embed]
+            The embed to send.
+        embeds: Optional[List[Embed]]
+            A list of embeds to send.
+        tts: bool
+            Whether the message should be sent using text-to-speech.
         """
-        raise NotImplementedError
+        await self.client.http.send_message(
+            self.raw_id,
+            content,
+            embed=embed,
+            embeds=embeds,
+            msg_reference=None,
+            tts=tts
+        )
 
-    def to_dict(self) -> Dict[str, Any]:
+    async def bulk_delete(self, messages: List[Message]):
         """
-        Returns this type converted into a Dict.
+        Bulk deletes a list of messages.
 
-        Usually used to convert types for the API.
+        Parameters
+        ----------
+        messages: :type:`List[Message]`
+            The list of messages to bulk delete.
         """
-        raise NotImplementedError
+        ids: List[Snowflake] = [m.id for m in messages]
+        return await self.client.http.bulk_delete_messages(ids, self.raw_id)
 
-# TODO: Add Messageable abstraction where the bot can send messages to
-# For example, sending a DM to someone or sending a message in a text channel
+    async def history(self, limit: int = 50, /, around: Optional[Snowflake] = None, before: Optional[Snowflake] = None, after: Optional[Snowflake] = None):
+        # TODO: Move iterator implementation to a separate class
+        msgs: List[Dict[str, Any]]
+        if limit <= 100:
+            msgs = await self.client.http.get_messages(self.raw_id, around, before, after, limit)
+        else:
+            # paginator mode activated
+            amount_of_loops = limit // 100
+            msgs = []
+            for _ in range(amount_of_loops):
+                msgs.extend(await self.client.http.get_messages(self.raw_id, around, before, after, limit))
+                if len(msgs) != 100:
+                    # we either hit the limit of the channel or the limit according to the parameters
+                    break
+                else:
+                    if limit > 100: 
+                        limit -= 100
+                    before = msgs[0].get("id")
 
+        for m in msgs:
+            yield Message(m, self.client)
+
+    async def pins(self):
+        msgs: List[Dict[str, Any]] = await self.client.http.get_pinned_messages(self.raw_id)
+
+        for m in msgs:
+            yield Message(m, self.client)

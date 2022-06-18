@@ -21,54 +21,99 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
+from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Union, Optional, TYPE_CHECKING, overload
+from datetime import datetime
 
-from .types.channel import ChannelOverwrite, ChannelType
+from discord_typings import (
+    TextChannelData,
+    NewsChannelData,
+    VoiceChannelData,
+    CategoryChannelData,
+    DMChannelData,
+    PermissionOverwriteData,
+)
+from .enums.channel import ChannelType
 from .types.snowflake import *
-from .abs import APIType
-from .mixins import SnowflakeMixin
+from .abs import Messageable
+from .object import DiscordObject
+from .user import User
+from .utils import MISSING, MaybeMissing
 
-class RawChannel(APIType, SnowflakeMixin):
+if TYPE_CHECKING:
+    from .guild import Guild
+
+__all__ = (
+    "RawChannel",
+    "GuildChannel",
+    "DMChannel",
+    "TextChannel",
+    "VoiceChannel",
+    "CategoryChannel",
+)
+
+class RawChannel(DiscordObject):
     """
-    Represents the base for all channel types. Do not implement this yourself,
-    instead use `TextChannel`, `VoiceChannel`, or `Thread`.
+    Represents the base for all channel types. 
+    
+    Do not implement this yourself, instead use :class:`TextChannel`, 
+    :class:`VoiceChannel`, :class:`DMChannel`, or :class:`Thread`.
 
     Attributes
     ----------
     id: :type:`Snowflake`
-        The id of this channel
+        The id of this channel.
     type: :type:`int`
-        The type of this channel. Look at the `ChannelType` enum to see what
-        numbers mean what.
+        The type of this channel. Look at the `ChannelType` enum to see what the
+        valid values are.
     """
-    type: int
+    __slots__ = ("id", "type",)
+
+    def __init__(self, d: Dict[str, Any], client):
+        DiscordObject.__init__(self, d, client)
+        self._update(d)
+
+    def _update(self, d: Dict[str, Any]):
+        self.id: Snowflake = d.get("id")
+        self.type: int = d.get("type")
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]):
-        id: Snowflake = d.get("id")
-        type: int = d.get("type")
+    def from_dict(cls, client, d: Dict[str, Any]):
+        """Attempts to convert a dict into a channel object.
+        
+        Parameters
+        ----------
+        client: :type:`Client`
+            The parent client of the channel object.
+        d: :type:`Dict[str, Any]`
+            The raw channel dict.
+        """
+        channel_type: int = d.get("type")
 
-        ret_cls = cls()
-        ret_cls.raw_id = id
-        ret_cls.type = type
-        return ret_cls
+        if channel_type == ChannelType.DM.value:
+            return DMChannel(d, client)
+        elif channel_type == ChannelType.GUILD_TEXT.value or channel_type == ChannelType.GUILD_NEWS.value:
+            return TextChannel(d, client)
+        elif channel_type == ChannelType.GUILD_VOICE.value or channel_type == ChannelType.GUILD_STAGE_VOICE.value:
+            return VoiceChannel(d, client)
+
+        raise TypeError("Invalid channel dict provided")
+
+    def to_dict(self) -> Dict[str, Any]:
+        ret_dict: Dict[str, Any] = {
+            "id": self.id,
+            "type": self.type
+        }
+        return ret_dict
 
 class GuildChannel(RawChannel):
     """
     Represents the base for channels in a guild. Do not implement this
-    yourself, instead use `TextChannel`, `VoiceChannel`, or `Thread`.
+    yourself, instead use :class:`TextChannel`, :class:`VoiceChannel`, 
+    or :class:`Thread`.
 
-    This is a child of `RawChannel`.
-
-    Parameters
-    ----------
-    d: :type:`Dict[str, Any]`
-        The dictionary from the Discord API that represents this 
-        channel. 
-        
-        This is passed in in order to initalize the 
-        type with the `RawChannel.from_dict()` function
+    This is a child of :class:`RawChannel`.
 
     Attributes
     ----------
@@ -81,65 +126,289 @@ class GuildChannel(RawChannel):
     nsfw: :type:`bool`
         Whether or not this channel is NSFW (not safe for work).
         Discord might call this "age restricted" or something similar
-    permission_overwrites: :type:`List[ChannelOverwrite]`
+    permission_overwrites: :type:`List[PermissionOverwriteData]`
         The permission overwrites for this channel
     """
-    def __init__(
-        self, 
-        d: Dict[str, Any],
-        guild_id: Snowflake,
-        name: str,
-        position: int,
-        nsfw: bool,
-        permission_overwrites: List[ChannelOverwrite]
-    ) -> None:
-        self = RawChannel.from_dict(d)
+    __slots__ = (
+        "guild",
+        "parent",
+        "name",
+        "position",
+        "nsfw",
+        "permission_overwrites",
+    )
 
-        if self.type == ChannelType.DM or self.type == ChannelType.GROUP_DM:
-            # TODO: Rephase this to be clearer
-            raise TypeError("Expecting GuildChannel, got DMChannel instead")
+    def __init__(self, d: Dict[str, Any], client):
+        RawChannel.__init__(self, d, client)
 
-        self.guild_id = guild_id
-        self.name = name
-        self.position = position
-        self.nsfw = nsfw
-        self.permission_overwrites = permission_overwrites
+        if self.type == ChannelType.DM.value or self.type == ChannelType.GROUP_DM.value:
+            raise TypeError("Expecting Guild channel type, got DM channel type instead")
 
-    @classmethod
-    def from_dict(cls, d: Dict[str, Any]):
-        guild_id: Snowflake = d.get("guild_id")
-        name: str = d.get("name")
-        position: int = d.get("position")
-        nsfw: bool = d.get("nsfw")
-        raw_perm_ows: List[Dict[str, Any]] = d.get("permission_overwrites")
-        permission_overwrites: List[ChannelOverwrite] = []
+        self._guild_id: Snowflake = d.get("guild_id")
+        self.guild: Optional[Guild] = None
+        self._update(d)
 
-        for i in raw_perm_ows:
-            id: Snowflake = i.get("id")
-            type: int = i.get("type")
-            allow: str = i.get("allow")
-            deny: str = i.get("deny")
+    def _update(self, d: Dict[str, Any]):
+        self.name: str = d.get("name")
+        self.position: int = d.get("position")
+        self.nsfw: bool = d.get("nsfw", False)
+        self.permission_overwrites: List[PermissionOverwriteData] = [PermissionOverwriteData(i) for i in d.get("permission_overwrites")] if d.get("permission_overwrites") is not None else []
+        self._parent_id = d.get("parent_id")
+        self.parent: Optional[GuildChannel] = None
 
-            overwrite = ChannelOverwrite()
-            overwrite.id = id
-            overwrite.type = type
-            overwrite.allow = allow
-            overwrite.deny = deny
+    def to_dict(self) -> Dict[str, Any]:
+        ret_dict: Dict[str, Any] = super(RawChannel, self).to_dict()
+        ret_dict.update({
+            "guild_id": self._guild_id,
+            "name": self.name,
+            "position": self.position,
+            "nsfw": self.nsfw,
+            "parent_id": self._parent_id
+        })
 
-            permission_overwrites.append(overwrite)
+        if self.permission_overwrites:
+            ret_dict["permission_overwrites"] = self.permission_overwrites
 
-        return cls(d, guild_id, name, position, nsfw, permission_overwrites)
+        return ret_dict
+
+    def _set_guild(self, new_guild: Guild):
+        self.guild = new_guild
+
+    def _set_parent(self, new_parent: GuildChannel):
+        self.parent = new_parent
 
     @property
     def mention(self) -> Optional[str]:
         """
         Returns a string that can mention this Guild Channel.
-
-        This does type checking to make sure the Guild Channel is not
-        a voice or stage channel.
         """
-        if self.type == ChannelType.GUILD_VOICE or self.type == ChannelType.GUILD_STAGE_VOICE:
-            return None
-
         return f"<#{self.id}>"
 
+    async def move(self, /, position: int, parent: Optional[GuildChannel] = None):
+        """Moves this channel to a new position and/or to a new parent.
+
+        Parameters
+        ----------
+        position: :type:`int`
+            The position to move the channel to.
+        parent: :type:`Optional[GuildChannel]`
+            The new parent to move the channel to. Defaults to None.
+        """
+        self.position = position
+
+        if parent:
+            self._set_parent(parent)
+
+        await self.client.http.modify_channel_positions(
+            self._guild_id, 
+            self.id, 
+            position=position, 
+            parent_id=parent.id if parent is not None else None
+        )
+
+class DMChannel(RawChannel, Messageable):
+    """
+    Represents a DM channel.
+    This is a child of both :class:`RawChannel` and :class:`Messageable`.
+
+    Attributes
+    ----------
+    """
+    __slots__ = ("last_message_id", "recipients", "last_pin_timestamp",)
+
+    @overload
+    def __init__(self, d: DMChannelData, client):
+        ...
+
+    def __init__(self, d: Dict[str, Any], client):
+        RawChannel.__init__(self, d, client)
+        self._update(d)
+
+    def _update(self, d: Dict[str, Any]):
+        self.last_message_id: Optional[Snowflake] = d.get("last_message_id")
+        self.recipients: List[User] = [User.from_dict(self.client, u) for u in d.get("recipients")]
+        raw_last_pin_timestamp: MaybeMissing[Optional[str]] = d.get("last_pin_timestamp", MISSING)
+        self.last_pin_timestamp: MaybeMissing[Optional[datetime]] = MISSING
+        if raw_last_pin_timestamp is not MISSING:
+            self.last_pin_timestamp = datetime.fromisoformat(raw_last_pin_timestamp) if raw_last_pin_timestamp is not None else None
+
+class TextChannel(GuildChannel, Messageable):
+    """
+    Represents a text channel used in a guild.
+
+    This is a child of both :class:`GuildChannel` and :class:`Messageable`.
+
+    Attributes
+    ----------
+    topic: :type:`Optional[str]`
+        The topic of this text channel
+    cooldown: :type:`int`
+        The cooldown or rate limit per user of this text channel
+    last_message_id: :type:`Optional[Snowflake]`
+        The id of the last message sent in this text channel
+    last_pin_timestamp: :type:`Optional[datetime]`
+        The time of the last pin in this text channel
+    permissions: :type:`Optional[str]`
+        The permissions for the invoking user in this text channel.
+        This is only set for slash command interactions
+    """
+    __slots__ = (
+        "topic",
+        "nsfw",
+        "last_message_id",
+        "cooldown",
+        "last_pin_timestamp",
+        "default_auto_archive_duration",
+    )
+
+    @overload
+    def __init__(self, d: Union[TextChannelData, NewsChannelData], client):
+        ...
+
+    def __init__(self, d: Dict[str, Any], client):
+        GuildChannel.__init__(self, d, client)
+        self._update(d)
+
+    def _update(self, d: Dict[str, Any]):
+        self.topic: Optional[str] = d.get("topic")
+        self.cooldown: int = d.get("rate_limit_per_user", 0)
+        self.last_message_id: Optional[Snowflake] = d.get("last_message_id")
+        raw_last_pin_timestamp: MaybeMissing[Optional[str]] = d.get("last_pin_timestamp", MISSING)
+        self.last_pin_timestamp: MaybeMissing[Optional[datetime]] = MISSING
+        if raw_last_pin_timestamp is not MISSING:
+            self.last_pin_timestamp = datetime.fromisoformat(raw_last_pin_timestamp) if raw_last_pin_timestamp is not None else None
+        self.permissions: MaybeMissing[str] = d.get("permissions", MISSING)
+
+    def to_dict(self) -> Dict[str, Any]:
+        ret_dict: Dict[str, Any] = super(GuildChannel, self).to_dict()
+        ret_dict.update({
+            "rate_limit_per_user": self.cooldown
+        })
+
+        if self.topic:
+            ret_dict["topic"] = self.topic
+
+        return ret_dict
+
+    async def edit(
+        self,
+        /,
+        name: Optional[str] = None,
+        type: Optional[int] = None,
+        topic: Optional[str] = None,
+        nsfw: Optional[bool] = None,
+        cooldown: Optional[int] = None,
+        permission_overwrites: Optional[List[PermissionOverwriteData]] = None
+    ):
+        if name:
+            self.name = name
+
+        if type:
+            if not (type == ChannelType.GUILD_TEXT or type == ChannelType.GUILD_NEWS):
+                raise TypeError("You cannot convert a Text Channel to any other channel besides a News Channel!")
+            self.type = type
+
+        if topic:
+            self.topic = topic
+
+        if nsfw is not None:
+            self.nsfw = nsfw
+
+        if cooldown:
+            self.cooldown = cooldown
+
+        if permission_overwrites:
+            self.permission_overwrites = permission_overwrites
+
+        await self.client.http.modify_channel(self.id, self.to_dict())
+
+class VoiceChannel(GuildChannel):
+    """Represents a voice channel used in a guild.
+    This is a child of :class:`GuildChannel`.
+
+    Attributes
+    ----------
+    bitrate: :type:`int`
+        The bitrate of this voice channel
+    user_limit: :type:`int`
+        The user limit of this voice channel
+    rtc_region: :type:`Optional[str]`
+        The region of this voice channel
+    automatic_rtc_region: :type:`bool`
+        Whether or not this voice channel has automatic regions
+    video_quality_mode: :type:`Union[MISSING, int]`
+        The video quality of this voice channel
+    """
+    __slots__ = (
+        "bitrate", 
+        "user_limit", 
+        "rtc_region", 
+        "video_quality_mode"
+    )
+
+    @overload
+    def __init__(self, d: VoiceChannelData, client):
+        ...
+
+    def __init__(self, d: Dict[str, Any], client):
+        GuildChannel.__init__(self, d, client)
+        self._update(d)
+
+    def _update(self, d: Dict[str, Any]):
+        self.bitrate: int = d.get("bitrate")
+        self.user_limit: int = d.get("user_limit")
+        self.rtc_region: Optional[str] = d.get("rtc_region")
+        self.automatic_rtc_region: bool = self.rtc_region is None
+        self.video_quality_mode: MaybeMissing[int] = d.get("video_quality_mode", MISSING)
+
+    def to_dict(self) -> Dict[str, Any]:
+        ret_dict: Dict[str, Any] = super(GuildChannel, self).to_dict()
+        ret_dict.update({
+            "bitrate": self.bitrate,
+            "user_limit": self.user_limit,
+            "rtc_region": self.rtc_region,
+            "video_quality_mode": self.video_quality_mode
+        })
+
+        return ret_dict
+
+    async def edit(
+        self, 
+        /, 
+        name: Optional[str] = None, 
+        bitrate: Optional[int] = None,
+        user_limit: Optional[int] = None,
+        permission_overwrites: Optional[List[PermissionOverwriteData]] = None,
+        rtc_region: Optional[str] = None,
+        video_quality_mode: Optional[int] = None
+    ):
+        if name:
+            self.name = name
+
+        if bitrate:
+            self.bitrate = bitrate
+
+        if user_limit:
+            self.user_limit = user_limit
+
+        if permission_overwrites:
+            self.permission_overwrites = permission_overwrites
+
+        if rtc_region:
+            self.rtc_region = rtc_region
+
+        if video_quality_mode:
+            self.video_quality_mode = video_quality_mode
+
+        await self.client.http.modify_channel(self.id, self.to_dict())
+
+class CategoryChannel(GuildChannel):
+    """Represents a category channel used in a guild.
+    This is a child of :class:`GuildChannel`.
+    """
+    @overload
+    def __init__(self, d: CategoryChannelData, client):
+        ...
+
+    def __init__(self, d: Dict[str, Any], client):
+        GuildChannel.__init__(self, d, client)

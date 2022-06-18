@@ -22,35 +22,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from typing import Any, Dict, Optional
-
-__all__ = (
-    "ActivityTypes",
-    "Activity",
-    "to_activity",
-)
-
-class ActivityTypes:
-    GAME = 0
-    STREAMING = 1
-    LISTENING = 2
-    WATCHING = 3
-    CUSTOM = 4
-    COMPETING = 5
-
-class Activity:
-    name: str
-    type: int
-    url: Optional[str]
-
-def to_activity(d: Dict[str, Any]):
-    name: str = d.get("name")
-    type: int = d.get("type")
-    url: Optional[str] = d.get("url")
-
-    activ = Activity()
-    activ.name = name
-    activ.type = type
-    activ.url = url
-
-    return activ
+from .channel import *
+from .guild import *
+from .message import *
+from .user import *

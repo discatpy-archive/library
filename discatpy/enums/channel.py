@@ -22,20 +22,14 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from typing import Optional
-
-from .snowflake import *
+from enum import Enum
 
 __all__ = (
-    "ChannelType",
-    "ChannelOverwrite",
-    "VoiceRegion",
+    "ChannelType", 
     "VideoQualityModes",
-    "ThreadMetadata",
-    "ThreadMember",
 )
 
-class ChannelType:
+class ChannelType(Enum):
     GUILD_TEXT = 0
     DM = 1
     GUILD_VOICE = 2
@@ -48,33 +42,6 @@ class ChannelType:
     GUILD_PRIVATE_THREAD = 12
     GUILD_STAGE_VOICE = 13
 
-class ChannelOverwrite:
-    id: Snowflake
-    type: int
-    allow: str
-    deny: str
-
-class VoiceRegion:
-    id: str
-    name: str
-    optimal: bool
-    deprecated: bool
-    custom: bool
-
-class VideoQualityModes:
+class VideoQualityModes(Enum):
     AUTO = 1
     FULL = 2
-
-class ThreadMetadata:
-    archived: bool
-    auto_archive_duration: int
-    archive_timestamp: int # TODO: Maybe convert this to a more appropriate type for "ISO8601 timestamp"
-    locked: bool
-    invitable: Optional[bool]
-    create_timestamp: Optional[int] # TODO: Maybe convert this to a more appropriate type for "ISO8601 timestamp"
-
-class ThreadMember:
-    id: Optional[Snowflake]
-    user_id: Optional[Snowflake]
-    join_timestamp: int # TODO: Maybe convert this to a more appropriate type for "ISO8601 timestamp"
-    flags: int
