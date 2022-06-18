@@ -23,7 +23,7 @@ DEALINGS IN THE SOFTWARE.
 """
 
 import asyncio
-from typing import Any, Generic, Union, _SpecialForm, TypeVar
+from typing import Any, Generic, TypeVar, Union, _SpecialForm
 
 from .types.snowflake import *
 
@@ -44,8 +44,10 @@ __all__ = (
 
 T = TypeVar("T")
 
+
 class Unset:
     pass
+
 
 class DataEvent(asyncio.Event, Generic[T]):
     def __init__(self, *args, **kwargs) -> None:
@@ -68,6 +70,7 @@ class DataEvent(asyncio.Event, Generic[T]):
         super().clear()
         self.data = Unset()
 
+
 class _MissingDefine:
     __name__ = "MISSING"
 
@@ -83,11 +86,14 @@ class _MissingDefine:
     def __str__(self):
         return self.__repr__()
 
+
 MISSING: Any = _MissingDefine()
+
 
 @_SpecialForm
 def MaybeMissing(self, parameters):
     return Union[type(MISSING), parameters]
+
 
 def _ensure_snowflake_is_int(sf: Snowflake) -> int:
     ret_id = sf
@@ -96,7 +102,9 @@ def _ensure_snowflake_is_int(sf: Snowflake) -> int:
 
     return ret_id
 
+
 DISCORD_EPOCH = 1420070400000
+
 
 def snowflake_timestamp(id: Snowflake) -> int:
     """
@@ -108,6 +116,7 @@ def snowflake_timestamp(id: Snowflake) -> int:
         The snowflake to extract from
     """
     return (_ensure_snowflake_is_int(id) >> 22) + DISCORD_EPOCH
+
 
 def snowflake_iwid(id: Snowflake) -> int:
     """
@@ -121,6 +130,7 @@ def snowflake_iwid(id: Snowflake) -> int:
     """
     return (_ensure_snowflake_is_int(id) & 0x3E0000) >> 17
 
+
 def snowflake_ipid(id: Snowflake) -> int:
     """
     The internal process ID stored in this object's
@@ -133,6 +143,7 @@ def snowflake_ipid(id: Snowflake) -> int:
     """
     return (_ensure_snowflake_is_int(id) & 0x1F000) >> 12
 
+
 def snowflake_increment(id: Snowflake) -> int:
     """
     The increment of the object's Snowflake ID.
@@ -144,6 +155,7 @@ def snowflake_increment(id: Snowflake) -> int:
     """
     return _ensure_snowflake_is_int(id) & 0xFFF
 
+
 _KT = TypeVar("_KT")
 _VT = TypeVar("_VT")
 
@@ -154,6 +166,7 @@ class MultipleValuesDict(dict):
     It does this by having the actual value in the dictionary be a list with all
     of those values.
     """
+
     def __setitem__(self, __k: _KT, __v: _VT) -> None:
         val = __v
         if __k in self:
@@ -166,12 +179,14 @@ class MultipleValuesDict(dict):
 
         return super().__setitem__(__k, val)
 
-    def get_one(self, __key: _KT, __index: int, /, _type: type = None, default: Any = None):
+    def get_one(
+        self, __key: _KT, __index: int, /, _type: type = None, default: Any = None
+    ):
         """Gets one value from a key that matches index and optionally type.
 
         If there is only one value assigned to a key, the key provided is not found, or
         there is no value that meets the conditions provided, the default value will be returned.
-        
+
         Parameters
         ----------
         __key: :type:`_KT`

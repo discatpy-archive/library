@@ -24,14 +24,14 @@ DEALINGS IN THE SOFTWARE.
 from __future__ import annotations
 
 import asyncio
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from .internal.dispatcher import *
-from .internal.events import *
-from .types.snowflake import *
 from .cache import ClientCache
 from .gateway import GatewayClient
 from .http import HTTPClient
+from .internal.dispatcher import *
+from .internal.events import *
+from .types.snowflake import *
 from .user import User
 
 if TYPE_CHECKING:
@@ -42,9 +42,8 @@ if TYPE_CHECKING:
 
     DiscordModel = Union[RawChannel, Guild, User]
 
-__all__ = (
-    "Client",
-)
+__all__ = ("Client",)
+
 
 def _fetch_function_from_type(http: HTTPClient, t: Union[type, str]):
     t_name: str = ""
@@ -61,6 +60,7 @@ def _fetch_function_from_type(http: HTTPClient, t: Union[type, str]):
         return http.get_user
     else:
         raise TypeError("invalid type passed in")
+
 
 class Client(EventsMixin):
     """
@@ -89,8 +89,9 @@ class Client(EventsMixin):
     dispatcher: :type:`Dispatcher`
         The event dispatcher for Gateway events
     """
+
     def __init__(self, intents: int, api_version: Optional[int] = None):
-        self.gateway: Optional[GatewayClient] = None # initalized later
+        self.gateway: Optional[GatewayClient] = None  # initalized later
         self.http: HTTPClient = HTTPClient(api_version=api_version)
         self.cache: ClientCache = ClientCache(self)
         self.me: Optional[User] = None
@@ -98,7 +99,7 @@ class Client(EventsMixin):
         self.running: bool = False
         self.intents: int = intents
         self.dispatcher: Dispatcher = Dispatcher()
-    
+
     @property
     def token(self):
         """
@@ -175,6 +176,7 @@ class Client(EventsMixin):
         token: :type:`str`
             The token for the bot user
         """
+
         async def wrapped():
             await self.login(token)
             await self.gateway_run()
@@ -184,7 +186,7 @@ class Client(EventsMixin):
     def grab(self, id: Snowflake, _type: Union[DiscordModel, str]):
         """Grabbing an object is attempting to get it from the cache then fetching it from
         the API if it doesn't exist in the cache.
-        
+
         Parameters
         ----------
         id: :type:`Snowflake`

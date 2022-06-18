@@ -23,23 +23,23 @@ DEALINGS IN THE SOFTWARE.
 """
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from .types.snowflake import *
 from .message import Message
+from .types.snowflake import *
 
 if TYPE_CHECKING:
     from .client import Client
     from .embed import Embed
 
-__all__ = (
-    "Messageable",
-)
+__all__ = ("Messageable",)
+
 
 class Messageable:
     """
     An abstract type for API types that can send messages.
     """
+
     client: Client
     raw_id: Snowflake
 
@@ -72,7 +72,7 @@ class Messageable:
             embed=embed,
             embeds=embeds,
             msg_reference=None,
-            tts=tts
+            tts=tts,
         )
 
     async def bulk_delete(self, messages: List[Message]):
@@ -87,22 +87,35 @@ class Messageable:
         ids: List[Snowflake] = [m.id for m in messages]
         return await self.client.http.bulk_delete_messages(ids, self.raw_id)
 
-    async def history(self, limit: int = 50, /, around: Optional[Snowflake] = None, before: Optional[Snowflake] = None, after: Optional[Snowflake] = None):
+    async def history(
+        self,
+        limit: int = 50,
+        /,
+        around: Optional[Snowflake] = None,
+        before: Optional[Snowflake] = None,
+        after: Optional[Snowflake] = None,
+    ):
         # TODO: Move iterator implementation to a separate class
         msgs: List[Dict[str, Any]]
         if limit <= 100:
-            msgs = await self.client.http.get_messages(self.raw_id, around, before, after, limit)
+            msgs = await self.client.http.get_messages(
+                self.raw_id, around, before, after, limit
+            )
         else:
             # paginator mode activated
             amount_of_loops = limit // 100
             msgs = []
             for _ in range(amount_of_loops):
-                msgs.extend(await self.client.http.get_messages(self.raw_id, around, before, after, limit))
+                msgs.extend(
+                    await self.client.http.get_messages(
+                        self.raw_id, around, before, after, limit
+                    )
+                )
                 if len(msgs) != 100:
                     # we either hit the limit of the channel or the limit according to the parameters
                     break
                 else:
-                    if limit > 100: 
+                    if limit > 100:
                         limit -= 100
                     before = msgs[0].get("id")
 
@@ -110,7 +123,9 @@ class Messageable:
             yield Message(m, self.client)
 
     async def pins(self):
-        msgs: List[Dict[str, Any]] = await self.client.http.get_pinned_messages(self.raw_id)
+        msgs: List[Dict[str, Any]] = await self.client.http.get_pinned_messages(
+            self.raw_id
+        )
 
         for m in msgs:
             yield Message(m, self.client)

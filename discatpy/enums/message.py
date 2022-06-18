@@ -29,11 +29,13 @@ __all__ = (
     "MessageType",
 )
 
+
 class MessageActivityType(Enum):
     JOIN = 1
     SPECTATE = 2
     LISTEN = 3
     JOIN_REQUEST = 5
+
 
 class MessageType(Enum):
     DEFAULT = 0

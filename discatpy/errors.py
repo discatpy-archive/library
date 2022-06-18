@@ -22,7 +22,8 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from typing import Any, Dict, List, Tuple, Union, Optional
+from typing import Any, Dict, List, Optional, Tuple, Union
+
 from aiohttp import ClientResponse
 
 __all__ = (
@@ -30,12 +31,15 @@ __all__ = (
     "HTTPException",
 )
 
+
 class DisCatPyException(Exception):
     """
     Basis for all exceptions in DisCatPy. If you wanted to catch any exception
     thrown by DisCatPy, you would catch this exception.
     """
+
     pass
+
 
 def _shorten_error_dict(d: Dict[str, Any], key: str = "") -> Dict[str, str]:
     ret_items: List[Tuple[str, str]] = []
@@ -50,11 +54,14 @@ def _shorten_error_dict(d: Dict[str, Any], key: str = "") -> Dict[str, str]:
                 # recursively go through the dict to find the _errors list
                 ret_items.extend(_shorten_error_dict(val, new_k).items())
             else:
-                ret_items.append( (new_k, " ".join(x.get("message", "") for x in _errors)) )
+                ret_items.append(
+                    (new_k, " ".join(x.get("message", "") for x in _errors))
+                )
         else:
-            ret_items.append( (new_k, val) )
+            ret_items.append((new_k, val))
 
     return dict(ret_items)
+
 
 class HTTPException(DisCatPyException):
     """
@@ -71,7 +78,10 @@ class HTTPException(DisCatPyException):
     code :type:`int`
         The Discord specfic error code of the request.
     """
-    def __init__(self, response: ClientResponse, data: Optional[Union[Dict[str, Any], str]]):
+
+    def __init__(
+        self, response: ClientResponse, data: Optional[Union[Dict[str, Any], str]]
+    ):
         self.response = response
         self.status = response.status
         self.code: int
@@ -97,5 +107,6 @@ class HTTPException(DisCatPyException):
 
         format += ")"
 
-        super().__init__(format.format(response.status, response.reason, self.code, self.text))
-
+        super().__init__(
+            format.format(response.status, response.reason, self.code, self.text)
+        )

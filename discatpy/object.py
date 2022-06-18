@@ -23,18 +23,17 @@ DEALINGS IN THE SOFTWARE.
 """
 from __future__ import annotations
 
-from typing import Any, Dict, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict
 
 if TYPE_CHECKING:
     from .client import Client
 
-__all__ = (
-    "DiscordObject",
-)
+__all__ = ("DiscordObject",)
+
 
 class DiscordObject:
     """
-    A raw Discord Object. 
+    A raw Discord Object.
     All models here from the Discord API use this as a base.
 
     Attributes
@@ -44,8 +43,9 @@ class DiscordObject:
     d: :type:`Dict[str, Any]`
         The raw data from the API.
     """
+
     client: Client
-    d: Dict[str, Any] 
+    d: Dict[str, Any]
 
     def __init__(self, d: Dict[str, Any], client: Client):
         self.client = client

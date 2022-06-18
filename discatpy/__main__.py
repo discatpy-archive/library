@@ -22,23 +22,26 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
+import platform
 import sys
 
-import discatpy
-import platform
 import aiohttp
+
+import discatpy
+
 
 def neofetch():
     print(
-    f"""
+        f"""
 \033[31;40md8888b. d888888b .d8888.  .o88b.  .d8b.  d888888b d8888b. db    db\033[0m      Version: {discatpy.__version__}
 \033[32;40m88  `8D   `88'   88'  YP d8P  Y8 d8' `8b    88    88  `8D `8b  d8'\033[0m      Python Version: {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}-{sys.version_info.releaselevel}
 \033[33;40m88   88    88    `8bo.   8P      88ooo88    88    88oodD'  `8bd8' \033[0m      System Information: {platform.uname().system} {platform.uname().release} {platform.uname().version}
 \033[34;40m88   88    88      `Y8b. 8b      88   88    88    88         88   \033[0m      aiohttp Version: {aiohttp.__version__}
-\033[35;40m88  .8D   .88.   db   8D Y8b  d8 88   88    88    88         88   \033[0m 
+\033[35;40m88  .8D   .88.   db   8D Y8b  d8 88   88    88    88         88   \033[0m
 \033[36;40mY8888D' Y888888P `8888Y'  `Y88P' YP   YP    YP    88         YP   \033[0m
     """
     )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     neofetch()

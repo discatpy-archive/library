@@ -25,14 +25,14 @@ DEALINGS IN THE SOFTWARE.
 from typing import Any, Dict, Optional, Union, overload
 
 from discord_typings import UserData
-from .types.snowflake import *
+
 from .asset import Asset
 from .object import DiscordObject
+from .types.snowflake import *
 from .utils import MISSING, MaybeMissing
 
-__all__ = (
-    "User",
-)
+__all__ = ("User",)
+
 
 class User(DiscordObject):
     """Represents a User type.
@@ -60,6 +60,7 @@ class User(DiscordObject):
     public_flags: :type:`Union[MISSING, int]`
         The public flags for this user
     """
+
     __slots__ = (
         "id",
         "name",
@@ -86,16 +87,28 @@ class User(DiscordObject):
         self.id: Snowflake = d.get("id")
         self.name: str = d.get("username")
         self.discriminator: str = d.get("discriminator")
-        self.avatar: Optional[Asset] = Asset.from_user_avatar(self.client, self.id, d.get("avatar")) if d.get("avatar") else Asset.from_default_user_avatar(self.client, int(self.discriminator))
+        self.avatar: Optional[Asset] = (
+            Asset.from_user_avatar(self.client, self.id, d.get("avatar"))
+            if d.get("avatar")
+            else Asset.from_default_user_avatar(self.client, int(self.discriminator))
+        )
         self.bot: MaybeMissing[bool] = d.get("bot", MISSING)
         self.tfa_enabled: MaybeMissing[bool] = d.get("mfa_enabled", MISSING)
         self.accent_color: MaybeMissing[Optional[int]] = MISSING
         if d.get("accent_color", MISSING) is not MISSING:
-            self.accent_color = int(d.get("accent_color")) if d.get("accent_color") is not None else None
+            self.accent_color = (
+                int(d.get("accent_color"))
+                if d.get("accent_color") is not None
+                else None
+            )
         _banner_hash: MaybeMissing[Optional[str]] = d.get("banner", MISSING)
         self.banner: MaybeMissing[Optional[Asset]] = MISSING
         if _banner_hash is not MISSING:
-            self.banner = Asset.from_user_banner(self.client, self.id, _banner_hash) if _banner_hash is not None else None
+            self.banner = (
+                Asset.from_user_banner(self.client, self.id, _banner_hash)
+                if _banner_hash is not None
+                else None
+            )
         # TODO: Locales
         self.flags: MaybeMissing[int] = d.get("flags", MISSING)
         self.premium_type: MaybeMissing[int] = d.get("premium_type", MISSING)

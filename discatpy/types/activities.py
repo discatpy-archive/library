@@ -30,6 +30,7 @@ __all__ = (
     "to_activity",
 )
 
+
 class ActivityTypes:
     GAME = 0
     STREAMING = 1
@@ -38,10 +39,12 @@ class ActivityTypes:
     CUSTOM = 4
     COMPETING = 5
 
+
 class Activity:
     name: str
     type: int
     url: Optional[str]
+
 
 def to_activity(d: Dict[str, Any]):
     name: str = d.get("name")

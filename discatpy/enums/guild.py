@@ -34,6 +34,7 @@ __all__ = (
     "PremiumTier",
 )
 
+
 class VerificationLevel(Enum):
     NONE = 0
     LOW = 1
@@ -41,24 +42,29 @@ class VerificationLevel(Enum):
     HIGH = 3
     VERY_HIGH = 4
 
+
 class MessageNotificationLevel(Enum):
     ALL_MESSAGES = 0
     ONLY_MENTIONS = 1
+
 
 class ExplicitContentFilterLevel(Enum):
     DISABLED = 0
     MEMBERS_WITHOUT_ROLES = 1
     ALL_MEMBERS = 2
 
+
 class MFALevel(Enum):
     NONE = 0
     ELEVATED = 1
+
 
 class NSFWLevel(Enum):
     DEFAULT = 0
     EXPLICIT = 1
     SAFE = 2
     AGE_RESTRICTED = 3
+
 
 class PremiumTier(Enum):
     NONE = 0

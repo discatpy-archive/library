@@ -25,9 +25,10 @@ DEALINGS IN THE SOFTWARE.
 from enum import Enum
 
 __all__ = (
-    "ChannelType", 
+    "ChannelType",
     "VideoQualityModes",
 )
+
 
 class ChannelType(Enum):
     GUILD_TEXT = 0
@@ -41,6 +42,7 @@ class ChannelType(Enum):
     GUILD_PUBLIC_THREAD = 11
     GUILD_PRIVATE_THREAD = 12
     GUILD_STAGE_VOICE = 13
+
 
 class VideoQualityModes(Enum):
     AUTO = 1

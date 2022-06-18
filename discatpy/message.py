@@ -23,35 +23,37 @@ DEALINGS IN THE SOFTWARE.
 """
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Union, overload, TYPE_CHECKING
-from typing_extensions import Literal, NotRequired, TypedDict
 from datetime import datetime
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, overload
 
-from discord_typings import (
+from discord_typings import (  # MessageActivityData, # TODO: Find out why this can't import without errors
     MessageData,
-    MessageReferenceData,
     MessageReactionData,
-    #MessageActivityData, # TODO: Find out why this can't import without errors
+    MessageReferenceData,
 )
+from typing_extensions import Literal, NotRequired, TypedDict
+
 from .enums.channel import ChannelType
-from .types.snowflake import *
 from .object import DiscordObject
+from .types.snowflake import *
 from .user import User
 from .utils import MISSING, MaybeMissing
 
 if TYPE_CHECKING:
     from .channel import RawChannel
     from .embed import Embed
-    from .guild import GuildMember, Guild
+    from .guild import Guild, GuildMember
 
 __all__ = (
     "MessageActivityData",
     "Message",
 )
 
+
 class MessageActivityData(TypedDict):
-    type: Literal[1, 2, 3, 5] # MessageActivityTypes
+    type: Literal[1, 2, 3, 5]  # MessageActivityTypes
     party_id: NotRequired[str]
+
 
 class Message(DiscordObject):
     """
@@ -96,6 +98,7 @@ class Message(DiscordObject):
     referenced_message: :type:`Message`
         The referenced message of this message
     """
+
     __slots__ = (
         "channel",
         "guild",
@@ -136,21 +139,43 @@ class Message(DiscordObject):
         self._member: Optional[Dict[str, Any]] = d.get("member")
         self.content: str = d.get("content")
         self.timestamp: datetime = datetime.fromisoformat(d.get("timestamp"))
-        self.edited_timestamp: Optional[datetime] = datetime.fromisoformat(d.get("edited_timestamp")) if d.get("edited_timestamp") is not None else None
+        self.edited_timestamp: Optional[datetime] = (
+            datetime.fromisoformat(d.get("edited_timestamp"))
+            if d.get("edited_timestamp") is not None
+            else None
+        )
         self.tts: bool = d.get("tts")
         self.mention_everyone: bool = d.get("mention_everyone")
         # TODO: mentions, attachments, embeds
-        self.reactions: MaybeMissing[List[MessageReactionData]] = [MessageReactionData(r) for r in d.get("reactions")] if d.get("reactions", MISSING) is not MISSING else MISSING
+        self.reactions: MaybeMissing[List[MessageReactionData]] = (
+            [MessageReactionData(r) for r in d.get("reactions")]
+            if d.get("reactions", MISSING) is not MISSING
+            else MISSING
+        )
         self.pinned: bool = d.get("pinned")
         self.type: int = d.get("type")
         # TODO: application, application_id
-        self.activity: MaybeMissing[MessageActivityData] = MessageActivityData(d.get("activity")) if d.get("activity", MISSING) is not MISSING else MISSING
-        self.message_reference: MaybeMissing[MessageReferenceData] = MessageReferenceData(d.get("message_reference")) if d.get("message_reference", MISSING) is not MISSING else MISSING
+        self.activity: MaybeMissing[MessageActivityData] = (
+            MessageActivityData(d.get("activity"))
+            if d.get("activity", MISSING) is not MISSING
+            else MISSING
+        )
+        self.message_reference: MaybeMissing[MessageReferenceData] = (
+            MessageReferenceData(d.get("message_reference"))
+            if d.get("message_reference", MISSING) is not MISSING
+            else MISSING
+        )
         self.flags: MaybeMissing[int] = d.get("flags", MISSING)
-        raw_referenced_message: MaybeMissing[Optional[Dict[str, Any]]] = d.get("referenced_message", MISSING)
+        raw_referenced_message: MaybeMissing[Optional[Dict[str, Any]]] = d.get(
+            "referenced_message", MISSING
+        )
         self.referenced_message: MaybeMissing[Optional[Message]] = MISSING
         if raw_referenced_message is not MISSING:
-            self.referenced_message = Message(raw_referenced_message, self.client) if raw_referenced_message is not None else None
+            self.referenced_message = (
+                Message(raw_referenced_message, self.client)
+                if raw_referenced_message is not None
+                else None
+            )
         # TODO: interactions, thread, sticker_items
 
     def _set_channel(self, new_channel: RawChannel):
@@ -186,7 +211,9 @@ class Message(DiscordObject):
         tts: :type:`bool`
             Whether or not the reply should be TTS
         """
-        message_reference = MessageReferenceData(message_id=self.id, channel_id=self._channel_id)
+        message_reference = MessageReferenceData(
+            message_id=self.id, channel_id=self._channel_id
+        )
 
         if self._guild_id:
             message_reference["guild_id"] = self._guild_id
@@ -197,7 +224,7 @@ class Message(DiscordObject):
             embed=embed,
             embeds=embeds,
             msg_reference=message_reference,
-            tts=tts
+            tts=tts,
         )
 
     async def edit(
@@ -259,6 +286,8 @@ class Message(DiscordObject):
     async def crosspost(self):
         """Crossposts this message to following channels of the parent News Channel."""
         if self.channel.type != ChannelType.GUILD_NEWS:
-            raise TypeError("Parent channel of this message must be a News Channel to crosspost!")
+            raise TypeError(
+                "Parent channel of this message must be a News Channel to crosspost!"
+            )
 
         await self.client.http.crosspost_message(self._channel_id, self.id)

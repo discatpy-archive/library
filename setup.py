@@ -1,10 +1,13 @@
-import setuptools
 import os
 import re
+
+import setuptools
+
 
 def get_abspath(rel_path: str):
     cur = os.path.abspath(os.path.dirname(__file__))
     return os.path.join(cur, rel_path)
+
 
 # Get long description fron README.md
 long_desc = ""
@@ -15,7 +18,9 @@ with open(get_abspath("README.md"), "r", encoding="utf-8") as ldf:
 version = ""
 with open(get_abspath("discatpy/__init__.py"), "r") as fp:
     # I hate regex so much.
-    version = re.search(r"^__version__\s*=\s*['\"]([^'\"]*)['\"]", fp.read(), re.MULTILINE).group(1)
+    version = re.search(
+        r"^__version__\s*=\s*['\"]([^'\"]*)['\"]", fp.read(), re.MULTILINE
+    ).group(1)
 
 # Get the requirements from requirements.txt
 requirements = []
@@ -38,7 +43,7 @@ setuptools.setup(
     long_description=long_desc,
     long_description_content_type="text/markdown",
     url="https://github.com/EmreTech/DisCatPy",
-    project_urls = {
+    project_urls={
         "Bug Tracker": "https://github.com/EmreTech/DisCatPy/issues",
     },
     classifiers=[
@@ -47,8 +52,7 @@ setuptools.setup(
         "Operating System :: OS Independent",
         "Development Status :: 3 - Alpha",
         "Framework :: AsyncIO",
-        "Framework :: aiohttp"
-        "Intended Audience :: Developers",
+        "Framework :: aiohttp" "Intended Audience :: Developers",
         "Natural Language :: English",
         "Topic :: Internet",
         "Topic :: Software Development :: Libraries",

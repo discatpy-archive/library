@@ -24,9 +24,8 @@ DEALINGS IN THE SOFTWARE.
 
 from enum import Enum
 
-__all__ = (
-    "PremiumTypes",
-)
+__all__ = ("PremiumTypes",)
+
 
 class PremiumTypes(Enum):
     NONE = 0

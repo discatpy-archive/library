@@ -23,28 +23,28 @@ DEALINGS IN THE SOFTWARE.
 """
 
 import asyncio
-import json
-import random
-import aiohttp
-import platform
 import datetime
+import json
+import platform
+import random
 import zlib
-from typing import Any, Dict, List, Union, Optional
+from typing import Any, Dict, List, Optional, Union
+
+import aiohttp
 
 from .types.activities import Activity
-from .types.gateway import GatewayPayload, GatewayOpcode, to_gateway_payload
+from .types.gateway import GatewayOpcode, GatewayPayload, to_gateway_payload
 
-__all__ = (
-    "GatewayClient",
-)
+__all__ = ("GatewayClient",)
 
-ZLIB_SUFFIX = b'\x00\x00\xff\xff'
+ZLIB_SUFFIX = b"\x00\x00\xff\xff"
 
 _identify_connection_properties = {
     "$os": platform.uname().system,
     "$browser": "discatpy",
     "$device": "discatpy",
 }
+
 
 def decompress_msg(inflator, msg: bytes):
     """
@@ -68,10 +68,11 @@ def decompress_msg(inflator, msg: bytes):
     out_str = buff.decode("utf-8")
     return out_str
 
+
 class GatewayClient:
     """
     The Gateway Client between your Bot and Discord
-    
+
     Parameters
     ----------
     ws: :class:`aiohttp.ClientWebSocketResponse`
@@ -81,7 +82,7 @@ class GatewayClient:
     heartbeat_timeout: :class:`int`
         The amount of time (in seconds) to wait for a heartbeat ack
         to come in.
-    
+
     Attributes
     ----------
     inflator: :class:`zlib.decompressobj`
@@ -97,7 +98,13 @@ class GatewayClient:
     keep_alive_task: :class:`Optional[asyncio.Task]`
         The task used to keep the connection alive
     """
-    def __init__(self, ws: aiohttp.ClientWebSocketResponse, client, heartbeat_timeout: float = 30.0):
+
+    def __init__(
+        self,
+        ws: aiohttp.ClientWebSocketResponse,
+        client,
+        heartbeat_timeout: float = 30.0,
+    ):
         self.ws: aiohttp.ClientWebSocketResponse = ws
         self.inflator = zlib.decompressobj()
         self.client = client
@@ -113,7 +120,7 @@ class GatewayClient:
 
     def identify_payload(self):
         """
-        Returns the identifcation payload. 
+        Returns the identifcation payload.
 
         For internal use only.
         """
@@ -124,7 +131,7 @@ class GatewayClient:
                 "intents": self.client.intents,
                 "properties": _identify_connection_properties,
                 "large_threshold": 250,
-            }
+            },
         }
 
         if self.client.me.presence is not None:
@@ -147,7 +154,7 @@ class GatewayClient:
         """
         await self.ws.close(code=code)
         await self.keep_alive_task
-        
+
         if reconnect:
             await self.client._gateway_reconnect.set()
 
@@ -170,12 +177,14 @@ class GatewayClient:
                         "token": self.client.token,
                         "session_id": self.session_id,
                         "seq": self.seq_num,
-                    }
+                    },
                 }
                 await self.ws.send_json(resume_dict)
                 self._gateway_resume = False
 
-            if (datetime.datetime.now() - self._last_heartbeat_ack).total_seconds() > self.heartbeat_timeout:
+            if (
+                datetime.datetime.now() - self._last_heartbeat_ack
+            ).total_seconds() > self.heartbeat_timeout:
                 await self.close(code=1008)
 
             try:
@@ -184,20 +193,27 @@ class GatewayClient:
                 # try to re-establish the connection with the Gateway
                 await self.close(code=1012)
 
-            if msg.type == aiohttp.WSMsgType.BINARY or msg.type == aiohttp.WSMsgType.TEXT:
+            if (
+                msg.type == aiohttp.WSMsgType.BINARY
+                or msg.type == aiohttp.WSMsgType.TEXT
+            ):
                 if msg.type == aiohttp.WSMsgType.BINARY:
                     # compression was used, decompress the message
                     inflated_msg = decompress_msg(self.inflator, msg.data)
                 else:
                     # compression wasn't used
                     inflated_msg = msg.data
-                
+
                 inflated_msg = json.loads(inflated_msg)
                 self.recent_gp = to_gateway_payload(inflated_msg)
 
                 self.seq_num = self.recent_gp.s
                 await self.poll_event()
-            elif msg.type in (aiohttp.WSMsgType.CLOSE, aiohttp.WSMsgType.CLOSED, aiohttp.WSMsgType.CLOSING):
+            elif msg.type in (
+                aiohttp.WSMsgType.CLOSE,
+                aiohttp.WSMsgType.CLOSED,
+                aiohttp.WSMsgType.CLOSING,
+            ):
                 # we got a close code
                 await self.close(reconnect=False)
 
@@ -214,10 +230,12 @@ class GatewayClient:
         # Attempts to reconnect to the Gateway when prompted
         if self.recent_gp.op == GatewayOpcode.RECONNECT:
             await self.close(code=1012)
-        
+
         # This connection session is invalid: if we can resume, then resume. Otherwise, reconnect.
         if self.recent_gp.op == GatewayOpcode.INVALID_SESSION:
-            resumable: bool = self.recent_gp.d if isinstance(self.recent_gp.d, bool) else False
+            resumable: bool = (
+                self.recent_gp.d if isinstance(self.recent_gp.d, bool) else False
+            )
             self._gateway_resume = resumable
             await self.close(code=1012)
 
@@ -226,7 +244,7 @@ class GatewayClient:
             self.heartbeat_interval = self.recent_gp.d["heartbeat_interval"] / 1000
             await self.ws.send_json(self.identify_payload())
             self.keep_alive_task = asyncio.create_task(self.keep_alive_loop())
-        
+
         # Handles a heartbeat acknowledge to prevent our system from thinking the connection is "zombied"
         if self.recent_gp.op == GatewayOpcode.HEARTBEAT_ACK:
             self._last_heartbeat_ack = datetime.datetime.now()
@@ -246,12 +264,19 @@ class GatewayClient:
 
         name = "on_" + self.recent_gp.t.lower()
         await self.client.dispatcher.dispatch(name, *args)
-        
-    async def request_guild_members(self, guild_id: int, user_ids: Optional[Union[int, List[int]]], limit: int = 0, query: str = "", presences: bool = False):
+
+    async def request_guild_members(
+        self,
+        guild_id: int,
+        user_ids: Optional[Union[int, List[int]]],
+        limit: int = 0,
+        query: str = "",
+        presences: bool = False,
+    ):
         """
         Sends a command to the Gateway requesting members from a certain guild.
-        
-        When the chucks of the members are received, they will be automatically 
+
+        When the chucks of the members are received, they will be automatically
         inserted into the client's cache.
 
         Parameters
@@ -274,7 +299,7 @@ class GatewayClient:
                 "query": query,
                 "limit": limit,
                 "presences": presences,
-            }
+            },
         }
 
         if user_ids is not None:
@@ -282,7 +307,9 @@ class GatewayClient:
 
         await self.ws.send_json(guild_mems_req)
 
-    async def update_presence(self, since: int, activities: List[Activity], status: str, afk: bool):
+    async def update_presence(
+        self, since: int, activities: List[Activity], status: str, afk: bool
+    ):
         """
         Sends a presence update to the Gateway.
 
@@ -304,16 +331,18 @@ class GatewayClient:
                 "activities": [],
                 "status": status,
                 "afk": afk,
-            }
+            },
         }
 
         # TODO: Move this script to a to_dict function for Activities
         for i in activities:
-            new_presence_dict["d"]["activities"].append({
-                "name": i.name,
-                "type": i.type,
-                "url": i.url,
-            })
+            new_presence_dict["d"]["activities"].append(
+                {
+                    "name": i.name,
+                    "type": i.type,
+                    "url": i.url,
+                }
+            )
 
         await self.ws.send_json(new_presence_dict)
 
@@ -324,14 +353,11 @@ class GatewayClient:
         - sends a heartbeat payload with the sequence number
         - wait for the set heartbeat_interval time defined by the server
             - if this is the first heartbeat, then we multiply that time with a jitter (value between 0 and 1)
-        
+
         Do not run this yourself. The Gateway will automatically start an `asyncio.Task` to run this.
         """
         while not self.ws.closed:
-            heartbeat_payload = {
-                "op": GatewayOpcode.HEARTBEAT,
-                "d": self.seq_num
-            }
+            heartbeat_payload = {"op": GatewayOpcode.HEARTBEAT, "d": self.seq_num}
             await self.ws.send_json(heartbeat_payload)
 
             delta = self.heartbeat_interval
