@@ -24,9 +24,12 @@ DEALINGS IN THE SOFTWARE.
 from __future__ import annotations
 
 import asyncio
+from signal import SIGINT, SIGTERM
+import traceback
 from typing import TYPE_CHECKING, Optional
 
 from .cache import ClientCache
+from .flags import Intents
 from .gateway import GatewayClient
 from .http import HTTPClient
 from .internal.dispatcher import *
@@ -89,16 +92,27 @@ class Client(EventsMixin):
     dispatcher: :type:`Dispatcher`
         The event dispatcher for Gateway events
     """
+    __slots__ = (
+        "gateway", 
+        "http", 
+        "cache", 
+        "me", 
+        "running", 
+        "intents", 
+        "dispatcher",
+    )
 
-    def __init__(self, intents: int, api_version: Optional[int] = None):
+    def __init__(self, /, intents: Intents, api_version: Optional[int] = None):
         self.gateway: Optional[GatewayClient] = None  # initalized later
         self.http: HTTPClient = HTTPClient(api_version=api_version)
         self.cache: ClientCache = ClientCache(self)
         self.me: Optional[User] = None
         self._gateway_reconnect = asyncio.Event()
         self.running: bool = False
-        self.intents: int = intents
+        self.intents: Intents = intents
         self.dispatcher: Dispatcher = Dispatcher()
+
+        self.dispatcher.add_listener(self.on_error)
 
     @property
     def token(self):
@@ -116,6 +130,23 @@ class Client(EventsMixin):
         """
         return self.http.api_version
 
+    # Built-in events
+
+    async def on_error(self, exception: Exception):
+        """The default error handler for the client.
+
+        Instead of raising the exception and stopping the entire connection, this prints the traceback
+        on screen.
+
+        Parameters
+        ----------
+        exception: :type:`Exception`
+            The exception of the traceback to print.
+        """
+        traceback.print_exception(type(exception), exception, exception.__traceback__)
+
+    # Running logic
+
     async def login(self, token: str):
         """
         Logs into the bot user and grabs its user object.
@@ -128,9 +159,8 @@ class Client(EventsMixin):
             The token for the bot user
         """
         user_dict = await self.http.login(token)
-        self.me = User.from_dict(self, user_dict)
-        # TODO: Support setting the initial presence
-        self.me.presence = None
+        self.me = User(user_dict, self)
+        self.cache.add_user(self.me)
 
     async def _end_run(self):
         await self.gateway.close(reconnect=False)
@@ -159,13 +189,7 @@ class Client(EventsMixin):
                     # we cannot reconnect, so we must stop the program
                     self.running = False
             except Exception as e:
-                self.running = False
-                await self._end_run()
-                raise e
-
-        # the code is not expected to reach here since the only way to stop the code is
-        # with a keyboard interrupt, which will raise an exception
-        await self._end_run()
+                await self.dispatcher.dispatch("on_error", e)
 
     def run(self, token: str):
         """
@@ -181,7 +205,14 @@ class Client(EventsMixin):
             await self.login(token)
             await self.gateway_run()
 
-        asyncio.run(wrapped())
+        try:
+            asyncio.run(wrapped())
+        except KeyboardInterrupt:
+            pass
+        finally:
+            asyncio.run(self._end_run())
+
+    # Cache/HTTP
 
     def grab(self, id: Snowflake, _type: Union[DiscordModel, str]):
         """Grabbing an object is attempting to get it from the cache then fetching it from

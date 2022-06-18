@@ -35,6 +35,7 @@ from .channel import *
 from .client import *
 from .embed import *
 from .errors import *
+from .flags import *
 from .gateway import *
 from .guild import *
 from .http import *

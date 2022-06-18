@@ -21,6 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
+from __future__ import annotations
 
 import asyncio
 import datetime
@@ -28,25 +29,36 @@ import json
 import platform
 import random
 import zlib
-from typing import Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, List, Optional, Union
+from typing_extensions import TypedDict
 
 import aiohttp
 
-from .types.activities import Activity
-from .types.gateway import GatewayOpcode, GatewayPayload, to_gateway_payload
+from .enums.gateway import GatewayOpcode
+from .types.snowflake import *
 
-__all__ = ("GatewayClient",)
+if TYPE_CHECKING:
+    from .client import Client
+
+__all__ = ("GatewayPayload", "GatewayClient",)
+
+class GatewayPayload(TypedDict):
+    op: int
+    d: Optional[Any]
+    s: Optional[int]
+    t: Optional[str]
+
 
 ZLIB_SUFFIX = b"\x00\x00\xff\xff"
 
 _identify_connection_properties = {
-    "$os": platform.uname().system,
-    "$browser": "discatpy",
-    "$device": "discatpy",
+    "os": platform.uname().system,
+    "browser": "discatpy",
+    "device": "discatpy",
 }
 
 
-def decompress_msg(inflator, msg: bytes):
+def decompress_msg(inflator: zlib._Decompress, msg: bytes):
     """
     Decompresses the message with the provided object from
     zlib.decompressobj().
@@ -77,7 +89,7 @@ class GatewayClient:
     ----------
     ws: :class:`aiohttp.ClientWebSocketResponse`
         The websockets response
-    client
+    client: :class:`Client`
         The Client
     heartbeat_timeout: :class:`int`
         The amount of time (in seconds) to wait for a heartbeat ack
@@ -102,12 +114,12 @@ class GatewayClient:
     def __init__(
         self,
         ws: aiohttp.ClientWebSocketResponse,
-        client,
+        client: Client,
         heartbeat_timeout: float = 30.0,
     ):
         self.ws: aiohttp.ClientWebSocketResponse = ws
         self.inflator = zlib.decompressobj()
-        self.client = client
+        self.client: Client = client
         self.heartbeat_interval: float = 0.0
         self.seq_num: Optional[int] = None
         self.session_id: str = ""
@@ -125,17 +137,16 @@ class GatewayClient:
         For internal use only.
         """
         identify_dict = {
-            "op": GatewayOpcode.IDENTIFY,
+            "op": GatewayOpcode.IDENTIFY.value,
             "d": {
-                "token": self.client.http.token,
-                "intents": self.client.intents,
+                "token": self.client.token,
+                "intents": self.client.intents.value,
                 "properties": _identify_connection_properties,
                 "large_threshold": 250,
             },
         }
 
-        if self.client.me.presence is not None:
-            identify_dict["d"]["presence"] = self.client.user.presence.to_dict()
+        # TODO: Presence support
 
         return identify_dict
 
@@ -172,7 +183,7 @@ class GatewayClient:
         while not self.ws.closed:
             if self._gateway_resume:
                 resume_dict = {
-                    "op": GatewayOpcode.RESUME,
+                    "op": GatewayOpcode.RESUME.value,
                     "d": {
                         "token": self.client.token,
                         "session_id": self.session_id,
@@ -198,16 +209,14 @@ class GatewayClient:
                 or msg.type == aiohttp.WSMsgType.TEXT
             ):
                 if msg.type == aiohttp.WSMsgType.BINARY:
-                    # compression was used, decompress the message
                     inflated_msg = decompress_msg(self.inflator, msg.data)
                 else:
-                    # compression wasn't used
                     inflated_msg = msg.data
 
                 inflated_msg = json.loads(inflated_msg)
-                self.recent_gp = to_gateway_payload(inflated_msg)
+                self.recent_gp = GatewayPayload(inflated_msg)
 
-                self.seq_num = self.recent_gp.s
+                self.seq_num = self.recent_gp["s"]
                 await self.poll_event()
             elif msg.type in (
                 aiohttp.WSMsgType.CLOSE,
@@ -224,29 +233,29 @@ class GatewayClient:
         For internal use only.
         """
         # Manages all event dispatches
-        if self.recent_gp.op == GatewayOpcode.DISPATCH:
+        if self.recent_gp["op"] == GatewayOpcode.DISPATCH.value:
             await self.poll_dispatched_event()
 
         # Attempts to reconnect to the Gateway when prompted
-        if self.recent_gp.op == GatewayOpcode.RECONNECT:
+        if self.recent_gp["op"] == GatewayOpcode.RECONNECT.value:
             await self.close(code=1012)
 
         # This connection session is invalid: if we can resume, then resume. Otherwise, reconnect.
-        if self.recent_gp.op == GatewayOpcode.INVALID_SESSION:
+        if self.recent_gp["op"] == GatewayOpcode.INVALID_SESSION.value:
             resumable: bool = (
-                self.recent_gp.d if isinstance(self.recent_gp.d, bool) else False
+                self.recent_gp["d"] if isinstance(self.recent_gp["d"], bool) else False
             )
             self._gateway_resume = resumable
             await self.close(code=1012)
 
         # Handles the hello message (means we successfully connected) with the identify payload and keep alive loop
-        if self.recent_gp.op == GatewayOpcode.HELLO:
-            self.heartbeat_interval = self.recent_gp.d["heartbeat_interval"] / 1000
+        if self.recent_gp["op"] == GatewayOpcode.HELLO.value:
+            self.heartbeat_interval = self.recent_gp["d"]["heartbeat_interval"] / 1000
             await self.ws.send_json(self.identify_payload())
             self.keep_alive_task = asyncio.create_task(self.keep_alive_loop())
 
         # Handles a heartbeat acknowledge to prevent our system from thinking the connection is "zombied"
-        if self.recent_gp.op == GatewayOpcode.HEARTBEAT_ACK:
+        if self.recent_gp["op"] == GatewayOpcode.HEARTBEAT_ACK.value:
             self._last_heartbeat_ack = datetime.datetime.now()
 
     async def poll_dispatched_event(self):
@@ -258,17 +267,17 @@ class GatewayClient:
         args: List[Any] = ()
 
         # TODO: Parse event data into arguments
-        if self.recent_gp.t == "READY":
-            self.session_id = self.recent_gp.d["session_id"]
+        if self.recent_gp["t"] == "READY":
+            self.session_id = self.recent_gp["d"]["session_id"]
             # TODO: Add (unavailable) guilds to the client cache
 
-        name = "on_" + self.recent_gp.t.lower()
+        name = "on_" + self.recent_gp["t"].lower()
         await self.client.dispatcher.dispatch(name, *args)
 
     async def request_guild_members(
         self,
-        guild_id: int,
-        user_ids: Optional[Union[int, List[int]]],
+        guild_id: Snowflake,
+        user_ids: Optional[Union[Snowflake, List[Snowflake]]] = None,
         limit: int = 0,
         query: str = "",
         presences: bool = False,
@@ -293,7 +302,7 @@ class GatewayClient:
             If we want to grab the presences of the members. Set to False by default
         """
         guild_mems_req = {
-            "op": GatewayOpcode.REQUEST_GUILD_MEMBERS,
+            "op": GatewayOpcode.REQUEST_GUILD_MEMBERS.value,
             "d": {
                 "guild_id": str(guild_id),
                 "query": query,
@@ -308,7 +317,7 @@ class GatewayClient:
         await self.ws.send_json(guild_mems_req)
 
     async def update_presence(
-        self, since: int, activities: List[Activity], status: str, afk: bool
+        self, since: int, status: str, afk: bool
     ):
         """
         Sends a presence update to the Gateway.
@@ -325,7 +334,7 @@ class GatewayClient:
             If the bot is AFK or not
         """
         new_presence_dict = {
-            "op": GatewayOpcode.PRESENCE_UPDATE,
+            "op": GatewayOpcode.PRESENCE_UPDATE.value,
             "d": {
                 "since": since,
                 "activities": [],
@@ -334,15 +343,7 @@ class GatewayClient:
             },
         }
 
-        # TODO: Move this script to a to_dict function for Activities
-        for i in activities:
-            new_presence_dict["d"]["activities"].append(
-                {
-                    "name": i.name,
-                    "type": i.type,
-                    "url": i.url,
-                }
-            )
+        # TODO: Activities
 
         await self.ws.send_json(new_presence_dict)
 
@@ -357,7 +358,7 @@ class GatewayClient:
         Do not run this yourself. The Gateway will automatically start an `asyncio.Task` to run this.
         """
         while not self.ws.closed:
-            heartbeat_payload = {"op": GatewayOpcode.HEARTBEAT, "d": self.seq_num}
+            heartbeat_payload = {"op": GatewayOpcode.HEARTBEAT.value, "d": self.seq_num}
             await self.ws.send_json(heartbeat_payload)
 
             delta = self.heartbeat_interval
