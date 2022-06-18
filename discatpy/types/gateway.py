@@ -31,11 +31,13 @@ __all__ = (
     "to_gateway_payload",
 )
 
+
 class GatewayPayload:
     op: int
-    d: Any # most of the time this is Dict[str, Any], but sometimes it can be some other type
+    d: Any  # most of the time this is Dict[str, Any], but sometimes it can be some other type
     s: Optional[int]
     t: Optional[str]
+
 
 class GatewayOpcode:
     DISPATCH = 0
@@ -49,6 +51,7 @@ class GatewayOpcode:
     INVALID_SESSION = 9
     HELLO = 10
     HEARTBEAT_ACK = 11
+
 
 # To specify multiple intents, use FIRST | SECOND | THIRD...
 # TODO: Remove the comment above (it's a note for myself later on)
@@ -70,6 +73,7 @@ class GatewayIntents:
     DIRECT_MESSAGE_TYPING = 1 << 14
     GUILD_MESSAGE_CONTENT = 1 << 15
     GUILD_SCHEDULED_EVENTS = 1 << 16
+
 
 def to_gateway_payload(d: Dict[str, Any]):
     op: int = d.get("op")

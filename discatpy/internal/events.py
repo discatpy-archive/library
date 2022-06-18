@@ -23,17 +23,17 @@ DEALINGS IN THE SOFTWARE.
 """
 
 from typing import List
+
 from .dispatcher import *
 
-__all__ = (
-    "EventsMixin",
-)
+__all__ = ("EventsMixin",)
+
 
 class EventsMixin:
     """
     This mixin adds Discord Gateway events functionality like listening to an event
     or all the avaliable event types out there.
-    
+
     This is for internal use only.
     """
 
@@ -110,11 +110,12 @@ class EventsMixin:
         event: :type:`str`
             The event to listen for
         """
+
         def wrapper(func):
             name = func.__name__
             if event != name:
                 name = event
-            
+
             if name not in self.valid_events:
                 raise ValueError("Event name provided is not a valid event!")
 

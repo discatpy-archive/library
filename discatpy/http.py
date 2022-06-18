@@ -22,32 +22,31 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
+import asyncio
+import datetime
+import json
+import logging
+import sys
 from re import M
 from typing import Any, Dict, List, Optional, Union
 from urllib.parse import quote as urlquote
-import sys
-import asyncio
+
 import aiohttp
-import json
-import datetime
-import logging
 import discord_typings
 
 from . import __version__
-from .enums.channel import ChannelType
-from .types.snowflake import *
 from .embed import Embed
+from .enums.channel import ChannelType
 from .errors import DisCatPyException, HTTPException
-from .utils import DataEvent, MISSING, MaybeMissing
+from .types.snowflake import *
+from .utils import MISSING, DataEvent, MaybeMissing
 
-__all__ = (
-    "Route",
-    "HTTPClient"
-)
+__all__ = ("Route", "HTTPClient")
 
 _log = logging.getLogger(__name__)
 
 VALID_API_VERSIONS: List[int] = [9, 10]
+
 
 class Route:
     """
@@ -93,23 +92,35 @@ class Route:
         return "{0}:{1}".format(self.method, self.path)
 
     def get_bucket(self, shared_bucket_hash: str) -> str:
-        return f"{self.guild_id}:{self.channel_id}:{self.path}" if shared_bucket_hash is None else f"{self.guild_id}:{self.channel_id}:{shared_bucket_hash}"
+        return (
+            f"{self.guild_id}:{self.channel_id}:{self.path}"
+            if shared_bucket_hash is None
+            else f"{self.guild_id}:{self.channel_id}:{shared_bucket_hash}"
+        )
 
     def grab_url(self, api_version: str) -> str:
         url = self.base.format(api_version) + self.path
         if self._parameters:
-            url = url.format_map({k: urlquote(v) if isinstance(v, str) else v for k, v in self._parameters.items()})
+            url = url.format_map(
+                {
+                    k: urlquote(v) if isinstance(v, str) else v
+                    for k, v in self._parameters.items()
+                }
+            )
 
         return url
+
 
 def _get_user_agent():
     user_agent = "DiscordBot (https://github.com/EmreTech/DisCatPy.git, {0}) Python/{1.major}.{1.minor}.{1.micro}"
     return user_agent.format(__version__, sys.version_info)
 
+
 def _calculate_ratelimit_delta(reset_timestamp: float) -> float:
     now = datetime.datetime.now()
     reset = datetime.datetime.fromtimestamp(float(reset_timestamp))
     return (reset - now).total_seconds()
+
 
 def query_parameters(**parameters: Dict[str, Any]):
     ret_url: str = ""
@@ -128,6 +139,7 @@ def query_parameters(**parameters: Dict[str, Any]):
         ret_url += urlquote(str(v))
 
     return ret_url
+
 
 class HTTPClient:
     """
@@ -152,9 +164,15 @@ class HTTPClient:
         Do not modify this
     """
 
-    def __init__(self, api_version: Optional[int] = None, connector: Optional[aiohttp.BaseConnector] = None):
+    def __init__(
+        self,
+        api_version: Optional[int] = None,
+        connector: Optional[aiohttp.BaseConnector] = None,
+    ):
         self.connector = connector
-        self._session: Optional[aiohttp.ClientSession] = None # initalized later by login
+        self._session: Optional[
+            aiohttp.ClientSession
+        ] = None  # initalized later by login
         self._global_ratelimit: DataEvent = DataEvent()
         self._bucket_ratelimits: Dict[str, DataEvent] = {}
         self._buckets: Dict[str, str] = {}
@@ -170,23 +188,19 @@ class HTTPClient:
         Recreates the session if it's closed.
         """
         if self._session.closed:
-            self._session = aiohttp.ClientSession(
-                connector=self.connector
-            )
+            self._session = aiohttp.ClientSession(connector=self.connector)
 
     async def ws_connect(self, url: str):
         """
-        Starts a websocket connection. 
-        
+        Starts a websocket connection.
+
         This is only used for the Gateway.
         """
         kwargs = {
             "max_msg_size": 0,
             "timeout": 30.0,
             "autoclose": False,
-            "headers": {
-                "User-Agent": self.user_agent
-            },
+            "headers": {"User-Agent": self.user_agent},
             "compress": 0,
         }
 
@@ -205,9 +219,7 @@ class HTTPClient:
         json: :type:`Dict[str, Any]`
             Any content we should send along with the request
         """
-        headers: Dict[str, Any] = {
-            "User-Agent": self.user_agent
-        }
+        headers: Dict[str, Any] = {"User-Agent": self.user_agent}
 
         if self.token is not None:
             headers["Authorization"] = f"Bot {self.token}"
@@ -231,10 +243,14 @@ class HTTPClient:
 
         if self._global_ratelimit.is_set():
             delta = _calculate_ratelimit_delta(self._global_ratelimit.data)
-            _log.debug("We are being ratelimited globally. Trying again in %s seconds.", delta)
+            _log.debug(
+                "We are being ratelimited globally. Trying again in %s seconds.", delta
+            )
 
             if delta <= 0:
-                _log.debug("Global ratelimit is over now. Skipping over this ratelimit.")
+                _log.debug(
+                    "Global ratelimit is over now. Skipping over this ratelimit."
+                )
                 pass
 
             await asyncio.sleep(delta)
@@ -248,10 +264,15 @@ class HTTPClient:
         else:
             if ratelimited.is_set():
                 delta = _calculate_ratelimit_delta(ratelimited.data)
-                _log.debug("This bucket is being ratelimited. Trying again in %s seconds.", delta)
+                _log.debug(
+                    "This bucket is being ratelimited. Trying again in %s seconds.",
+                    delta,
+                )
 
                 if delta <= 0:
-                    _log.debug("Bucket ratelimit is over now. Skipping over this ratelimit.")
+                    _log.debug(
+                        "Bucket ratelimit is over now. Skipping over this ratelimit."
+                    )
                     pass
 
                 await asyncio.sleep(delta)
@@ -263,8 +284,10 @@ class HTTPClient:
             async with self._session.request(method, url, **kwargs) as response:
                 resp_code = response.status
                 data = None
-                
-                if not resp_code == 204: # 204 means empty content, aiohttp throws an error when trying to parse empty context as json
+
+                if (
+                    not resp_code == 204
+                ):  # 204 means empty content, aiohttp throws an error when trying to parse empty context as json
                     data = await response.json(encoding="utf-8")
 
                 _bucket = response.headers.get("X-RateLimit-Bucket")
@@ -280,7 +303,10 @@ class HTTPClient:
                     if not ratelimited.is_set():
                         # we are the first request with this bucket to hit a ratelimit
                         delta = _calculate_ratelimit_delta(reset_timestamp)
-                        _log.debug("Ratelimit bucket exhausted, trying again in %s seconds.", delta)
+                        _log.debug(
+                            "Ratelimit bucket exhausted, trying again in %s seconds.",
+                            delta,
+                        )
 
                         if delta > 0:
                             ratelimited.set(reset_timestamp)
@@ -292,19 +318,28 @@ class HTTPClient:
                             ratelimit_task = asyncio.create_task(unlock())
                             await ratelimit_task
                         else:
-                            _log.debug("Ratelimit bucket is already good to go. Skipping.")
+                            _log.debug(
+                                "Ratelimit bucket is already good to go. Skipping."
+                            )
                     else:
                         # we are not the first request with this bucket to hit a ratelimit
                         delta = _calculate_ratelimit_delta(ratelimited.data)
-                        _log.debug("Ratelimit bucket exhausted, trying again in %s seconds.", delta)
+                        _log.debug(
+                            "Ratelimit bucket exhausted, trying again in %s seconds.",
+                            delta,
+                        )
 
                         if delta > 0:
-                            await asyncio.sleep(_calculate_ratelimit_delta(ratelimited.data))
+                            await asyncio.sleep(
+                                _calculate_ratelimit_delta(ratelimited.data)
+                            )
                         else:
-                            _log.debug("Ratelimit bucket is already good to go. Skipping.")
+                            _log.debug(
+                                "Ratelimit bucket is already good to go. Skipping."
+                            )
 
                 if resp_code >= 200 and resp_code < 300:
-                    _log.debug("Connection to \"%s\" succeeded!", url)
+                    _log.debug('Connection to "%s" succeeded!', url)
                     return data
 
                 # we are being ratelimited
@@ -329,7 +364,7 @@ class HTTPClient:
                         self._global_ratelimit.clear()
 
                     continue
-                    
+
                 # server error, retry after waiting
                 if resp_code in {500, 502, 504}:
                     await asyncio.sleep(1 + tries * 2)
@@ -357,9 +392,7 @@ class HTTPClient:
         token: :type:`str`
             The token to login with
         """
-        self._session = aiohttp.ClientSession(
-            connector=self.connector
-        )
+        self._session = aiohttp.ClientSession(connector=self.connector)
         old_token = self.token
         self.token = token
 
@@ -369,16 +402,18 @@ class HTTPClient:
         except HTTPException as e:
             self.token = old_token
             if e.status == 401:
-                raise DisCatPyException("LoginFailure: Improper token has been passed.") from e
+                raise DisCatPyException(
+                    "LoginFailure: Improper token has been passed."
+                ) from e
             raise
 
         return me
 
     async def close(self):
         """
-        Closes the internal session. 
-        
-        Required when the client is done in order to stop 
+        Closes the internal session.
+
+        Required when the client is done in order to stop
         aiohttp from complaining.
         """
         return await self._session.close()
@@ -410,7 +445,7 @@ class HTTPClient:
         async with self._session.get(url) as resp:
             if resp.status == 200:
                 return await resp.read()
-            
+
             raise HTTPException(resp, f"failed to grab Asset with url {url}")
 
     # User HTTP functions
@@ -441,7 +476,9 @@ class HTTPClient:
         recipient_id: :type:`Snowflake`
             The recipient of this DM.
         """
-        return await self.request(Route("POST", "/users/@me/channels"), json={"recipient_id":recipient_id})
+        return await self.request(
+            Route("POST", "/users/@me/channels"), json={"recipient_id": recipient_id}
+        )
 
     async def modify_current_user(self, username: str):
         """
@@ -453,18 +490,28 @@ class HTTPClient:
             The new username for the bot.
         """
         # TODO: add the ability to modify the avatar
-        return await self.request(Route("PATCH", "/users/@me"), json={"username":username})
+        return await self.request(
+            Route("PATCH", "/users/@me"), json={"username": username}
+        )
 
     # Guild HTTP functions
 
     async def get_guild(self, guild_id: Snowflake, with_counts: bool = False):
-        return await self.request(Route("GET", "/guilds/{guild_id}" + query_parameters(with_counts=with_counts), guild_id=guild_id))
+        return await self.request(
+            Route(
+                "GET",
+                "/guilds/{guild_id}" + query_parameters(with_counts=with_counts),
+                guild_id=guild_id,
+            )
+        )
 
     async def get_guild_preview(self, guild_id: Snowflake):
-        return await self.request(Route("GET", "/guilds/{guild_id}/preview", guild_id=guild_id))
+        return await self.request(
+            Route("GET", "/guilds/{guild_id}/preview", guild_id=guild_id)
+        )
 
     async def create_guild(
-        self, 
+        self,
         name: str,
         icon: MaybeMissing[str] = MISSING,
         icon_type: str = "jpeg",
@@ -476,7 +523,7 @@ class HTTPClient:
         afk_channel_id: MaybeMissing[Snowflake] = MISSING,
         afk_timeout: MaybeMissing[int] = MISSING,
         system_channel_id: MaybeMissing[Snowflake] = MISSING,
-        system_channel_flags: MaybeMissing[int] = MISSING
+        system_channel_flags: MaybeMissing[int] = MISSING,
     ):
         json_req = discord_typings.GuildData(name=name)
 
@@ -512,9 +559,13 @@ class HTTPClient:
 
         return await self.request(Route("POST", "/guilds"), json=json_req)
 
-    async def modify_guild(self, guild_id: Snowflake, new_guild: discord_typings.GuildData):
-        return await self.request(Route("PATCH", "/guilds/{guild_id}", guild_id=guild_id), json=new_guild)
-    
+    async def modify_guild(
+        self, guild_id: Snowflake, new_guild: discord_typings.GuildData
+    ):
+        return await self.request(
+            Route("PATCH", "/guilds/{guild_id}", guild_id=guild_id), json=new_guild
+        )
+
     async def leave_guild(self, guild_id: Snowflake):
         """
         Makes the bot leave a guild with the provided guild id.
@@ -524,7 +575,9 @@ class HTTPClient:
         guild_id: :type:`Snowflake`
             The id of the guild to leave
         """
-        return await self.request(Route("DELETE", "/users/@me/guilds/{guild_id}", guild_id=guild_id))
+        return await self.request(
+            Route("DELETE", "/users/@me/guilds/{guild_id}", guild_id=guild_id)
+        )
 
     # Channel HTTP functions
 
@@ -537,18 +590,31 @@ class HTTPClient:
         channel_id: :type:`Snowflake`
             The id of the channel to grab
         """
-        return await self.request(Route("GET", "/channels/{channel_id}", channel_id=channel_id))
+        return await self.request(
+            Route("GET", "/channels/{channel_id}", channel_id=channel_id)
+        )
 
     async def get_channels(self, guild_id: Snowflake):
-        return await self.request(Route("GET", "/guilds/{guild_id}/channels", guild_id=guild_id))
+        return await self.request(
+            Route("GET", "/guilds/{guild_id}/channels", guild_id=guild_id)
+        )
 
     async def get_active_threads(self, guild_id: Snowflake):
-        return await self.request(Route("GET", "/guilds/{guild_id}/threads/active", guild_id=guild_id))
+        return await self.request(
+            Route("GET", "/guilds/{guild_id}/threads/active", guild_id=guild_id)
+        )
 
-    async def create_channel(self, guild_id: Snowflake, new_channel: discord_typings.PartialChannelData):
-        return await self.request(Route("POST", "/guilds/{guild_id}/channels", guild_id=guild_id), json=new_channel)
+    async def create_channel(
+        self, guild_id: Snowflake, new_channel: discord_typings.PartialChannelData
+    ):
+        return await self.request(
+            Route("POST", "/guilds/{guild_id}/channels", guild_id=guild_id),
+            json=new_channel,
+        )
 
-    async def modify_channel(self, channel_id: Snowflake, new_channel: discord_typings.ChannelData):
+    async def modify_channel(
+        self, channel_id: Snowflake, new_channel: discord_typings.ChannelData
+    ):
         """
         Modifies a channel with the given channel (in Dict form).
 
@@ -559,20 +625,21 @@ class HTTPClient:
         new_channel: :type:`Dict[str, Any]`
             The updated channel. Outputted from `GuildChannel.to_dict()`
         """
-        return await self.request(Route("PATCH", "/channels/{channel_id}", channel_id=channel_id), json=new_channel)
+        return await self.request(
+            Route("PATCH", "/channels/{channel_id}", channel_id=channel_id),
+            json=new_channel,
+        )
 
     async def modify_channel_positions(
-        self, 
-        guild_id: Snowflake, 
-        channel_id: Snowflake, 
-        /, 
-        position: Optional[int] = None, 
-        lock_permissions: Optional[bool] = None, 
-        parent_id: Optional[Snowflake] = None
+        self,
+        guild_id: Snowflake,
+        channel_id: Snowflake,
+        /,
+        position: Optional[int] = None,
+        lock_permissions: Optional[bool] = None,
+        parent_id: Optional[Snowflake] = None,
     ):
-        json_req: Dict[str, Any] = {
-            "id": channel_id
-        }
+        json_req: Dict[str, Any] = {"id": channel_id}
 
         if position is not None:
             json_req["position"] = position
@@ -583,7 +650,10 @@ class HTTPClient:
         if parent_id:
             json_req["parent_id"] = parent_id
 
-        return await self.request(Route("PATCH", "/guilds/{guild_id}/channels", guild_id=guild_id), json=json_req)
+        return await self.request(
+            Route("PATCH", "/guilds/{guild_id}/channels", guild_id=guild_id),
+            json=json_req,
+        )
 
     async def delete_channel(self, channel_id: Snowflake):
         """
@@ -594,15 +664,17 @@ class HTTPClient:
         channel_id: :type:`Snowflake`
             The id of the channel to delete/close
         """
-        return await self.request(Route("DELETE", "/channels/{channel_id}", channel_id=channel_id))
+        return await self.request(
+            Route("DELETE", "/channels/{channel_id}", channel_id=channel_id)
+        )
 
     async def start_thread_from_message(
-        self, 
-        channel_id: Snowflake, 
-        msg_id: Snowflake, 
-        name: str, 
-        auto_archive_duration: Optional[int] = None, 
-        cooldown: int = 0
+        self,
+        channel_id: Snowflake,
+        msg_id: Snowflake,
+        name: str,
+        auto_archive_duration: Optional[int] = None,
+        cooldown: int = 0,
     ):
         """
         Starts a thread with a provided message id.
@@ -620,27 +692,32 @@ class HTTPClient:
         cooldown: :type:`int`
             The cooldown (rate limit per user) of this thread
         """
-        json_req: Dict[str, Any] = {"name":name}
+        json_req: Dict[str, Any] = {"name": name}
 
         if auto_archive_duration:
             json_req["auto_archive_duration"] = auto_archive_duration
-        
+
         if cooldown:
             json_req["rate_limit_per_user"] = cooldown
 
         return await self.request(
-            Route("POST", "/channels/{channel_id}/messages/{message_id}/threads", channel_id=channel_id, message_id=msg_id),
-            json=json_req
+            Route(
+                "POST",
+                "/channels/{channel_id}/messages/{message_id}/threads",
+                channel_id=channel_id,
+                message_id=msg_id,
+            ),
+            json=json_req,
         )
 
     async def start_thread_without_message(
-        self, 
-        channel_id: Snowflake, 
-        name: str, 
-        auto_archive_duration: Optional[int] = None, 
+        self,
+        channel_id: Snowflake,
+        name: str,
+        auto_archive_duration: Optional[int] = None,
         type: int = ChannelType.GUILD_PRIVATE_THREAD,
         invitable: bool = True,
-        cooldown: int = 0
+        cooldown: int = 0,
     ):
         """
         Starts a thread without a provided message id.
@@ -661,7 +738,11 @@ class HTTPClient:
         cooldown: :type:`int`
             The cooldown (rate limit per user) of this thread
         """
-        json_req: Dict[str, Any] = {"name":name, "rate_limit_per_user":cooldown, "type":type}
+        json_req: Dict[str, Any] = {
+            "name": name,
+            "rate_limit_per_user": cooldown,
+            "type": type,
+        }
 
         if type == ChannelType.GUILD_PRIVATE_THREAD:
             json_req["invitable"] = invitable
@@ -671,45 +752,108 @@ class HTTPClient:
 
         return await self.request(
             Route("POST", "/channels/{channel_id}/threads", channel_id=channel_id),
-            json=json_req
+            json=json_req,
         )
 
     # Guild Member HTTP functions
 
     async def get_guild_member(self, guild_id: Snowflake, user_id: Snowflake):
-        return await self.request(Route("GET", "/guilds/{guild_id}/members/{user_id}", guild_id=guild_id, user_id=user_id))
+        return await self.request(
+            Route(
+                "GET",
+                "/guilds/{guild_id}/members/{user_id}",
+                guild_id=guild_id,
+                user_id=user_id,
+            )
+        )
 
-    async def get_guild_members(self, guild_id: Snowflake, limit: int = 1, after: Snowflake = 0):
-        return await self.request(Route("GET", "/guilds/{guild_id}/members" + query_parameters(limit=limit, after=after), guild_id=guild_id))
+    async def get_guild_members(
+        self, guild_id: Snowflake, limit: int = 1, after: Snowflake = 0
+    ):
+        return await self.request(
+            Route(
+                "GET",
+                "/guilds/{guild_id}/members"
+                + query_parameters(limit=limit, after=after),
+                guild_id=guild_id,
+            )
+        )
 
     async def find_guild_members(self, guild_id: Snowflake, query: str, limit: int = 1):
-        return await self.request(Route("GET", "/guilds/{guild_id}/members/search" + query_parameters(query=query, limit=limit), guild_id=guild_id))
+        return await self.request(
+            Route(
+                "GET",
+                "/guilds/{guild_id}/members/search"
+                + query_parameters(query=query, limit=limit),
+                guild_id=guild_id,
+            )
+        )
 
-    async def modify_guild_member(self, guild_id: Snowflake, user_id: Snowflake, new_guild_member: Dict[str, Any]):
-        return await self.request(Route("PATCH", "/guilds/{guild_id}/members/{user_id}", guild_id=guild_id, user_id=user_id), json=new_guild_member)
+    async def modify_guild_member(
+        self, guild_id: Snowflake, user_id: Snowflake, new_guild_member: Dict[str, Any]
+    ):
+        return await self.request(
+            Route(
+                "PATCH",
+                "/guilds/{guild_id}/members/{user_id}",
+                guild_id=guild_id,
+                user_id=user_id,
+            ),
+            json=new_guild_member,
+        )
 
     async def modify_current_guild_member(self, guild_id: Snowflake, nick: str):
-        return await self.request(Route("PATCH", "/guilds/{guild_id}/members/@me", guild_id=guild_id), json={"nick":nick})
+        return await self.request(
+            Route("PATCH", "/guilds/{guild_id}/members/@me", guild_id=guild_id),
+            json={"nick": nick},
+        )
 
     async def remove_guild_member(self, guild_id: Snowflake, user_id: Snowflake):
-        return await self.request(Route("DELETE", "/guilds/{guild_id}/members/{user_id}", guild_id=guild_id, user_id=user_id))
+        return await self.request(
+            Route(
+                "DELETE",
+                "/guilds/{guild_id}/members/{user_id}",
+                guild_id=guild_id,
+                user_id=user_id,
+            )
+        )
 
-    async def add_guild_member_role(self, guild_id: Snowflake, user_id: Snowflake, role_id: Snowflake):
-        return await self.request(Route("PUT", "/guilds/{guild_id}/members/{user_id}/roles/{role_id}", guild_id=guild_id, user_id=user_id, role_id=role_id))
+    async def add_guild_member_role(
+        self, guild_id: Snowflake, user_id: Snowflake, role_id: Snowflake
+    ):
+        return await self.request(
+            Route(
+                "PUT",
+                "/guilds/{guild_id}/members/{user_id}/roles/{role_id}",
+                guild_id=guild_id,
+                user_id=user_id,
+                role_id=role_id,
+            )
+        )
 
-    async def remove_guild_member_role(self, guild_id: Snowflake, user_id: Snowflake, role_id: Snowflake):
-        return await self.request(Route("DELETE", "/guilds/{guild_id}/members/{user_id}/roles/{role_id}", guild_id=guild_id, user_id=user_id, role_id=role_id))
+    async def remove_guild_member_role(
+        self, guild_id: Snowflake, user_id: Snowflake, role_id: Snowflake
+    ):
+        return await self.request(
+            Route(
+                "DELETE",
+                "/guilds/{guild_id}/members/{user_id}/roles/{role_id}",
+                guild_id=guild_id,
+                user_id=user_id,
+                role_id=role_id,
+            )
+        )
 
     # Message HTTP functions
 
     async def get_messages(
-        self, 
-        channel_id: Snowflake, 
-        /, 
-        limit: int = 50, 
-        around: MaybeMissing[Snowflake] = MISSING, 
-        before: MaybeMissing[Snowflake] = MISSING, 
-        after: MaybeMissing[Snowflake] = MISSING
+        self,
+        channel_id: Snowflake,
+        /,
+        limit: int = 50,
+        around: MaybeMissing[Snowflake] = MISSING,
+        before: MaybeMissing[Snowflake] = MISSING,
+        after: MaybeMissing[Snowflake] = MISSING,
     ):
         """Grabs all messages from a channel.
         Only one of the around, before, and after parameters can be set.
@@ -732,10 +876,24 @@ class HTTPClient:
         elif limit > 100:
             raise ValueError("Got a limit that's larger than 100")
 
-        if (before and after and around) or (before and after) or (after and around) or (before and around):
-            raise ValueError("Only one of before, around, and after can be set.") 
+        if (
+            (before and after and around)
+            or (before and after)
+            or (after and around)
+            or (before and around)
+        ):
+            raise ValueError("Only one of before, around, and after can be set.")
 
-        return await self.request(Route("GET", "/channels/{channel_id}/messages" + query_parameters(limit=limit, around=around, before=before, after=after), channel_id=channel_id))
+        return await self.request(
+            Route(
+                "GET",
+                "/channels/{channel_id}/messages"
+                + query_parameters(
+                    limit=limit, around=around, before=before, after=after
+                ),
+                channel_id=channel_id,
+            )
+        )
 
     async def get_message(self, channel_id: Snowflake, message_id: Snowflake):
         """
@@ -749,8 +907,13 @@ class HTTPClient:
             The id of the message to grab
         """
         return await self.request(
-            Route("GET", "/channels/{channel_id}/messages/{message_id}", channel_id=channel_id, message_id=message_id)
-        )  
+            Route(
+                "GET",
+                "/channels/{channel_id}/messages/{message_id}",
+                channel_id=channel_id,
+                message_id=message_id,
+            )
+        )
 
     async def get_pinned_messages(self, channel_id: Snowflake):
         """
@@ -761,14 +924,16 @@ class HTTPClient:
         channel_id: :type:`Snowflake`
             The id of the channel to grab the pinned messages from.
         """
-        return await self.request(Route("GET", "/channels/{channel_id}/pins", channel_id=channel_id))
+        return await self.request(
+            Route("GET", "/channels/{channel_id}/pins", channel_id=channel_id)
+        )
 
     async def send_message(
-        self, 
-        channel_id: Snowflake, 
+        self,
+        channel_id: Snowflake,
         /,
-        content: str, 
-        embed: Optional[Embed] = None, 
+        content: str,
+        embed: Optional[Embed] = None,
         embeds: Optional[List[Embed]] = None,
         msg_reference: Optional[discord_typings.MessageReferenceData] = None,
         tts: bool = False,
@@ -806,7 +971,10 @@ class HTTPClient:
         if msg_reference:
             json_data["message_reference"] = msg_reference
 
-        return await self.request(Route("POST", "/channels/{channel_id}/messages", channel_id=channel_id), json=json_data)
+        return await self.request(
+            Route("POST", "/channels/{channel_id}/messages", channel_id=channel_id),
+            json=json_data,
+        )
 
     async def crosspost_message(self, channel_id: Snowflake, message_id: Snowflake):
         """Crossposts this message to all channel followers.
@@ -817,9 +985,16 @@ class HTTPClient:
         channel_id: :type:`Snowflake`
             The channel to crosspost from.
         message_id: :type:`Snowflake`
-            The message to crosspost.        
+            The message to crosspost.
         """
-        return await self.request(Route("POST", "/channels/{channel_id}/messages/{message_id}/crosspost", channel_id=channel_id, message_id=message_id))
+        return await self.request(
+            Route(
+                "POST",
+                "/channels/{channel_id}/messages/{message_id}/crosspost",
+                channel_id=channel_id,
+                message_id=message_id,
+            )
+        )
 
     async def edit_message(
         self,
@@ -827,8 +1002,8 @@ class HTTPClient:
         channel_id: Snowflake,
         /,
         content: str,
-        embed: Optional[Embed] = None, 
-        embeds: Optional[List[Embed]] = None
+        embed: Optional[Embed] = None,
+        embeds: Optional[List[Embed]] = None,
     ):
         """
         Edits an existing message.
@@ -858,8 +1033,13 @@ class HTTPClient:
             json_data["embeds"] = [e.to_dict() for e in embeds]
 
         return await self.request(
-            Route("PATCH", "/channels/{channel_id}/messages/{message_id}", channel_id=channel_id, message_id=msg_id), 
-            json=json_data
+            Route(
+                "PATCH",
+                "/channels/{channel_id}/messages/{message_id}",
+                channel_id=channel_id,
+                message_id=msg_id,
+            ),
+            json=json_data,
         )
 
     async def delete_message(self, msg_id: Snowflake, channel_id: Snowflake):
@@ -873,9 +1053,18 @@ class HTTPClient:
         channel_id: :type:`Snowflake`
             The id of the channel where the message is from
         """
-        return await self.request(Route("DELETE", "/channels/{channel_id}/messages/{message_id}", channel_id=channel_id, message_id=msg_id))
+        return await self.request(
+            Route(
+                "DELETE",
+                "/channels/{channel_id}/messages/{message_id}",
+                channel_id=channel_id,
+                message_id=msg_id,
+            )
+        )
 
-    async def bulk_delete_messages(self, messages: List[Snowflake], channel_id: Snowflake):
+    async def bulk_delete_messages(
+        self, messages: List[Snowflake], channel_id: Snowflake
+    ):
         """
         Bulk deletes messages from a channel.
 
@@ -887,8 +1076,12 @@ class HTTPClient:
             The id of the channel where the messages are from
         """
         return await self.request(
-            Route("POST", "/channels/{channel_id}/messages/bulk-delete", channel_id=channel_id),
-            json={"messages":messages}
+            Route(
+                "POST",
+                "/channels/{channel_id}/messages/bulk-delete",
+                channel_id=channel_id,
+            ),
+            json={"messages": messages},
         )
 
     async def pin_message(self, msg_id: Snowflake, channel_id: Snowflake):
@@ -902,7 +1095,14 @@ class HTTPClient:
         channel_id: :type:`Snowflake`
             The id of the channel to pin the message to
         """
-        return await self.request(Route("PUT", "/channels/{channel_id}/pins/{message_id}", channel_id=channel_id, message_id=msg_id))
+        return await self.request(
+            Route(
+                "PUT",
+                "/channels/{channel_id}/pins/{message_id}",
+                channel_id=channel_id,
+                message_id=msg_id,
+            )
+        )
 
     async def unpin_message(self, msg_id: Snowflake, channel_id: Snowflake):
         """
@@ -915,7 +1115,13 @@ class HTTPClient:
         channel_id: :type:`Snowflake`
             The id of the channel to unpin the message from
         """
-        return await self.request(Route("DELETE", "/channels/{channel_id}/pins/{message_id}", channel_id=channel_id, message_id=msg_id))
+        return await self.request(
+            Route(
+                "DELETE",
+                "/channels/{channel_id}/pins/{message_id}",
+                channel_id=channel_id,
+                message_id=msg_id,
+            )
+        )
 
     # Message Reaction HTTP functions
-

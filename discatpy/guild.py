@@ -26,16 +26,12 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Union, overload
 
-from discord_typings import (
-    RoleData,
-    EmojiData,
-    GuildMemberData,
-    GuildData,
-)
-from .types.snowflake import *
+from discord_typings import EmojiData, GuildData, GuildMemberData, RoleData
+
 from .asset import Asset
 from .channel import RawChannel
 from .object import DiscordObject
+from .types.snowflake import *
 from .user import User
 from .utils import MISSING, MaybeMissing
 
@@ -46,9 +42,10 @@ __all__ = (
     "Guild",
 )
 
+
 class GuildRole(DiscordObject):
     """Represents a role contained in a guild.
-    
+
     Attributes
     ----------
     guild: :type:`Guild`
@@ -72,6 +69,7 @@ class GuildRole(DiscordObject):
     mentionable: :type:`bool`
         Whether or not this role can be mentioned by others.
     """
+
     __slots__ = (
         "guild",
         "id",
@@ -95,7 +93,7 @@ class GuildRole(DiscordObject):
         DiscordObject.__init__(self, d, client)
 
         self.guild: Optional[Guild] = None
-        self._update(d)        
+        self._update(d)
 
     def _update(self, d: Dict[str, Any]):
         self.id: Snowflake = d.get("id")
@@ -115,9 +113,9 @@ class GuildRole(DiscordObject):
 
     def to_dict(self) -> Dict[str, Any]:
         ret_dict: Dict[str, Any] = {
-            "id": self.id, 
-            "name": self.name, 
-            "color": int(self.color, 16), 
+            "id": self.id,
+            "name": self.name,
+            "color": int(self.color, 16),
             "hoist": self.pinned,
             "position": self.position,
             "permissions": self.permissions,
@@ -136,9 +134,10 @@ class GuildRole(DiscordObject):
     def _set_guild(self, new_guild: Guild):
         self.guild = new_guild
 
+
 class Emoji(DiscordObject):
     """Represents an emoji that may or may not be a custom emoji from a Guild.
-    
+
     Attributes
     ----------
     guild: :type:`Optional[Guild]`
@@ -161,6 +160,7 @@ class Emoji(DiscordObject):
         Whether or not members can use this emoji. This can be False if
         the guild loses a boost level and loses extra emoji slots.
     """
+
     __slots__ = (
         "guild",
         "roles",
@@ -187,8 +187,16 @@ class Emoji(DiscordObject):
     def _update(self, d: Dict[str, Any]):
         self.id: Optional[Snowflake] = d.get("id")
         self.name: Optional[str] = d.get("name")
-        self._role_ids: MaybeMissing[List[Snowflake]] = [i for i in d.get("roles")] if d.get("roles", MISSING) is not MISSING else MISSING
-        self.creator: MaybeMissing[User] = User.from_dict(self.client, d.get("user")) if d.get("user", MISSING) is not MISSING else MISSING
+        self._role_ids: MaybeMissing[List[Snowflake]] = (
+            [i for i in d.get("roles")]
+            if d.get("roles", MISSING) is not MISSING
+            else MISSING
+        )
+        self.creator: MaybeMissing[User] = (
+            User.from_dict(self.client, d.get("user"))
+            if d.get("user", MISSING) is not MISSING
+            else MISSING
+        )
         self.require_colons: MaybeMissing[bool] = d.get("require_colons", MISSING)
         self.managed: MaybeMissing[bool] = d.get("managed", MISSING)
         self.animated: MaybeMissing[bool] = d.get("animated", MISSING)
@@ -198,9 +206,10 @@ class Emoji(DiscordObject):
         self.guild = new_guild
         # TODO: initialize roles after setting new guild
 
+
 class GuildMember(DiscordObject):
     """Represents a member of a guild.
-    
+
     Attributes
     ----------
     guild: :type:`Guild`
@@ -226,6 +235,7 @@ class GuildMember(DiscordObject):
         The date and time of when this member will have its time out expire, if
         they are currently timed out.
     """
+
     __slots__ = (
         "guild",
         "roles",
@@ -254,19 +264,33 @@ class GuildMember(DiscordObject):
         self._update(d)
 
     def _update(self, d: Dict[str, Any]):
-        self.user: MaybeMissing[User] = User.from_dict(self.client, d.get("user")) if d.get("user", MISSING) is not MISSING else MISSING
+        self.user: MaybeMissing[User] = (
+            User.from_dict(self.client, d.get("user"))
+            if d.get("user", MISSING) is not MISSING
+            else MISSING
+        )
         self.nick: MaybeMissing[Optional[str]] = d.get("nick", MISSING)
         self._avatar_hash: Optional[str] = d.get("avatar")
         self._role_ids: List[Snowflake] = d.get("roles")
         self.joined_at: datetime = datetime.fromisoformat(d.get("joined_at"))
-        self.premium_since: Optional[datetime] = datetime.fromisoformat(d.get("premium_since")) if d.get("premium_since") is not None else None
+        self.premium_since: Optional[datetime] = (
+            datetime.fromisoformat(d.get("premium_since"))
+            if d.get("premium_since") is not None
+            else None
+        )
         self.deaf: bool = d.get("deaf")
         self.mute: bool = d.get("mute")
         self.pending: Optional[bool] = d.get("pending")
-        raw_timeout_until: MaybeMissing[Optional[str]] = d.get("communication_disabled_until", MISSING)
-        self.timeout_until: MaybeMissing[Optional[str]]  = MISSING
+        raw_timeout_until: MaybeMissing[Optional[str]] = d.get(
+            "communication_disabled_until", MISSING
+        )
+        self.timeout_until: MaybeMissing[Optional[str]] = MISSING
         if raw_timeout_until is not MISSING:
-            self.timeout_until = datetime.fromisoformat(raw_timeout_until) if raw_timeout_until is not None else None
+            self.timeout_until = (
+                datetime.fromisoformat(raw_timeout_until)
+                if raw_timeout_until is not None
+                else None
+            )
 
     def to_dict(self) -> Dict[str, Any]:
         ret_dict: Dict[str, Any] = {"deaf": self.deaf, "mute": self.mute}
@@ -284,9 +308,22 @@ class GuildMember(DiscordObject):
 
     def _set_guild(self, guild: Guild):
         self.guild = guild
-        self.avatar = Asset.from_guild_member_avatar(self.client, self.guild.id, self.user.id, self._avatar_hash) if self._avatar_hash is not None else None
+        self.avatar = (
+            Asset.from_guild_member_avatar(
+                self.client, self.guild.id, self.user.id, self._avatar_hash
+            )
+            if self._avatar_hash is not None
+            else None
+        )
 
-    async def edit(self, /, nick: Optional[str] = None, mute: Optional[bool] = None, deaf: Optional[bool] = None, timeout_until: Optional[datetime] = None):
+    async def edit(
+        self,
+        /,
+        nick: Optional[str] = None,
+        mute: Optional[bool] = None,
+        deaf: Optional[bool] = None,
+        timeout_until: Optional[datetime] = None,
+    ):
         if nick:
             self.nick = nick
 
@@ -302,14 +339,18 @@ class GuildMember(DiscordObject):
             if timeout_until:
                 self.timeout_until = timeout_until
 
-            await self.client.http.modify_guild_member(self.guild.id, self.user.id, self.to_dict())
+            await self.client.http.modify_guild_member(
+                self.guild.id, self.user.id, self.to_dict()
+            )
 
     async def add_role(self, role: GuildRole):
         if self.guild.id != role.guild.id:
             return
 
         self.roles.append(role)
-        await self.client.http.add_guild_member_role(self.guild.id, self.user.id, role.id)
+        await self.client.http.add_guild_member_role(
+            self.guild.id, self.user.id, role.id
+        )
 
     async def remove_role(self, role: GuildRole):
         if self.guild.id != role.guild.id:
@@ -317,10 +358,13 @@ class GuildMember(DiscordObject):
 
         if role in self.roles:
             self.roles.remove(role)
-        await self.client.http.remove_guild_member_role(self.guild.id, self.user.id, role.id)
+        await self.client.http.remove_guild_member_role(
+            self.guild.id, self.user.id, role.id
+        )
 
     async def kick(self):
         await self.guild.kick(self)
+
 
 class Guild(DiscordObject):
     __slots__ = (
@@ -355,7 +399,7 @@ class Guild(DiscordObject):
     def __init__(self, d: Dict[str, Any], client):
         DiscordObject.__init__(d, client)
         self._update(d)
-            
+
     def _update(self, d: Dict[str, Any]):
         self.id: Snowflake = d.get("id")
         self.name: str = d.get("name")
@@ -370,7 +414,9 @@ class Guild(DiscordObject):
         self.verification_level: int = d.get("verification_level")
         self.default_message_notifications: int = d.get("default_message_notifications")
         self.explicit_content_filter: int = d.get("explicit_content_filter")
-        self.roles: List[GuildRole] = [GuildRole.from_dict(self.client, r) for r in d.get("roles")]
+        self.roles: List[GuildRole] = [
+            GuildRole.from_dict(self.client, r) for r in d.get("roles")
+        ]
         for r in self.roles:
             r._set_guild(self)
         self.emojis: List[Emoji] = [Emoji(e, self.client) for e in d.get("emojis")]
@@ -386,9 +432,13 @@ class Guild(DiscordObject):
         self.description: Optional[str] = d.get("description")
         self.banner_hash: Optional[str] = d.get("banner")
         self.premium_tier: int = d.get("premium_tier")
-        self.premium_subscription_count: MaybeMissing[Optional[int]] = d.get("premium_subscription_count", MISSING)
+        self.premium_subscription_count: MaybeMissing[Optional[int]] = d.get(
+            "premium_subscription_count", MISSING
+        )
         self.preferred_locale: str = d.get("preferred_locale")
-        self._public_updates_channel_id: Optional[Snowflake] = d.get("public_updates_channel_id")
+        self._public_updates_channel_id: Optional[Snowflake] = d.get(
+            "public_updates_channel_id"
+        )
         # TODO: max_video_channel_users, approximate_member_count, welcome_screen
         self.nsfw_level: int = d.get("nsfw_level")
         # TODO: stage_instances, stickers, guild_scheduled_events

@@ -23,7 +23,7 @@ DEALINGS IN THE SOFTWARE.
 """
 from __future__ import annotations
 
-from typing import Any, List, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, List, Union
 
 from .enums.channel import ChannelType
 from .types.snowflake import *
@@ -36,9 +36,8 @@ if TYPE_CHECKING:
     from .message import Message
     from .user import User
 
-__all__ = (
-    "ClientCache",
-)
+__all__ = ("ClientCache",)
+
 
 class ClientCache:
     """
@@ -52,10 +51,11 @@ class ClientCache:
     _obj_cache: :type:`MultipleValuesDict[Snowflake, Any]`
         The internal cache that stores objects received from the Discord API.
     """
+
     def __init__(self, client: Client):
         self.client: Client = client
         self._obj_cache: MultipleValuesDict[Snowflake, Any] = MultipleValuesDict()
-    
+
     def find(self, id: Snowflake) -> bool:
         """Checks if there is an object with that id in the cache.
 
@@ -63,7 +63,7 @@ class ClientCache:
         ----------
         id: :type:`Snowflake`
             The id to check for.
-        
+
         Returns
         -------
         :type:`bool`
@@ -104,7 +104,9 @@ class ClientCache:
         """
         objs = self.get(id)
         if objs and isinstance(objs, list):
-            ret_obj: List[Any] = [o for o in objs if isinstance(o, t) or issubclass(o, t)]
+            ret_obj: List[Any] = [
+                o for o in objs if isinstance(o, t) or issubclass(o, t)
+            ]
             return ret_obj[0] if len(ret_obj) > 0 else None
 
         return objs
@@ -117,7 +119,9 @@ class ClientCache:
         message_obj: :type:`Message`
             The message object to add.
         """
-        message_obj._set_channel(self.client.grab(message_obj._channel_id, "RawChannel"))
+        message_obj._set_channel(
+            self.client.grab(message_obj._channel_id, "RawChannel")
+        )
         self._obj_cache[message_obj.id] = message_obj
 
     def add_channel(self, channel_obj: RawChannel):
@@ -128,12 +132,17 @@ class ClientCache:
         channel_obj: :type:`RawChannel`
             The channel object to add.
         """
-        if channel_obj.type == ChannelType.DM.value or channel_obj.type == ChannelType.GROUP_DM.value:
+        if (
+            channel_obj.type == ChannelType.DM.value
+            or channel_obj.type == ChannelType.GROUP_DM.value
+        ):
             # TODO: Consider removing this since all guilds the bot is in should already exist in the cache
             channel_obj._set_guild(self.client.grab(channel_obj._guild_id, "Guild"))
 
             if channel_obj._parent_id is not None:
-                channel_obj._set_parent(self.client.grab(channel_obj._parent_id, "RawChannel"))
+                channel_obj._set_parent(
+                    self.client.grab(channel_obj._parent_id, "RawChannel")
+                )
 
         self._obj_cache[channel_obj.id] = channel_obj
 
@@ -159,7 +168,7 @@ class ClientCache:
 
     def remove(self, obj: Any):
         """Removes an object from the cache.
-        
+
         Parameters
         ----------
         obj: :type:`Any`

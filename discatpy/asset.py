@@ -23,17 +23,17 @@ DEALINGS IN THE SOFTWARE.
 """
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
+
 from .types.snowflake import *
 
 if TYPE_CHECKING:
     from .client import Client
 
-__all__ = (
-    "Asset",
-)
+__all__ = ("Asset",)
 
 BASE_CDN_PATH = "https://cdn.discordapp.com/"
+
 
 class Asset:
     """
@@ -48,12 +48,13 @@ class Asset:
     key: :type:`str`
         The filename of this Asset.
     path: :type:`str`
-        The path to this Asset. This must contain `{0}{1}` at the end in 
+        The path to this Asset. This must contain `{0}{1}` at the end in
         order for the image format & key to be formatted correctly into the path.
     animated: :type:`bool`
-        Whether or not this Asset is animated. If it is, then :attr:`format` will 
+        Whether or not this Asset is animated. If it is, then :attr:`format` will
         be set to `gif`.
     """
+
     client: Client
 
     def __init__(self, client: Client, path: str, key: str, animated: bool = False):
@@ -83,7 +84,7 @@ class Asset:
         Parameters
         ----------
         size: :type:`int`
-            The desired size. This size must be a power of 2 and in-between 16 and 
+            The desired size. This size must be a power of 2 and in-between 16 and
             4096.
 
         Returns
@@ -137,11 +138,15 @@ class Asset:
 
     @classmethod
     def from_guild_banner(cls, client, guild_id: Snowflake, hash: str):
-        return cls(client, f"banners/{guild_id}/" + "{0}{1}", hash, hash.startswith("a_"))
+        return cls(
+            client, f"banners/{guild_id}/" + "{0}{1}", hash, hash.startswith("a_")
+        )
 
     @classmethod
     def from_user_banner(cls, client, user_id: Snowflake, hash: str):
-        return cls(client, f"banners/{user_id}/" + "{0}{1}", hash, hash.startswith("a_"))
+        return cls(
+            client, f"banners/{user_id}/" + "{0}{1}", hash, hash.startswith("a_")
+        )
 
     @classmethod
     def from_default_user_avatar(cls, client, discriminator: int):
@@ -149,15 +154,19 @@ class Asset:
 
     @classmethod
     def from_user_avatar(cls, client, user_id: Snowflake, hash: str):
-        return cls(client, f"avatars/{user_id}/" + "{0}{1}", hash, hash.startswith("a_"))
+        return cls(
+            client, f"avatars/{user_id}/" + "{0}{1}", hash, hash.startswith("a_")
+        )
 
     @classmethod
-    def from_guild_member_avatar(cls, client, guild_id: Snowflake, user_id: Snowflake, hash: str):
+    def from_guild_member_avatar(
+        cls, client, guild_id: Snowflake, user_id: Snowflake, hash: str
+    ):
         return cls(
             client,
             f"guilds/{guild_id}/users/{user_id}/avatars/" + "{0}{1}",
             hash,
-            hash.startswith("a_")
+            hash.startswith("a_"),
         )
 
     # TODO: Add application related assets, achievement icon, stick pack banner, team icon, sticker
@@ -167,5 +176,7 @@ class Asset:
         return cls(client, f"role-icons/{role_id}/" + "{0}{1}", hash)
 
     @classmethod
-    def from_guild_scheduled_event_cover(cls, client, scheduled_event_id: Snowflake, hash: str):
+    def from_guild_scheduled_event_cover(
+        cls, client, scheduled_event_id: Snowflake, hash: str
+    ):
         return cls(client, f"guild-events/{scheduled_event_id}/" + "{0}{1}", hash)

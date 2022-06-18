@@ -1,18 +1,18 @@
-"""   
+"""
 The MIT License (MIT)
 
 Copyright (c) 2022-present EmreTech
- 
+
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),
 to deal in the Software without restriction, including without limitation
 the rights to use, copy, modify, merge, publish, distribute, sublicense,
 and/or sell copies of the Software, and to permit persons to whom the
 Software is furnished to do so, subject to the following conditions:
- 
+
 The above copyright notice and this permission notice shall be included in
 all copies or substantial portions of the Software.
- 
+
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
 OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -22,12 +22,11 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from typing import Any, Dict, Optional, List, overload
+from typing import Any, Dict, List, Optional, overload
 
-from .errors import DisCatPyException
 from discord_typings import (
-    EmbedData,
     EmbedAuthorData,
+    EmbedData,
     EmbedFieldData,
     EmbedFooterData,
     EmbedImageData,
@@ -35,6 +34,8 @@ from discord_typings import (
     EmbedThumbnailData,
     EmbedVideoData,
 )
+
+from .errors import DisCatPyException
 
 __all__ = (
     "Embed",
@@ -47,9 +48,10 @@ __all__ = (
     "EmbedVideoData",
 )
 
+
 class Embed:
     """
-    Represents an embed type. Embeds are to be included with messages 
+    Represents an embed type. Embeds are to be included with messages
     and nothing else.
 
     Attributes
@@ -77,9 +79,10 @@ class Embed:
     fields: :type:`List[EmbedFieldData]`
         The fields of this Embed
     """
+
     def __init__(
-        self, 
-        title: str, 
+        self,
+        title: str,
         description: Optional[str] = None,
         url: Optional[str] = None,
         color: Optional[int] = None,
@@ -89,7 +92,7 @@ class Embed:
         video: Optional[EmbedVideoData] = None,
         provider: Optional[EmbedProviderData] = None,
         author: Optional[EmbedAuthorData] = None,
-        fields: Optional[List[EmbedFieldData]] = None
+        fields: Optional[List[EmbedFieldData]] = None,
     ):
         self.title = title
         self.description = description
@@ -125,7 +128,11 @@ class Embed:
         """
         if self._field_size_check():
             if "name" in kwargs and "value" in kwargs and "inline" in kwargs:
-                field: EmbedFieldData = EmbedFieldData(name=kwargs.get("name"), value=kwargs.get("value"), inline=kwargs.get("inline"))
+                field: EmbedFieldData = EmbedFieldData(
+                    name=kwargs.get("name"),
+                    value=kwargs.get("value"),
+                    inline=kwargs.get("inline"),
+                )
                 self.fields.append(field)
             elif isinstance(args[0], EmbedFieldData):
                 self.fields.append(args[0])
