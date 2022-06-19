@@ -24,8 +24,8 @@ DEALINGS IN THE SOFTWARE.
 from __future__ import annotations
 
 import asyncio
-from signal import SIGINT, SIGTERM
 import traceback
+from signal import SIGINT, SIGTERM
 from typing import TYPE_CHECKING, Optional
 
 from .cache import ClientCache
@@ -92,13 +92,14 @@ class Client(EventsMixin):
     dispatcher: :type:`Dispatcher`
         The event dispatcher for Gateway events
     """
+
     __slots__ = (
-        "gateway", 
-        "http", 
-        "cache", 
-        "me", 
-        "running", 
-        "intents", 
+        "gateway",
+        "http",
+        "cache",
+        "me",
+        "running",
+        "intents",
         "dispatcher",
     )
 
@@ -112,7 +113,7 @@ class Client(EventsMixin):
         self.intents: Intents = intents
         self.dispatcher: Dispatcher = Dispatcher()
 
-        self.dispatcher.add_listener(self.on_error)
+        self.dispatcher.add_event_callback(self.on_error)
 
     @property
     def token(self):

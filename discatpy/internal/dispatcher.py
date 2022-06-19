@@ -24,7 +24,7 @@ DEALINGS IN THE SOFTWARE.
 
 import asyncio
 import inspect
-from typing import Any, Callable, Coroutine, Optional
+from typing import Any, Callable, Coroutine, Dict, Optional
 
 from ..utils import MultipleValuesDict
 
@@ -40,6 +40,7 @@ class Dispatcher:
 
     def __init__(self):
         self.callbacks: MultipleValuesDict[str, CoroFunc] = MultipleValuesDict()
+        self.one_shots: Dict[str, Any] = {}
 
     async def run(self, coro: CoroFunc, *args: Any, **kwargs: Any):
         """
@@ -76,14 +77,17 @@ class Dispatcher:
             Keyword arguments to pass into the event callback
         """
         funcs = self.callbacks.get(name)
-        one_shot = funcs.__one_shot__
+        one_shot = self.one_shots.get(name)
 
-        for f in funcs:
-            await self.run(f, *args, **kwargs)
+        if isinstance(funcs, list):
+            for f in funcs:
+                await self.run(f, *args, **kwargs)
+        elif funcs is not None:
+            await self.run(funcs, *args, **kwargs)
 
         # this ensures that the listener gets removed after all of the callbacks are called
-        if one_shot:
-            self.remove_listener(name)
+        if one_shot and funcs is not None:
+            self.remove_event_callback(name)
 
     def add_event_callback(
         self, func: CoroFunc, name: Optional[str] = None, one_shot: bool = False
@@ -106,7 +110,7 @@ class Dispatcher:
             raise TypeError("Function provided is not a coroutine.")
 
         event_name = func.__name__ if not name else name
-        func.__one_shot__ = one_shot
+        self.one_shots[event_name] = one_shot
 
         if event_name in self.callbacks:
             original_callback = self.callbacks.get(event_name)
@@ -146,7 +150,7 @@ class Dispatcher:
         index: :type:`int`
             The index of the overloaded event callback to remove
         """
-        if not self.has_listener(name):
+        if not self.has_event_callback(name):
             raise Exception(f"There is no original callback with the name {name}.")
 
         del self.callbacks[name][index]

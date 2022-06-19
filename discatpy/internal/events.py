@@ -119,7 +119,7 @@ class EventsMixin:
             if name not in self.valid_events:
                 raise ValueError("Event name provided is not a valid event!")
 
-            self.dispatcher.add_listener(func, name=name)
+            self.dispatcher.add_event_callback(func, name=name)
             return func
 
         return wrapper
@@ -134,5 +134,5 @@ class EventsMixin:
         if func.__name__ not in self.valid_events:
             raise ValueError("Event name provided is not a valid event!")
 
-        self.dispatcher.add_listener(func)
+        self.dispatcher.add_event_callback(func)
         return func
