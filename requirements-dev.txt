@@ -1,1 +1,2 @@
 pre-commit==2.19.0
+pyright==1.1.255
