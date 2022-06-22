@@ -1,7 +1,7 @@
 ci:
     autoupdate_commit_msg: |
-        chore: pre-commit autoupdate
-    
+        style: pre-commit autoupdate
+
 repos:
 -   repo: https://github.com/psf/black
     rev: 22.3.0
