@@ -9,29 +9,3 @@ py_version = 38
 line_length = 100
 combine_as_imports = true
 filter_files = true
-
-
-[tool.pyright]
-typeCheckingMode = "basic"
-include = [
-    "discatpy",
-    "*.py",
-]
-pythonVersion = "3.8"
-
-# https://github.com/microsoft/pyright/blob/main/docs/configuration.md
-reportInvalidStringEscapeSequence = false
-reportPropertyTypeMismatch = true
-reportDuplicateImport = true
-reportUntypedFunctionDecorator = true
-reportUntypedClassDecorator = true
-reportUntypedBaseClass = true
-reportUntypedNamedTuple = true
-reportUnknownLambdaType = true
-reportInvalidTypeVarUse = true
-reportUnnecessaryCast = true
-reportSelfClsParameterName = true
-reportUnsupportedDunderAll = true
-reportUnusedVariable = true
-reportUnnecessaryComparison = true
-reportUnnecessaryTypeIgnoreComment = true

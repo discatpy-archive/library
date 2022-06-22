@@ -61,7 +61,7 @@ class Route:
         The method to use when connecting
     path: :type:`str`
         The path to connect to
-    parameters :type:`Dict[str, Any]`
+    parameters :type:`Any`
         Additional parameters to the path. Automatically formatted
 
     Attributes
@@ -122,7 +122,7 @@ def _calculate_ratelimit_delta(reset_timestamp: float) -> float:
     return (reset - now).total_seconds()
 
 
-def query_parameters(**parameters: Dict[str, Any]):
+def query_parameters(**parameters: Any):
     ret_url: str = ""
 
     for i, k in enumerate(parameters):
@@ -513,17 +513,17 @@ class HTTPClient:
     async def create_guild(
         self,
         name: str,
-        icon: MaybeMissing[str] = MISSING,
+        icon: Union[MISSING, str] = MISSING,
         icon_type: str = "jpeg",
-        verification_level: MaybeMissing[int] = MISSING,
-        default_message_notifications: MaybeMissing[int] = MISSING,
-        explicit_content_filter: MaybeMissing[int] = MISSING,
-        roles: MaybeMissing[List[discord_typings.RoleData]] = MISSING,
-        channels: MaybeMissing[List[discord_typings.PartialChannelData]] = MISSING,
-        afk_channel_id: MaybeMissing[Snowflake] = MISSING,
-        afk_timeout: MaybeMissing[int] = MISSING,
-        system_channel_id: MaybeMissing[Snowflake] = MISSING,
-        system_channel_flags: MaybeMissing[int] = MISSING,
+        verification_level: Union[MISSING, int] = MISSING,
+        default_message_notifications: Union[MISSING, int] = MISSING,
+        explicit_content_filter: Union[MISSING, int] = MISSING,
+        roles: Union[MISSING, List[discord_typings.RoleData]] = MISSING,
+        channels: Union[MISSING, List[discord_typings.PartialChannelData]] = MISSING,
+        afk_channel_id: Union[MISSING, Snowflake] = MISSING,
+        afk_timeout: Union[MISSING, int] = MISSING,
+        system_channel_id: Union[MISSING, Snowflake] = MISSING,
+        system_channel_flags: Union[MISSING, int] = MISSING,
     ):
         json_req = discord_typings.GuildData(name=name)
 
@@ -622,7 +622,7 @@ class HTTPClient:
         ----------
         channel_id: :type:`Snowflake`
             The id of the channel to modify
-        new_channel: :type:`Dict[str, Any]`
+        new_channel: :type:`discord_typings.ChannelData`
             The updated channel. Outputted from `GuildChannel.to_dict()`
         """
         return await self.request(
@@ -790,7 +790,7 @@ class HTTPClient:
         )
 
     async def modify_guild_member(
-        self, guild_id: Snowflake, user_id: Snowflake, new_guild_member: Dict[str, Any]
+        self, guild_id: Snowflake, user_id: Snowflake, new_guild_member: discord_typings.GuildMemberData
     ):
         return await self.request(
             Route(
@@ -851,9 +851,9 @@ class HTTPClient:
         channel_id: Snowflake,
         /,
         limit: int = 50,
-        around: MaybeMissing[Snowflake] = MISSING,
-        before: MaybeMissing[Snowflake] = MISSING,
-        after: MaybeMissing[Snowflake] = MISSING,
+        around: Union[MISSING, Snowflake] = MISSING,
+        before: Union[MISSING, Snowflake] = MISSING,
+        after: Union[MISSING, Snowflake] = MISSING,
     ):
         """Grabs all messages from a channel.
         Only one of the around, before, and after parameters can be set.
@@ -862,11 +862,11 @@ class HTTPClient:
         ----------
         channel_id: :type:`Snowflake`
             The id of the channel to grab the messages from
-        around: :type:`MaybeMissing[Snowflake]`
+        around: :type:`Union[MISSING, Snowflake]`
             The id of the message to grab the messages around. Set to MISSING by default
-        before: :type:`MaybeMissing[Snowflake]`
+        before: :type:`Union[MISSING, Snowflake]`
             The id of the message to grab the messages before. Set to MISSING by default
-        after: :type:`MaybeMissing[Snowflake]`
+        after: :type:`Union[MISSING, Snowflake]`
             The id of the message to grab the messages after. Set to MISSING by default
         limit: :type:`int`
             The amount of messages to grab. The maximum is 100. Set to 50 by default

@@ -28,6 +28,7 @@ from typing import TYPE_CHECKING, Any, cast, Dict, List, Optional, Union
 from typing_extensions import Literal, NotRequired, TypedDict
 
 from discord_typings import (
+    GuildMemberData,
     MessageData,
     MessageReactionData,
     MessageReferenceData,
@@ -132,7 +133,7 @@ class Message(DiscordObject):
         self._channel_id: Snowflake = d.get("channel_id")
         self._guild_id: Optional[Snowflake] = d.get("guild_id")
         self.author: User = User.from_dict(self.client, d.get("author"))
-        self._member: Optional[Dict[str, Any]] = d.get("member")
+        self._member: Optional[GuildMemberData] = d.get("member")
         self.content: str = d.get("content")
         self.timestamp: datetime = datetime.fromisoformat(d.get("timestamp"))
         self.edited_timestamp: Optional[datetime] = (
@@ -162,14 +163,14 @@ class Message(DiscordObject):
             else MISSING
         )
         self.flags: Union[MISSING, int] = d.get("flags", MISSING)
-        raw_referenced_message: Union[MISSING, Optional[Dict[str, Any]]] = d.get(
+        raw_referenced_message: Union[MISSING, Optional[MessageData]] = d.get(
             "referenced_message", MISSING
         )
         self.referenced_message: Union[MISSING, Optional[Message]] = MISSING
         if raw_referenced_message is not MISSING:
             self.referenced_message = (
                 Message(
-                    cast(raw_referenced_message, MessageData), self.client
+                    raw_referenced_message, self.client
                 )
                 if raw_referenced_message is not None
                 else None

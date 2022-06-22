@@ -139,7 +139,7 @@ class Embed:
         else:
             raise DisCatPyException("Exceeded the number of embed fields (max 25)")
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> EmbedData:
         ret_dict: EmbedData = EmbedData(
             title=self.title,
             type="rich",
