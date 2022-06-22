@@ -30,9 +30,9 @@ import platform
 import random
 import zlib
 from typing import TYPE_CHECKING, Any, List, Optional, Union
-from typing_extensions import TypedDict
 
 import aiohttp
+from typing_extensions import TypedDict
 
 from .enums.gateway import GatewayOpcode
 from .types.snowflake import *
@@ -40,7 +40,11 @@ from .types.snowflake import *
 if TYPE_CHECKING:
     from .client import Client
 
-__all__ = ("GatewayPayload", "GatewayClient",)
+__all__ = (
+    "GatewayPayload",
+    "GatewayClient",
+)
+
 
 class GatewayPayload(TypedDict):
     op: int
@@ -316,9 +320,7 @@ class GatewayClient:
 
         await self.ws.send_json(guild_mems_req)
 
-    async def update_presence(
-        self, since: int, status: str, afk: bool
-    ):
+    async def update_presence(self, since: int, status: str, afk: bool):
         """
         Sends a presence update to the Gateway.
 
