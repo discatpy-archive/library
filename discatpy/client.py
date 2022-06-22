@@ -24,8 +24,6 @@ DEALINGS IN THE SOFTWARE.
 from __future__ import annotations
 
 import asyncio
-import traceback
-from signal import SIGINT, SIGTERM
 from typing import TYPE_CHECKING, Optional
 
 from .cache import ClientCache
@@ -113,8 +111,6 @@ class Client(EventsMixin):
         self.intents: Intents = intents
         self.dispatcher: Dispatcher = Dispatcher()
 
-        self.dispatcher.add_event_callback(self.on_error)
-
     @property
     def token(self):
         """
@@ -131,20 +127,39 @@ class Client(EventsMixin):
         """
         return self.http.api_version
 
-    # Built-in events
+    # Events/listeners
 
-    async def on_error(self, exception: Exception):
-        """The default error handler for the client.
-
-        Instead of raising the exception and stopping the entire connection, this prints the traceback
-        on screen.
+    def event(self, name: Optional[str] = None):
+        """A decorator that registers a function as an event callback.
 
         Parameters
         ----------
-        exception: :type:`Exception`
-            The exception of the traceback to print.
+        name: :type:`Optional[str]` = `None`
+            The name of this event. If none, then the function's name is used.
         """
-        traceback.print_exception(type(exception), exception, exception.__traceback__)
+
+        def decorator(func):
+            self.dispatcher.set_event(func, name)
+            return func
+
+        return decorator
+
+    def listener(self, name: Optional[str] = None):
+        """A decorator that registers a function as a listener for an event.
+
+        You should use this decorator if you have multiple functions for one event.
+
+        Parameters
+        ----------
+        name: :type:`Optional[str]` = `None`
+            The name of this listener. If none, then the function's name is used.
+        """
+
+        def decorator(func):
+            self.dispatcher.add_listener(func, name)
+            return func
+
+        return decorator
 
     # Running logic
 

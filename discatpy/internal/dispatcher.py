@@ -24,6 +24,7 @@ DEALINGS IN THE SOFTWARE.
 
 import asyncio
 import inspect
+import traceback
 from typing import Any, Callable, Coroutine, Dict, Optional
 
 from ..utils import MultipleValuesDict
@@ -33,27 +34,52 @@ __all__ = ("Dispatcher",)
 CoroFunc = Callable[..., Coroutine[Any, Any, Any]]
 
 
+def _find_value_in_multidict(d: MultipleValuesDict[str, Any], k: str, v: Any):
+    values = d.get(k)
+
+    if isinstance(values, list):
+        for i, value in enumerate(values):
+            if value is v:
+                return i
+
+    return -1
+
+
 class Dispatcher:
-    """
-    Runs coroutines based on if an event is dispatched.
+    """A class that helps manage events and listeners.
+
+    Attributes
+    ----------
+    events: :type:`Dict[str, CoroFunc]`
+        The events for this dispatcher.
+    listener: :type:`MultipleValuesDict[str, CoroFunc]`
+        The listeners for this dispatcher.
     """
 
     def __init__(self):
-        self.callbacks: MultipleValuesDict[str, CoroFunc] = MultipleValuesDict()
-        self.one_shots: Dict[str, Any] = {}
+        self.events: Dict[str, CoroFunc] = {}
+        self.listeners: MultipleValuesDict[str, CoroFunc] = MultipleValuesDict()
+
+        async def on_error(exception: Exception):
+            traceback.print_exception(
+                type(exception), exception, exception.__traceback__
+            )
+
+        self.set_event(on_error)
 
     async def run(self, coro: CoroFunc, *args: Any, **kwargs: Any):
-        """
-        Runs the given coroutine. Do not run this yourself, :meth:`dispatch` takes care of that.
+        """Runs the given coroutine. Do not run this yourself, :meth:`.dispatch` takes care of that.
+
+        If the coroutine returns anything, then the coroutine result is ignored..
 
         Parameters
         ----------
         coro: :type:`Callable[..., Coroutine[Any, Any, Any]]`
-            The coroutine to run
+            The coroutine to run.
         *args: :type:`Any`
-            Arguments to pass into the coroutine
+            Arguments to pass into the coroutine.
         **kwargs: :type:`Any`
-            Keyword arguments to pass into the coroutine
+            Keyword arguments to pass into the coroutine.
         """
         try:
             await coro(*args, **kwargs)
@@ -63,110 +89,123 @@ class Dispatcher:
             raise
 
     async def dispatch(self, name: str, *args: Any, **kwargs: Any):
-        """
-        Dispatches a event. This will trigger the all of the event's
+        """Dispatches a event. This will trigger the all of the event's
         callbacks.
 
         Parameters
         ----------
         name: :type:`str`
-            The name of the event to dispatch
+            The name of the event to dispatch.
         *args: :type:`Any`
-            Arguments to pass into the event callback
+            Arguments to pass into the event callback.
         **kwargs: :type:`Any`
-            Keyword arguments to pass into the event callback
+            Keyword arguments to pass into the event callback.
         """
-        funcs = self.callbacks.get(name)
-        one_shot = self.one_shots.get(name)
+        event_func = self.events.get(name)
+        listeners = self.listeners.get(name)
 
-        if isinstance(funcs, list):
-            for f in funcs:
-                await self.run(f, *args, **kwargs)
-        elif funcs is not None:
-            await self.run(funcs, *args, **kwargs)
+        if event_func:
+            await self.run(event_func, *args, **kwargs)
 
-        # this ensures that the listener gets removed after all of the callbacks are called
-        if one_shot and funcs is not None:
-            self.remove_event_callback(name)
+        if listeners:
+            if isinstance(listeners, list):
+                for listener in listeners:
+                    await self.run(listener, *args, **kwargs)
 
-    def add_event_callback(
-        self, func: CoroFunc, name: Optional[str] = None, one_shot: bool = False
-    ):
-        """
-        Adds a new callback for an event.
+                    if listener.__one_shot__:
+                        self.remove_listener(
+                            name, _find_value_in_multidict(listeners, name, listener)
+                        )
+            else:
+                await self.run(listeners, *args, **kwargs)
+
+                if listeners.__one_shot__:
+                    self.remove_listener(name, -1)
+
+    def set_event(self, func: CoroFunc, name: Optional[str] = None):
+        """Sets an event to a callback.
 
         Parameters
         ----------
         func: :type:`Callable[..., Coroutine[Any, Any, Any]]`
-            The function for this callback.
-        name: :type:`Optional[str]`
+            The callback for this event.
+        name: :type:`Optional[str]` = `None`
             The name of this event. If not set, then it uses the name of
             the function.
-        one_shot: :type:`bool`
-            If this event should be deleted or not. Set to False
-            by default.
         """
         if not asyncio.iscoroutinefunction(func):
             raise TypeError("Function provided is not a coroutine.")
 
         event_name = func.__name__ if not name else name
-        self.one_shots[event_name] = one_shot
+        self.events[event_name] = func
 
-        if event_name in self.callbacks:
-            original_callback = self.callbacks.get(event_name)
+    def remove_event(self, name: str):
+        """Removes an event.
 
-            if isinstance(original_callback, list):
-                original_callback = original_callback[0]
+        Parameters
+        ----------
+        name: :type:`str`
+            The name of the event callback to remove.
+        """
+        del self.events[name]
 
-            original_callback_sig = inspect.signature(original_callback)
-            overloaded_callback_sig = inspect.signature(func)
+    def has_event(self, name: str):
+        """
+        Check if this dispatcher already has a event.
 
-            if original_callback_sig.parameters != overloaded_callback_sig.parameters:
+        Parameters
+        ----------
+        name: :type:`str`
+            The name of the event callback to find.
+
+        Returns
+        -------
+        :type:`bool`
+            A bool correlating to if there is a event callback with that
+            name or not.
+        """
+        return name in self.events
+
+    def add_listener(
+        self, func: CoroFunc, name: Optional[str] = None, one_shot: bool = False
+    ):
+        """Adds a new listener to an event.
+
+        Parameters
+        ----------
+        func: :type:`Callable[..., Coroutine[Any, Any, Any]]`
+            The callback for this listener.
+        name: :type:`Optional[str]` = `None`
+            The name of the event to listen to. If not set, then it uses the name
+            of the function.
+        one_shot: :type:`bool` = `False`
+            If this listener should be deleted or not.
+        """
+        event_name = func.__name__ if not name else name
+
+        if event_name in self.events:
+            events_sig = inspect.signature(self.events[event_name])
+            listener_sig = inspect.signature(self.listeners[event_name])
+
+            if events_sig.parameters != listener_sig.parameters:
                 raise TypeError(
                     "Overloaded function does not have the same parameters as original function."
                 )
 
-        self.callbacks[event_name] = func
+            setattr(func, "__one_shot__", one_shot)
+            self.listeners[event_name] = func
 
-    def remove_event_callback(self, name: str):
-        """
-        Removes a event callback for an event.
-
-        Parameters
-        ----------
-        name: :type:`str`
-            The name of the event callback to remove
-        """
-        del self.callbacks[name]
-
-    def remove_event_callback_overload(self, name: str, index: int):
-        """
-        Removes an overloaded event callback for an event callback.
+    def remove_listener(self, name: str, index: int):
+        """Removes a listener for an event.
 
         Parameters
         ----------
         name: :type:`str`
-            The name of the event callback to remove the overloaded event callback
+            The name of the event callback to remove the overloaded event callback.
         index: :type:`int`
-            The index of the overloaded event callback to remove
+            The index of the overloaded event callback to remove.
         """
-        if not self.has_event_callback(name):
-            raise Exception(f"There is no original callback with the name {name}.")
-
-        del self.callbacks[name][index]
-
-    def has_event_callback(self, name: str):
-        """
-        Check if this dispatcher already has a event callback.
-
-        Parameters
-        ----------
-        name: :type:`str`
-            The name of the event callback to find
-
-        Returns
-        -------
-            A bool correlating to if there is a event callback with that
-            name or not.
-        """
-        return name in self.callbacks
+        if isinstance(self.listeners.get(name), list):
+            del self.listeners[name][index]
+        elif name in self.listeners:
+            del self.listeners[name]
