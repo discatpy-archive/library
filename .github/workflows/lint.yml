@@ -29,5 +29,5 @@ jobs:
 
           git pull
           git add .
-          git commit -m "style: pre-commit autoupdate"
+          git commit -m "style: pre-commit autofix"
           git push
