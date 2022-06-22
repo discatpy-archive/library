@@ -34,7 +34,7 @@ __all__ = ("Dispatcher",)
 CoroFunc = Callable[..., Coroutine[Any, Any, Any]]
 
 
-def _find_value_in_multidict(d: MultipleValuesDict[str, Any], k: str, v: Any):
+def _find_value_in_multidict(d: MultipleValuesDict, k: str, v: Any):
     values = d.get(k)
 
     if isinstance(values, list):
@@ -52,13 +52,13 @@ class Dispatcher:
     ----------
     events: :type:`Dict[str, CoroFunc]`
         The events for this dispatcher.
-    listener: :type:`MultipleValuesDict[str, CoroFunc]`
+    listener: :type:`MultipleValuesDict`
         The listeners for this dispatcher.
     """
 
     def __init__(self):
         self.events: Dict[str, CoroFunc] = {}
-        self.listeners: MultipleValuesDict[str, CoroFunc] = MultipleValuesDict()
+        self.listeners: MultipleValuesDict = MultipleValuesDict()
 
         async def on_error(exception: Exception):
             traceback.print_exception(
@@ -114,7 +114,7 @@ class Dispatcher:
 
                     if listener.__one_shot__:
                         self.remove_listener(
-                            name, _find_value_in_multidict(listeners, name, listener)
+                            name, _find_value_in_multidict(self.listeners, name, listener)
                         )
             else:
                 await self.run(listeners, *args, **kwargs)

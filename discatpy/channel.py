@@ -27,6 +27,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, overload
 
 from discord_typings import (
+    PartialChannelData,
     CategoryChannelData,
     DMChannelData,
     NewsChannelData,
@@ -40,7 +41,7 @@ from .enums.channel import ChannelType
 from .object import DiscordObject
 from .types.snowflake import *
 from .user import User
-from .utils import MISSING, MaybeMissing
+from .utils import MISSING
 
 if TYPE_CHECKING:
     from .guild import Guild
@@ -53,6 +54,8 @@ __all__ = (
     "VoiceChannel",
     "CategoryChannel",
 )
+
+GuildChannelData = CategoryChannelData # there isn't anything extra in CategoryChannelData, so it's assigned here
 
 
 class RawChannel(DiscordObject):
@@ -76,11 +79,11 @@ class RawChannel(DiscordObject):
         "type",
     )
 
-    def __init__(self, d: Dict[str, Any], client):
+    def __init__(self, d: PartialChannelData, client):
         DiscordObject.__init__(self, d, client)
         self._update(d)
 
-    def _update(self, d: Dict[str, Any]):
+    def _update(self, d: PartialChannelData):
         self.id: Snowflake = d.get("id")
         self.type: int = d.get("type")
 
@@ -95,7 +98,7 @@ class RawChannel(DiscordObject):
         d: :type:`Dict[str, Any]`
             The raw channel dict.
         """
-        channel_type: int = d.get("type")
+        channel_type: int = d.get("type") # type: ignore
 
         if channel_type == ChannelType.DM.value:
             return DMChannel(d, client)
@@ -112,8 +115,8 @@ class RawChannel(DiscordObject):
 
         raise TypeError("Invalid channel dict provided")
 
-    def to_dict(self) -> Dict[str, Any]:
-        ret_dict: Dict[str, Any] = {"id": self.id, "type": self.type}
+    def to_dict(self) -> PartialChannelData:
+        ret_dict: PartialChannelData = {"id": self.id, "type": self.type}
         return ret_dict
 
 
@@ -149,7 +152,7 @@ class GuildChannel(RawChannel):
         "permission_overwrites",
     )
 
-    def __init__(self, d: Dict[str, Any], client):
+    def __init__(self, d: GuildChannelData, client):
         RawChannel.__init__(self, d, client)
 
         if self.type == ChannelType.DM.value or self.type == ChannelType.GROUP_DM.value:
@@ -159,7 +162,7 @@ class GuildChannel(RawChannel):
         self.guild: Optional[Guild] = None
         self._update(d)
 
-    def _update(self, d: Dict[str, Any]):
+    def _update(self, d: GuildChannelData):
         self.name: str = d.get("name")
         self.position: int = d.get("position")
         self.nsfw: bool = d.get("nsfw", False)
@@ -171,8 +174,8 @@ class GuildChannel(RawChannel):
         self._parent_id = d.get("parent_id")
         self.parent: Optional[GuildChannel] = None
 
-    def to_dict(self) -> Dict[str, Any]:
-        ret_dict: Dict[str, Any] = super(RawChannel, self).to_dict()
+    def to_dict(self) -> GuildChannelData:
+        ret_dict: GuildChannelData = super(RawChannel, self).to_dict()
         ret_dict.update(
             {
                 "guild_id": self._guild_id,
@@ -196,9 +199,7 @@ class GuildChannel(RawChannel):
 
     @property
     def mention(self) -> Optional[str]:
-        """
-        Returns a string that can mention this Guild Channel.
-        """
+        """Returns a string that can mention this Guild Channel."""
         return f"<#{self.id}>"
 
     async def move(self, /, position: int, parent: Optional[GuildChannel] = None):
@@ -239,23 +240,19 @@ class DMChannel(RawChannel, Messageable):
         "last_pin_timestamp",
     )
 
-    @overload
     def __init__(self, d: DMChannelData, client):
-        ...
-
-    def __init__(self, d: Dict[str, Any], client):
         RawChannel.__init__(self, d, client)
         self._update(d)
 
-    def _update(self, d: Dict[str, Any]):
+    def _update(self, d: DMChannelData):
         self.last_message_id: Optional[Snowflake] = d.get("last_message_id")
         self.recipients: List[User] = [
             User.from_dict(self.client, u) for u in d.get("recipients")
         ]
-        raw_last_pin_timestamp: MaybeMissing[Optional[str]] = d.get(
+        raw_last_pin_timestamp: Union[MISSING, Optional[str]] = d.get(
             "last_pin_timestamp", MISSING
         )
-        self.last_pin_timestamp: MaybeMissing[Optional[datetime]] = MISSING
+        self.last_pin_timestamp: Union[MISSING, Optional[datetime]] = MISSING
         if raw_last_pin_timestamp is not MISSING:
             self.last_pin_timestamp = (
                 datetime.fromisoformat(raw_last_pin_timestamp)
@@ -294,32 +291,28 @@ class TextChannel(GuildChannel, Messageable):
         "default_auto_archive_duration",
     )
 
-    @overload
     def __init__(self, d: Union[TextChannelData, NewsChannelData], client):
-        ...
-
-    def __init__(self, d: Dict[str, Any], client):
         GuildChannel.__init__(self, d, client)
         self._update(d)
 
-    def _update(self, d: Dict[str, Any]):
+    def _update(self, d: Union[TextChannelData, NewsChannelData]):
         self.topic: Optional[str] = d.get("topic")
         self.cooldown: int = d.get("rate_limit_per_user", 0)
         self.last_message_id: Optional[Snowflake] = d.get("last_message_id")
-        raw_last_pin_timestamp: MaybeMissing[Optional[str]] = d.get(
+        raw_last_pin_timestamp: Union[MISSING, Optional[str]] = d.get(
             "last_pin_timestamp", MISSING
         )
-        self.last_pin_timestamp: MaybeMissing[Optional[datetime]] = MISSING
+        self.last_pin_timestamp: Union[MISSING, Optional[datetime]] = MISSING
         if raw_last_pin_timestamp is not MISSING:
             self.last_pin_timestamp = (
                 datetime.fromisoformat(raw_last_pin_timestamp)
                 if raw_last_pin_timestamp is not None
                 else None
             )
-        self.permissions: MaybeMissing[str] = d.get("permissions", MISSING)
+        self.permissions: Union[MISSING, str] = d.get("permissions", MISSING)
 
-    def to_dict(self) -> Dict[str, Any]:
-        ret_dict: Dict[str, Any] = super(GuildChannel, self).to_dict()
+    def to_dict(self) -> Union[TextChannelData, NewsChannelData]:
+        ret_dict: Union[TextChannelData, NewsChannelData] = super(GuildChannel, self).to_dict()
         ret_dict.update({"rate_limit_per_user": self.cooldown})
 
         if self.topic:
@@ -382,25 +375,21 @@ class VoiceChannel(GuildChannel):
 
     __slots__ = ("bitrate", "user_limit", "rtc_region", "video_quality_mode")
 
-    @overload
     def __init__(self, d: VoiceChannelData, client):
-        ...
-
-    def __init__(self, d: Dict[str, Any], client):
         GuildChannel.__init__(self, d, client)
         self._update(d)
 
-    def _update(self, d: Dict[str, Any]):
+    def _update(self, d: VoiceChannelData):
         self.bitrate: int = d.get("bitrate")
         self.user_limit: int = d.get("user_limit")
         self.rtc_region: Optional[str] = d.get("rtc_region")
         self.automatic_rtc_region: bool = self.rtc_region is None
-        self.video_quality_mode: MaybeMissing[int] = d.get(
+        self.video_quality_mode: Union[MISSING, int] = d.get(
             "video_quality_mode", MISSING
         )
 
-    def to_dict(self) -> Dict[str, Any]:
-        ret_dict: Dict[str, Any] = super(GuildChannel, self).to_dict()
+    def to_dict(self) -> VoiceChannelData:
+        ret_dict: VoiceChannelData = super(GuildChannel, self).to_dict()
         ret_dict.update(
             {
                 "bitrate": self.bitrate,
@@ -448,9 +437,5 @@ class CategoryChannel(GuildChannel):
     This is a child of :class:`GuildChannel`.
     """
 
-    @overload
     def __init__(self, d: CategoryChannelData, client):
-        ...
-
-    def __init__(self, d: Dict[str, Any], client):
         GuildChannel.__init__(self, d, client)

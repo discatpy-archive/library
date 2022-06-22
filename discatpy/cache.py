@@ -30,7 +30,7 @@ from .types.snowflake import *
 from .utils import MultipleValuesDict
 
 if TYPE_CHECKING:
-    from .channel import RawChannel
+    from .channel import RawChannel, GuildChannel
     from .client import Client
     from .guild import Guild
     from .message import Message
@@ -124,7 +124,7 @@ class ClientCache:
         )
         self._obj_cache[message_obj.id] = message_obj
 
-    def add_channel(self, channel_obj: RawChannel):
+    def add_channel(self, channel_obj: Union[RawChannel, GuildChannel]):
         """Adds a channel object to the cache.
 
         Parameters

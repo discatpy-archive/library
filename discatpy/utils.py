@@ -23,7 +23,7 @@ DEALINGS IN THE SOFTWARE.
 """
 
 import asyncio
-from typing import Any, Generic, TypeVar, Union, _SpecialForm
+from typing import Any, Generic, Optional, TypeVar, Union, _SpecialForm
 
 from .types.snowflake import *
 
@@ -180,7 +180,7 @@ class MultipleValuesDict(dict):
         return super().__setitem__(__k, val)
 
     def get_one(
-        self, __key: _KT, __index: int, /, _type: type = None, default: Any = None
+        self, __key: _KT, __index: int, /, _type: Optional[type] = None, default: Any = None
     ):
         """Gets one value from a key that matches index and optionally type.
 

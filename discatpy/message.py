@@ -24,23 +24,23 @@ DEALINGS IN THE SOFTWARE.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, cast, Dict, List, Optional, Union
+from typing_extensions import Literal, NotRequired, TypedDict
 
-from discord_typings import (  # MessageActivityData, # TODO: Find out why this can't import without errors
+from discord_typings import (
     MessageData,
     MessageReactionData,
     MessageReferenceData,
 )
-from typing_extensions import Literal, NotRequired, TypedDict
 
 from .enums.channel import ChannelType
-from .object import DiscordObject
 from .types.snowflake import *
+from .object import DiscordObject
 from .user import User
-from .utils import MISSING, MaybeMissing
+from .utils import MISSING
 
 if TYPE_CHECKING:
-    from .channel import RawChannel
+    from .channel import RawChannel, GuildChannel
     from .embed import Embed
     from .guild import Guild, GuildMember
 
@@ -119,19 +119,15 @@ class Message(DiscordObject):
         "referenced_message",
     )
 
-    @overload
     def __init__(self, d: MessageData, client):
-        ...
-
-    def __init__(self, d: Dict[str, Any], client):
         DiscordObject.__init__(self, d, client)
 
-        self.channel: Optional[RawChannel] = None
+        self.channel: Optional[Union[RawChannel, GuildChannel]] = None
         self.guild: Optional[Guild] = None
         self.member: Optional[GuildMember] = None
         self._update(d)
 
-    def _update(self, d: Dict[str, Any]):
+    def _update(self, d: MessageData):
         self.id: Snowflake = d.get("id")
         self._channel_id: Snowflake = d.get("channel_id")
         self._guild_id: Optional[Snowflake] = d.get("guild_id")
@@ -147,42 +143,44 @@ class Message(DiscordObject):
         self.tts: bool = d.get("tts")
         self.mention_everyone: bool = d.get("mention_everyone")
         # TODO: mentions, attachments, embeds
-        self.reactions: MaybeMissing[List[MessageReactionData]] = (
-            [MessageReactionData(r) for r in d.get("reactions")]
+        self.reactions: Union[MISSING, List[MessageReactionData]] = (
+            [cast(r, MessageReactionData) for r in d.get("reactions")]
             if d.get("reactions", MISSING) is not MISSING
             else MISSING
         )
         self.pinned: bool = d.get("pinned")
         self.type: int = d.get("type")
         # TODO: application, application_id
-        self.activity: MaybeMissing[MessageActivityData] = (
-            MessageActivityData(d.get("activity"))
+        self.activity: Union[MISSING, MessageActivityData] = (
+            cast(d.get("activity"), MessageActivityData)
             if d.get("activity", MISSING) is not MISSING
             else MISSING
         )
-        self.message_reference: MaybeMissing[MessageReferenceData] = (
-            MessageReferenceData(d.get("message_reference"))
+        self.message_reference: Union[MISSING, MessageReferenceData] = (
+            cast(d.get("message_reference"), MessageReferenceData)
             if d.get("message_reference", MISSING) is not MISSING
             else MISSING
         )
-        self.flags: MaybeMissing[int] = d.get("flags", MISSING)
-        raw_referenced_message: MaybeMissing[Optional[Dict[str, Any]]] = d.get(
+        self.flags: Union[MISSING, int] = d.get("flags", MISSING)
+        raw_referenced_message: Union[MISSING, Optional[Dict[str, Any]]] = d.get(
             "referenced_message", MISSING
         )
-        self.referenced_message: MaybeMissing[Optional[Message]] = MISSING
+        self.referenced_message: Union[MISSING, Optional[Message]] = MISSING
         if raw_referenced_message is not MISSING:
             self.referenced_message = (
-                Message(raw_referenced_message, self.client)
+                Message(
+                    cast(raw_referenced_message, MessageData), self.client
+                )
                 if raw_referenced_message is not None
                 else None
             )
         # TODO: interactions, thread, sticker_items
 
-    def _set_channel(self, new_channel: RawChannel):
+    def _set_channel(self, new_channel: Union[RawChannel, GuildChannel]):
         self.channel = new_channel
 
         if self.channel.type not in (ChannelType.DM, ChannelType.GROUP_DM):
-            self.guild = self.channel.guild
+            self.guild = self.channel.guild # type: ignore
 
     def _set_member(self, new_member: GuildMember):
         if self.guild:
@@ -285,9 +283,10 @@ class Message(DiscordObject):
 
     async def crosspost(self):
         """Crossposts this message to following channels of the parent News Channel."""
-        if self.channel.type != ChannelType.GUILD_NEWS:
-            raise TypeError(
-                "Parent channel of this message must be a News Channel to crosspost!"
-            )
+        if self.channel is not None:
+            if self.channel.type != ChannelType.GUILD_NEWS:
+                raise TypeError(
+                    "Parent channel of this message must be a News Channel to crosspost!"
+                )
 
-        await self.client.http.crosspost_message(self._channel_id, self.id)
+            await self.client.http.crosspost_message(self._channel_id, self.id)

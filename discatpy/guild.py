@@ -85,17 +85,13 @@ class GuildRole(DiscordObject):
         "tags",
     )
 
-    @overload
     def __init__(self, d: RoleData, client):
-        ...
-
-    def __init__(self, d: Dict[str, Any], client):
         DiscordObject.__init__(self, d, client)
 
         self.guild: Optional[Guild] = None
         self._update(d)
 
-    def _update(self, d: Dict[str, Any]):
+    def _update(self, d: RoleData):
         self.id: Snowflake = d.get("id")
         self.name: str = d.get("name")
         self.color: str = hex(d.get("color"))
@@ -111,8 +107,8 @@ class GuildRole(DiscordObject):
         self.mentionable: bool = d.get("mentionable")
         # TODO: tags
 
-    def to_dict(self) -> Dict[str, Any]:
-        ret_dict: Dict[str, Any] = {
+    def to_dict(self) -> RoleData:
+        ret_dict: RoleData = {
             "id": self.id,
             "name": self.name,
             "color": int(self.color, 16),
@@ -173,34 +169,30 @@ class Emoji(DiscordObject):
         "available",
     )
 
-    @overload
     def __init__(self, d: EmojiData, client):
-        ...
-
-    def __init__(self, d: Dict[str, Any], client):
         DiscordObject.__init__(self, d, client)
 
         self.guild: Optional[Guild] = None
         self.roles: Union[MISSING, List[GuildRole]] = None
         self._update(d)
 
-    def _update(self, d: Dict[str, Any]):
+    def _update(self, d: EmojiData):
         self.id: Optional[Snowflake] = d.get("id")
         self.name: Optional[str] = d.get("name")
-        self._role_ids: MaybeMissing[List[Snowflake]] = (
+        self._role_ids: Union[MISSING, List[Snowflake]] = (
             [i for i in d.get("roles")]
             if d.get("roles", MISSING) is not MISSING
             else MISSING
         )
-        self.creator: MaybeMissing[User] = (
-            User.from_dict(self.client, d.get("user"))
+        self.creator: Union[MISSING, User] = (
+            User(d.get("user"), self.client)
             if d.get("user", MISSING) is not MISSING
             else MISSING
         )
-        self.require_colons: MaybeMissing[bool] = d.get("require_colons", MISSING)
-        self.managed: MaybeMissing[bool] = d.get("managed", MISSING)
-        self.animated: MaybeMissing[bool] = d.get("animated", MISSING)
-        self.available: MaybeMissing[bool] = d.get("available", MISSING)
+        self.require_colons: Union[MISSING, bool] = d.get("require_colons", MISSING)
+        self.managed: Union[MISSING, bool] = d.get("managed", MISSING)
+        self.animated: Union[MISSING, bool] = d.get("animated", MISSING)
+        self.available: Union[MISSING, bool] = d.get("available", MISSING)
 
     def _set_guild(self, new_guild: Guild):
         self.guild = new_guild
@@ -251,25 +243,21 @@ class GuildMember(DiscordObject):
         "timeout_until",
     )
 
-    @overload
     def __init__(self, d: GuildMemberData, client):
-        ...
-
-    def __init__(self, d: Dict[str, Any], client):
-        super().__init__(d, client)
+        DiscordObject.__init__(self, d, client)
 
         self.guild: Optional[Guild] = None
         self.roles: Optional[List[GuildRole]] = None
         self.avatar: Optional[Asset] = None
         self._update(d)
 
-    def _update(self, d: Dict[str, Any]):
-        self.user: MaybeMissing[User] = (
+    def _update(self, d: GuildMemberData):
+        self.user: Union[MISSING, User] = (
             User.from_dict(self.client, d.get("user"))
             if d.get("user", MISSING) is not MISSING
             else MISSING
         )
-        self.nick: MaybeMissing[Optional[str]] = d.get("nick", MISSING)
+        self.nick: Union[MISSING, Optional[str]] = d.get("nick", MISSING)
         self._avatar_hash: Optional[str] = d.get("avatar")
         self._role_ids: List[Snowflake] = d.get("roles")
         self.joined_at: datetime = datetime.fromisoformat(d.get("joined_at"))
@@ -281,10 +269,10 @@ class GuildMember(DiscordObject):
         self.deaf: bool = d.get("deaf")
         self.mute: bool = d.get("mute")
         self.pending: Optional[bool] = d.get("pending")
-        raw_timeout_until: MaybeMissing[Optional[str]] = d.get(
+        raw_timeout_until: Union[MISSING, Optional[str]] = d.get(
             "communication_disabled_until", MISSING
         )
-        self.timeout_until: MaybeMissing[Optional[str]] = MISSING
+        self.timeout_until: Union[MISSING, Optional[str]] = MISSING
         if raw_timeout_until is not MISSING:
             self.timeout_until = (
                 datetime.fromisoformat(raw_timeout_until)
@@ -292,8 +280,8 @@ class GuildMember(DiscordObject):
                 else None
             )
 
-    def to_dict(self) -> Dict[str, Any]:
-        ret_dict: Dict[str, Any] = {"deaf": self.deaf, "mute": self.mute}
+    def to_dict(self) -> GuildMemberData:
+        ret_dict: GuildMemberData = {"deaf": self.deaf, "mute": self.mute}
 
         if self.nick:
             ret_dict["nick"] = self.nick
@@ -392,22 +380,18 @@ class Guild(DiscordObject):
         "premium_progress_bar_enabled",
     )
 
-    @overload
     def __init__(self, d: GuildData, client):
-        ...
-
-    def __init__(self, d: Dict[str, Any], client):
         DiscordObject.__init__(d, client)
         self._update(d)
 
-    def _update(self, d: Dict[str, Any]):
+    def _update(self, d: GuildData):
         self.id: Snowflake = d.get("id")
         self.name: str = d.get("name")
         self._icon_hash: Optional[str] = d.get("icon")
         self._splash_hash: Optional[str] = d.get("splash")
         self._discovery_splash_hash: Optional[str] = d.get("discovery_splash")
         self._owner_id: Snowflake = d.get("owner_id")
-        self.permissions: MaybeMissing[str] = d.get("permissions", MISSING)
+        self.permissions: Union[MISSING, str] = d.get("permissions", MISSING)
         self._afk_channel_id: Snowflake = d.get("afk_channel_id")
         self.afk_timeout: int = d.get("afk_timeout")
         # TODO: widgets
@@ -432,7 +416,7 @@ class Guild(DiscordObject):
         self.description: Optional[str] = d.get("description")
         self.banner_hash: Optional[str] = d.get("banner")
         self.premium_tier: int = d.get("premium_tier")
-        self.premium_subscription_count: MaybeMissing[Optional[int]] = d.get(
+        self.premium_subscription_count: Union[MISSING, Optional[int]] = d.get(
             "premium_subscription_count", MISSING
         )
         self.preferred_locale: str = d.get("preferred_locale")

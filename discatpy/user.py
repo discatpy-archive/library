@@ -22,14 +22,14 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from typing import Any, Dict, Optional, Union, overload
+from typing import Optional, Union
 
 from discord_typings import UserData
 
 from .asset import Asset
 from .object import DiscordObject
 from .types.snowflake import *
-from .utils import MISSING, MaybeMissing
+from .utils import MISSING
 
 __all__ = ("User",)
 
@@ -75,15 +75,11 @@ class User(DiscordObject):
         "public_flags",
     )
 
-    @overload
     def __init__(self, d: UserData, client):
-        ...
-
-    def __init__(self, d: Dict[str, Any], client):
         DiscordObject.__init__(self, d, client)
         self._update(d)
 
-    def _update(self, d: Dict[str, Any]):
+    def _update(self, d: UserData):
         self.id: Snowflake = d.get("id")
         self.name: str = d.get("username")
         self.discriminator: str = d.get("discriminator")
@@ -92,17 +88,17 @@ class User(DiscordObject):
             if d.get("avatar")
             else Asset.from_default_user_avatar(self.client, int(self.discriminator))
         )
-        self.bot: MaybeMissing[bool] = d.get("bot", MISSING)
-        self.tfa_enabled: MaybeMissing[bool] = d.get("mfa_enabled", MISSING)
-        self.accent_color: MaybeMissing[Optional[int]] = MISSING
+        self.bot: Union[MISSING, bool] = d.get("bot", MISSING)
+        self.tfa_enabled: Union[MISSING, bool] = d.get("mfa_enabled", MISSING)
+        self.accent_color: Union[MISSING, Optional[int]] = MISSING
         if d.get("accent_color", MISSING) is not MISSING:
             self.accent_color = (
                 int(d.get("accent_color"))
                 if d.get("accent_color") is not None
                 else None
             )
-        _banner_hash: MaybeMissing[Optional[str]] = d.get("banner", MISSING)
-        self.banner: MaybeMissing[Optional[Asset]] = MISSING
+        _banner_hash: Union[MISSING, Optional[str]] = d.get("banner", MISSING)
+        self.banner: Union[MISSING, Optional[Asset]] = MISSING
         if _banner_hash is not MISSING:
             self.banner = (
                 Asset.from_user_banner(self.client, self.id, _banner_hash)
@@ -110,13 +106,11 @@ class User(DiscordObject):
                 else None
             )
         # TODO: Locales
-        self.flags: MaybeMissing[int] = d.get("flags", MISSING)
-        self.premium_type: MaybeMissing[int] = d.get("premium_type", MISSING)
-        self.public_flags: MaybeMissing[int] = d.get("public_flags", MISSING)
+        self.flags: Union[MISSING, int] = d.get("flags", MISSING)
+        self.premium_type: Union[MISSING, int] = d.get("premium_type", MISSING)
+        self.public_flags: Union[MISSING, int] = d.get("public_flags", MISSING)
 
     @property
     def mention(self) -> str:
-        """
-        Returns a string that can mention this user.
-        """
+        """Returns a string that can mention this user."""
         return f"<@{self.id}>"

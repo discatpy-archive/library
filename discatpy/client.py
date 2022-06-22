@@ -30,8 +30,7 @@ from .cache import ClientCache
 from .flags import Intents
 from .gateway import GatewayClient
 from .http import HTTPClient
-from .internal.dispatcher import *
-from .internal.events import *
+from .internal.dispatcher import Dispatcher
 from .types.snowflake import *
 from .user import User
 
@@ -63,7 +62,7 @@ def _fetch_function_from_type(http: HTTPClient, t: Union[type, str]):
         raise TypeError("invalid type passed in")
 
 
-class Client(EventsMixin):
+class Client:
     """
     The main client that joins the developer's code and the Discord API together.
 

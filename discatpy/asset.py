@@ -55,8 +55,6 @@ class Asset:
         be set to `gif`.
     """
 
-    client: Client
-
     def __init__(self, client: Client, path: str, key: str, animated: bool = False):
         self.client = client
         self.format = ".png" if not animated else ".gif"
