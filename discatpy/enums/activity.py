@@ -24,9 +24,7 @@ DEALINGS IN THE SOFTWARE.
 
 from enum import Enum
 
-__all__ = (
-    "ActivityTypes",
-)
+__all__ = ("ActivityTypes",)
 
 
 class ActivityTypes(Enum):

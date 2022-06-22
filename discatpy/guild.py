@@ -180,14 +180,10 @@ class Emoji(DiscordObject):
         self.id: Optional[Snowflake] = d.get("id")
         self.name: Optional[str] = d.get("name")
         self._role_ids: Union[MISSING, List[Snowflake]] = (
-            [i for i in d.get("roles")]
-            if d.get("roles", MISSING) is not MISSING
-            else MISSING
+            [i for i in d.get("roles")] if d.get("roles", MISSING) is not MISSING else MISSING
         )
         self.creator: Union[MISSING, User] = (
-            User(d.get("user"), self.client)
-            if d.get("user", MISSING) is not MISSING
-            else MISSING
+            User(d.get("user"), self.client) if d.get("user", MISSING) is not MISSING else MISSING
         )
         self.require_colons: Union[MISSING, bool] = d.get("require_colons", MISSING)
         self.managed: Union[MISSING, bool] = d.get("managed", MISSING)
@@ -275,9 +271,7 @@ class GuildMember(DiscordObject):
         self.timeout_until: Union[MISSING, Optional[str]] = MISSING
         if raw_timeout_until is not MISSING:
             self.timeout_until = (
-                datetime.fromisoformat(raw_timeout_until)
-                if raw_timeout_until is not None
-                else None
+                datetime.fromisoformat(raw_timeout_until) if raw_timeout_until is not None else None
             )
 
     def to_dict(self) -> GuildMemberData:
@@ -327,18 +321,14 @@ class GuildMember(DiscordObject):
             if timeout_until:
                 self.timeout_until = timeout_until
 
-            await self.client.http.modify_guild_member(
-                self.guild.id, self.user.id, self.to_dict()
-            )
+            await self.client.http.modify_guild_member(self.guild.id, self.user.id, self.to_dict())
 
     async def add_role(self, role: GuildRole):
         if self.guild.id != role.guild.id:
             return
 
         self.roles.append(role)
-        await self.client.http.add_guild_member_role(
-            self.guild.id, self.user.id, role.id
-        )
+        await self.client.http.add_guild_member_role(self.guild.id, self.user.id, role.id)
 
     async def remove_role(self, role: GuildRole):
         if self.guild.id != role.guild.id:
@@ -346,9 +336,7 @@ class GuildMember(DiscordObject):
 
         if role in self.roles:
             self.roles.remove(role)
-        await self.client.http.remove_guild_member_role(
-            self.guild.id, self.user.id, role.id
-        )
+        await self.client.http.remove_guild_member_role(self.guild.id, self.user.id, role.id)
 
     async def kick(self):
         await self.guild.kick(self)
@@ -398,9 +386,7 @@ class Guild(DiscordObject):
         self.verification_level: int = d.get("verification_level")
         self.default_message_notifications: int = d.get("default_message_notifications")
         self.explicit_content_filter: int = d.get("explicit_content_filter")
-        self.roles: List[GuildRole] = [
-            GuildRole.from_dict(self.client, r) for r in d.get("roles")
-        ]
+        self.roles: List[GuildRole] = [GuildRole.from_dict(self.client, r) for r in d.get("roles")]
         for r in self.roles:
             r._set_guild(self)
         self.emojis: List[Emoji] = [Emoji(e, self.client) for e in d.get("emojis")]
@@ -420,9 +406,7 @@ class Guild(DiscordObject):
             "premium_subscription_count", MISSING
         )
         self.preferred_locale: str = d.get("preferred_locale")
-        self._public_updates_channel_id: Optional[Snowflake] = d.get(
-            "public_updates_channel_id"
-        )
+        self._public_updates_channel_id: Optional[Snowflake] = d.get("public_updates_channel_id")
         # TODO: max_video_channel_users, approximate_member_count, welcome_screen
         self.nsfw_level: int = d.get("nsfw_level")
         # TODO: stage_instances, stickers, guild_scheduled_events

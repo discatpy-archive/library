@@ -53,9 +53,7 @@ def _shorten_error_dict(d: Dict[str, Any], key: str = "") -> Dict[str, str]:
                 # recursively go through the dict to find the _errors list
                 ret_items.extend(_shorten_error_dict(val, new_k).items())
             else:
-                ret_items.append(
-                    (new_k, " ".join(x.get("message", "") for x in _errors))
-                )
+                ret_items.append((new_k, " ".join(x.get("message", "") for x in _errors)))
         else:
             ret_items.append((new_k, val))
 
@@ -77,9 +75,7 @@ class HTTPException(DisCatPyException):
         The Discord specfic error code of the request.
     """
 
-    def __init__(
-        self, response: ClientResponse, data: Optional[Union[Dict[str, Any], str]]
-    ):
+    def __init__(self, response: ClientResponse, data: Optional[Union[Dict[str, Any], str]]):
         self.response = response
         self.status = response.status
         self.code: int
@@ -105,6 +101,4 @@ class HTTPException(DisCatPyException):
 
         format += ")"
 
-        super().__init__(
-            format.format(response.status, response.reason, self.code, self.text)
-        )
+        super().__init__(format.format(response.status, response.reason, self.code, self.text))

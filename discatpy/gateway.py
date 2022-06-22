@@ -208,10 +208,7 @@ class GatewayClient:
                 # try to re-establish the connection with the Gateway
                 await self.close(code=1012)
 
-            if (
-                msg.type == aiohttp.WSMsgType.BINARY
-                or msg.type == aiohttp.WSMsgType.TEXT
-            ):
+            if msg.type == aiohttp.WSMsgType.BINARY or msg.type == aiohttp.WSMsgType.TEXT:
                 if msg.type == aiohttp.WSMsgType.BINARY:
                     inflated_msg = decompress_msg(self.inflator, msg.data)
                 else:

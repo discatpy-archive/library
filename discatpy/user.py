@@ -93,9 +93,7 @@ class User(DiscordObject):
         self.accent_color: Union[MISSING, Optional[int]] = MISSING
         if d.get("accent_color", MISSING) is not MISSING:
             self.accent_color = (
-                int(d.get("accent_color"))
-                if d.get("accent_color") is not None
-                else None
+                int(d.get("accent_color")) if d.get("accent_color") is not None else None
             )
         _banner_hash: Union[MISSING, Optional[str]] = d.get("banner", MISSING)
         self.banner: Union[MISSING, Optional[Asset]] = MISSING

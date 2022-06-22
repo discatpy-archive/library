@@ -102,10 +102,7 @@ class Route:
         url = self.base.format(api_version) + self.path
         if self._parameters:
             url = url.format_map(
-                {
-                    k: urlquote(v) if isinstance(v, str) else v
-                    for k, v in self._parameters.items()
-                }
+                {k: urlquote(v) if isinstance(v, str) else v for k, v in self._parameters.items()}
             )
 
         return url
@@ -170,9 +167,7 @@ class HTTPClient:
         connector: Optional[aiohttp.BaseConnector] = None,
     ):
         self.connector = connector
-        self._session: Optional[
-            aiohttp.ClientSession
-        ] = None  # initalized later by login
+        self._session: Optional[aiohttp.ClientSession] = None  # initalized later by login
         self._global_ratelimit: DataEvent = DataEvent()
         self._bucket_ratelimits: Dict[str, DataEvent] = {}
         self._buckets: Dict[str, str] = {}
@@ -243,14 +238,10 @@ class HTTPClient:
 
         if self._global_ratelimit.is_set():
             delta = _calculate_ratelimit_delta(self._global_ratelimit.data)
-            _log.debug(
-                "We are being ratelimited globally. Trying again in %s seconds.", delta
-            )
+            _log.debug("We are being ratelimited globally. Trying again in %s seconds.", delta)
 
             if delta <= 0:
-                _log.debug(
-                    "Global ratelimit is over now. Skipping over this ratelimit."
-                )
+                _log.debug("Global ratelimit is over now. Skipping over this ratelimit.")
                 pass
 
             await asyncio.sleep(delta)
@@ -270,9 +261,7 @@ class HTTPClient:
                 )
 
                 if delta <= 0:
-                    _log.debug(
-                        "Bucket ratelimit is over now. Skipping over this ratelimit."
-                    )
+                    _log.debug("Bucket ratelimit is over now. Skipping over this ratelimit.")
                     pass
 
                 await asyncio.sleep(delta)
@@ -318,9 +307,7 @@ class HTTPClient:
                             ratelimit_task = asyncio.create_task(unlock())
                             await ratelimit_task
                         else:
-                            _log.debug(
-                                "Ratelimit bucket is already good to go. Skipping."
-                            )
+                            _log.debug("Ratelimit bucket is already good to go. Skipping.")
                     else:
                         # we are not the first request with this bucket to hit a ratelimit
                         delta = _calculate_ratelimit_delta(ratelimited.data)
@@ -330,13 +317,9 @@ class HTTPClient:
                         )
 
                         if delta > 0:
-                            await asyncio.sleep(
-                                _calculate_ratelimit_delta(ratelimited.data)
-                            )
+                            await asyncio.sleep(_calculate_ratelimit_delta(ratelimited.data))
                         else:
-                            _log.debug(
-                                "Ratelimit bucket is already good to go. Skipping."
-                            )
+                            _log.debug("Ratelimit bucket is already good to go. Skipping.")
 
                 if resp_code >= 200 and resp_code < 300:
                     _log.debug('Connection to "%s" succeeded!', url)
@@ -402,9 +385,7 @@ class HTTPClient:
         except HTTPException as e:
             self.token = old_token
             if e.status == 401:
-                raise DisCatPyException(
-                    "LoginFailure: Improper token has been passed."
-                ) from e
+                raise DisCatPyException("LoginFailure: Improper token has been passed.") from e
             raise
 
         return me
@@ -490,9 +471,7 @@ class HTTPClient:
             The new username for the bot.
         """
         # TODO: add the ability to modify the avatar
-        return await self.request(
-            Route("PATCH", "/users/@me"), json={"username": username}
-        )
+        return await self.request(Route("PATCH", "/users/@me"), json={"username": username})
 
     # Guild HTTP functions
 
@@ -506,9 +485,7 @@ class HTTPClient:
         )
 
     async def get_guild_preview(self, guild_id: Snowflake):
-        return await self.request(
-            Route("GET", "/guilds/{guild_id}/preview", guild_id=guild_id)
-        )
+        return await self.request(Route("GET", "/guilds/{guild_id}/preview", guild_id=guild_id))
 
     async def create_guild(
         self,
@@ -559,9 +536,7 @@ class HTTPClient:
 
         return await self.request(Route("POST", "/guilds"), json=json_req)
 
-    async def modify_guild(
-        self, guild_id: Snowflake, new_guild: discord_typings.GuildData
-    ):
+    async def modify_guild(self, guild_id: Snowflake, new_guild: discord_typings.GuildData):
         return await self.request(
             Route("PATCH", "/guilds/{guild_id}", guild_id=guild_id), json=new_guild
         )
@@ -590,14 +565,10 @@ class HTTPClient:
         channel_id: :type:`Snowflake`
             The id of the channel to grab
         """
-        return await self.request(
-            Route("GET", "/channels/{channel_id}", channel_id=channel_id)
-        )
+        return await self.request(Route("GET", "/channels/{channel_id}", channel_id=channel_id))
 
     async def get_channels(self, guild_id: Snowflake):
-        return await self.request(
-            Route("GET", "/guilds/{guild_id}/channels", guild_id=guild_id)
-        )
+        return await self.request(Route("GET", "/guilds/{guild_id}/channels", guild_id=guild_id))
 
     async def get_active_threads(self, guild_id: Snowflake):
         return await self.request(
@@ -612,9 +583,7 @@ class HTTPClient:
             json=new_channel,
         )
 
-    async def modify_channel(
-        self, channel_id: Snowflake, new_channel: discord_typings.ChannelData
-    ):
+    async def modify_channel(self, channel_id: Snowflake, new_channel: discord_typings.ChannelData):
         """
         Modifies a channel with the given channel (in Dict form).
 
@@ -664,9 +633,7 @@ class HTTPClient:
         channel_id: :type:`Snowflake`
             The id of the channel to delete/close
         """
-        return await self.request(
-            Route("DELETE", "/channels/{channel_id}", channel_id=channel_id)
-        )
+        return await self.request(Route("DELETE", "/channels/{channel_id}", channel_id=channel_id))
 
     async def start_thread_from_message(
         self,
@@ -767,14 +734,11 @@ class HTTPClient:
             )
         )
 
-    async def get_guild_members(
-        self, guild_id: Snowflake, limit: int = 1, after: Snowflake = 0
-    ):
+    async def get_guild_members(self, guild_id: Snowflake, limit: int = 1, after: Snowflake = 0):
         return await self.request(
             Route(
                 "GET",
-                "/guilds/{guild_id}/members"
-                + query_parameters(limit=limit, after=after),
+                "/guilds/{guild_id}/members" + query_parameters(limit=limit, after=after),
                 guild_id=guild_id,
             )
         )
@@ -783,14 +747,16 @@ class HTTPClient:
         return await self.request(
             Route(
                 "GET",
-                "/guilds/{guild_id}/members/search"
-                + query_parameters(query=query, limit=limit),
+                "/guilds/{guild_id}/members/search" + query_parameters(query=query, limit=limit),
                 guild_id=guild_id,
             )
         )
 
     async def modify_guild_member(
-        self, guild_id: Snowflake, user_id: Snowflake, new_guild_member: discord_typings.GuildMemberData
+        self,
+        guild_id: Snowflake,
+        user_id: Snowflake,
+        new_guild_member: discord_typings.GuildMemberData,
     ):
         return await self.request(
             Route(
@@ -888,9 +854,7 @@ class HTTPClient:
             Route(
                 "GET",
                 "/channels/{channel_id}/messages"
-                + query_parameters(
-                    limit=limit, around=around, before=before, after=after
-                ),
+                + query_parameters(limit=limit, around=around, before=before, after=after),
                 channel_id=channel_id,
             )
         )
@@ -1062,9 +1026,7 @@ class HTTPClient:
             )
         )
 
-    async def bulk_delete_messages(
-        self, messages: List[Snowflake], channel_id: Snowflake
-    ):
+    async def bulk_delete_messages(self, messages: List[Snowflake], channel_id: Snowflake):
         """
         Bulk deletes messages from a channel.
 

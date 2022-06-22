@@ -27,10 +27,10 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, overload
 
 from discord_typings import (
-    PartialChannelData,
     CategoryChannelData,
     DMChannelData,
     NewsChannelData,
+    PartialChannelData,
     PermissionOverwriteData,
     TextChannelData,
     VoiceChannelData,
@@ -55,7 +55,9 @@ __all__ = (
     "CategoryChannel",
 )
 
-GuildChannelData = CategoryChannelData # there isn't anything extra in CategoryChannelData, so it's assigned here
+GuildChannelData = (
+    CategoryChannelData  # there isn't anything extra in CategoryChannelData, so it's assigned here
+)
 
 
 class RawChannel(DiscordObject):
@@ -98,7 +100,7 @@ class RawChannel(DiscordObject):
         d: :type:`Dict[str, Any]`
             The raw channel dict.
         """
-        channel_type: int = d.get("type") # type: ignore
+        channel_type: int = d.get("type")  # type: ignore
 
         if channel_type == ChannelType.DM.value:
             return DMChannel(d, client)
@@ -246,12 +248,8 @@ class DMChannel(RawChannel, Messageable):
 
     def _update(self, d: DMChannelData):
         self.last_message_id: Optional[Snowflake] = d.get("last_message_id")
-        self.recipients: List[User] = [
-            User.from_dict(self.client, u) for u in d.get("recipients")
-        ]
-        raw_last_pin_timestamp: Union[MISSING, Optional[str]] = d.get(
-            "last_pin_timestamp", MISSING
-        )
+        self.recipients: List[User] = [User.from_dict(self.client, u) for u in d.get("recipients")]
+        raw_last_pin_timestamp: Union[MISSING, Optional[str]] = d.get("last_pin_timestamp", MISSING)
         self.last_pin_timestamp: Union[MISSING, Optional[datetime]] = MISSING
         if raw_last_pin_timestamp is not MISSING:
             self.last_pin_timestamp = (
@@ -299,9 +297,7 @@ class TextChannel(GuildChannel, Messageable):
         self.topic: Optional[str] = d.get("topic")
         self.cooldown: int = d.get("rate_limit_per_user", 0)
         self.last_message_id: Optional[Snowflake] = d.get("last_message_id")
-        raw_last_pin_timestamp: Union[MISSING, Optional[str]] = d.get(
-            "last_pin_timestamp", MISSING
-        )
+        raw_last_pin_timestamp: Union[MISSING, Optional[str]] = d.get("last_pin_timestamp", MISSING)
         self.last_pin_timestamp: Union[MISSING, Optional[datetime]] = MISSING
         if raw_last_pin_timestamp is not MISSING:
             self.last_pin_timestamp = (
@@ -384,9 +380,7 @@ class VoiceChannel(GuildChannel):
         self.user_limit: int = d.get("user_limit")
         self.rtc_region: Optional[str] = d.get("rtc_region")
         self.automatic_rtc_region: bool = self.rtc_region is None
-        self.video_quality_mode: Union[MISSING, int] = d.get(
-            "video_quality_mode", MISSING
-        )
+        self.video_quality_mode: Union[MISSING, int] = d.get("video_quality_mode", MISSING)
 
     def to_dict(self) -> VoiceChannelData:
         ret_dict: VoiceChannelData = super(GuildChannel, self).to_dict()

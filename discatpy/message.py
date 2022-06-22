@@ -24,24 +24,19 @@ DEALINGS IN THE SOFTWARE.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, cast, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
+
+from discord_typings import GuildMemberData, MessageData, MessageReactionData, MessageReferenceData
 from typing_extensions import Literal, NotRequired, TypedDict
 
-from discord_typings import (
-    GuildMemberData,
-    MessageData,
-    MessageReactionData,
-    MessageReferenceData,
-)
-
 from .enums.channel import ChannelType
-from .types.snowflake import *
 from .object import DiscordObject
+from .types.snowflake import *
 from .user import User
 from .utils import MISSING
 
 if TYPE_CHECKING:
-    from .channel import RawChannel, GuildChannel
+    from .channel import GuildChannel, RawChannel
     from .embed import Embed
     from .guild import Guild, GuildMember
 
@@ -169,9 +164,7 @@ class Message(DiscordObject):
         self.referenced_message: Union[MISSING, Optional[Message]] = MISSING
         if raw_referenced_message is not MISSING:
             self.referenced_message = (
-                Message(
-                    raw_referenced_message, self.client
-                )
+                Message(raw_referenced_message, self.client)
                 if raw_referenced_message is not None
                 else None
             )
@@ -181,7 +174,7 @@ class Message(DiscordObject):
         self.channel = new_channel
 
         if self.channel.type not in (ChannelType.DM, ChannelType.GROUP_DM):
-            self.guild = self.channel.guild # type: ignore
+            self.guild = self.channel.guild  # type: ignore
 
     def _set_member(self, new_member: GuildMember):
         if self.guild:
@@ -210,9 +203,7 @@ class Message(DiscordObject):
         tts: :type:`bool`
             Whether or not the reply should be TTS
         """
-        message_reference = MessageReferenceData(
-            message_id=self.id, channel_id=self._channel_id
-        )
+        message_reference = MessageReferenceData(message_id=self.id, channel_id=self._channel_id)
 
         if self._guild_id:
             message_reference["guild_id"] = self._guild_id

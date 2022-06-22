@@ -30,7 +30,7 @@ from .types.snowflake import *
 from .utils import MultipleValuesDict
 
 if TYPE_CHECKING:
-    from .channel import RawChannel, GuildChannel
+    from .channel import GuildChannel, RawChannel
     from .client import Client
     from .guild import Guild
     from .message import Message
@@ -104,9 +104,7 @@ class ClientCache:
         """
         objs = self.get(id)
         if objs and isinstance(objs, list):
-            ret_obj: List[Any] = [
-                o for o in objs if isinstance(o, t) or issubclass(o, t)
-            ]
+            ret_obj: List[Any] = [o for o in objs if isinstance(o, t) or issubclass(o, t)]
             return ret_obj[0] if len(ret_obj) > 0 else None
 
         return objs
@@ -119,9 +117,7 @@ class ClientCache:
         message_obj: :type:`Message`
             The message object to add.
         """
-        message_obj._set_channel(
-            self.client.grab(message_obj._channel_id, "RawChannel")
-        )
+        message_obj._set_channel(self.client.grab(message_obj._channel_id, "RawChannel"))
         self._obj_cache[message_obj.id] = message_obj
 
     def add_channel(self, channel_obj: Union[RawChannel, GuildChannel]):
@@ -140,9 +136,7 @@ class ClientCache:
             channel_obj._set_guild(self.client.grab(channel_obj._guild_id, "Guild"))
 
             if channel_obj._parent_id is not None:
-                channel_obj._set_parent(
-                    self.client.grab(channel_obj._parent_id, "RawChannel")
-                )
+                channel_obj._set_parent(self.client.grab(channel_obj._parent_id, "RawChannel"))
 
         self._obj_cache[channel_obj.id] = channel_obj
 

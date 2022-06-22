@@ -18,9 +18,7 @@ with open(get_abspath("README.md"), "r", encoding="utf-8") as ldf:
 version = ""
 with open(get_abspath("discatpy/__init__.py"), "r") as fp:
     # I hate regex so much.
-    version = re.search(
-        r"^__version__\s*=\s*['\"]([^'\"]*)['\"]", fp.read(), re.MULTILINE
-    ).group(1)
+    version = re.search(r"^__version__\s*=\s*['\"]([^'\"]*)['\"]", fp.read(), re.MULTILINE).group(1)
 
 # Get the requirements from requirements.txt
 requirements = []

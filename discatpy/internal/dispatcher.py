@@ -61,9 +61,7 @@ class Dispatcher:
         self.listeners: MultipleValuesDict = MultipleValuesDict()
 
         async def on_error(exception: Exception):
-            traceback.print_exception(
-                type(exception), exception, exception.__traceback__
-            )
+            traceback.print_exception(type(exception), exception, exception.__traceback__)
 
         self.set_event(on_error)
 
@@ -166,9 +164,7 @@ class Dispatcher:
         """
         return name in self.events
 
-    def add_listener(
-        self, func: CoroFunc, name: Optional[str] = None, one_shot: bool = False
-    ):
+    def add_listener(self, func: CoroFunc, name: Optional[str] = None, one_shot: bool = False):
         """Adds a new listener to an event.
 
         Parameters

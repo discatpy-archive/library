@@ -136,15 +136,11 @@ class Asset:
 
     @classmethod
     def from_guild_banner(cls, client, guild_id: Snowflake, hash: str):
-        return cls(
-            client, f"banners/{guild_id}/" + "{0}{1}", hash, hash.startswith("a_")
-        )
+        return cls(client, f"banners/{guild_id}/" + "{0}{1}", hash, hash.startswith("a_"))
 
     @classmethod
     def from_user_banner(cls, client, user_id: Snowflake, hash: str):
-        return cls(
-            client, f"banners/{user_id}/" + "{0}{1}", hash, hash.startswith("a_")
-        )
+        return cls(client, f"banners/{user_id}/" + "{0}{1}", hash, hash.startswith("a_"))
 
     @classmethod
     def from_default_user_avatar(cls, client, discriminator: int):
@@ -152,14 +148,10 @@ class Asset:
 
     @classmethod
     def from_user_avatar(cls, client, user_id: Snowflake, hash: str):
-        return cls(
-            client, f"avatars/{user_id}/" + "{0}{1}", hash, hash.startswith("a_")
-        )
+        return cls(client, f"avatars/{user_id}/" + "{0}{1}", hash, hash.startswith("a_"))
 
     @classmethod
-    def from_guild_member_avatar(
-        cls, client, guild_id: Snowflake, user_id: Snowflake, hash: str
-    ):
+    def from_guild_member_avatar(cls, client, guild_id: Snowflake, user_id: Snowflake, hash: str):
         return cls(
             client,
             f"guilds/{guild_id}/users/{user_id}/avatars/" + "{0}{1}",
@@ -174,7 +166,5 @@ class Asset:
         return cls(client, f"role-icons/{role_id}/" + "{0}{1}", hash)
 
     @classmethod
-    def from_guild_scheduled_event_cover(
-        cls, client, scheduled_event_id: Snowflake, hash: str
-    ):
+    def from_guild_scheduled_event_cover(cls, client, scheduled_event_id: Snowflake, hash: str):
         return cls(client, f"guild-events/{scheduled_event_id}/" + "{0}{1}", hash)
