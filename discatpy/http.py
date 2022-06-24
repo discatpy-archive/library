@@ -27,7 +27,6 @@ import datetime
 import json
 import logging
 import sys
-from re import M
 from typing import Any, Dict, List, Optional, Union
 from urllib.parse import quote as urlquote
 
@@ -39,7 +38,7 @@ from .embed import Embed
 from .enums.channel import ChannelType
 from .errors import DisCatPyException, HTTPException
 from .types.snowflake import *
-from .utils import MISSING, DataEvent, MaybeMissing
+from .utils import MISSING, DataEvent, MissingType
 
 __all__ = ("Route", "HTTPClient")
 
@@ -490,17 +489,17 @@ class HTTPClient:
     async def create_guild(
         self,
         name: str,
-        icon: Union[MISSING, str] = MISSING,
+        icon: Union[MissingType, str] = MISSING,
         icon_type: str = "jpeg",
-        verification_level: Union[MISSING, int] = MISSING,
-        default_message_notifications: Union[MISSING, int] = MISSING,
-        explicit_content_filter: Union[MISSING, int] = MISSING,
-        roles: Union[MISSING, List[discord_typings.RoleData]] = MISSING,
-        channels: Union[MISSING, List[discord_typings.PartialChannelData]] = MISSING,
-        afk_channel_id: Union[MISSING, Snowflake] = MISSING,
-        afk_timeout: Union[MISSING, int] = MISSING,
-        system_channel_id: Union[MISSING, Snowflake] = MISSING,
-        system_channel_flags: Union[MISSING, int] = MISSING,
+        verification_level: Union[MissingType, int] = MISSING,
+        default_message_notifications: Union[MissingType, int] = MISSING,
+        explicit_content_filter: Union[MissingType, int] = MISSING,
+        roles: Union[MissingType, List[discord_typings.RoleData]] = MISSING,
+        channels: Union[MissingType, List[discord_typings.PartialChannelData]] = MISSING,
+        afk_channel_id: Union[MissingType, Snowflake] = MISSING,
+        afk_timeout: Union[MissingType, int] = MISSING,
+        system_channel_id: Union[MissingType, Snowflake] = MISSING,
+        system_channel_flags: Union[MissingType, int] = MISSING,
     ):
         json_req = discord_typings.GuildData(name=name)
 
@@ -817,9 +816,9 @@ class HTTPClient:
         channel_id: Snowflake,
         /,
         limit: int = 50,
-        around: Union[MISSING, Snowflake] = MISSING,
-        before: Union[MISSING, Snowflake] = MISSING,
-        after: Union[MISSING, Snowflake] = MISSING,
+        around: Union[MissingType, Snowflake] = MISSING,
+        before: Union[MissingType, Snowflake] = MISSING,
+        after: Union[MissingType, Snowflake] = MISSING,
     ):
         """Grabs all messages from a channel.
         Only one of the around, before, and after parameters can be set.

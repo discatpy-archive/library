@@ -31,7 +31,7 @@ __all__ = (
     "Unset",
     "DataEvent",
     "MISSING",
-    "MaybeMissing",
+    "MissingType",
     "DISCORD_EPOCH",
     "snowflake_timestamp",
     "snowflake_iwid",
@@ -75,7 +75,7 @@ class _MissingDefine:
     __name__ = "MISSING"
 
     def __eq__(self, other) -> bool:
-        raise NotImplementedError("MISSING cannot be compared")
+        return False
 
     def __repr__(self):
         return self.__class__.__name__
@@ -88,11 +88,7 @@ class _MissingDefine:
 
 
 MISSING: Any = _MissingDefine()
-
-
-@_SpecialForm
-def MaybeMissing(self, parameters):
-    return Union[type(MISSING), parameters]
+MissingType = type(MISSING)
 
 
 def _ensure_snowflake_is_int(sf: Snowflake) -> int:

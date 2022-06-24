@@ -98,14 +98,14 @@ class Messageable:
         # TODO: Move iterator implementation to a separate class
         msgs: List[Dict[str, Any]]
         if limit <= 100:
-            msgs = await self.client.http.get_messages(self.raw_id, around, before, after, limit)
+            msgs = await self.client.http.get_messages(self.raw_id, limit=limit, around=around, before=before, after=after)
         else:
             # paginator mode activated
             amount_of_loops = limit // 100
             msgs = []
             for _ in range(amount_of_loops):
                 msgs.extend(
-                    await self.client.http.get_messages(self.raw_id, around, before, after, limit)
+                    await self.client.http.get_messages(self.raw_id, limit=limit, around=around, before=before, after=after)
                 )
                 if len(msgs) != 100:
                     # we either hit the limit of the channel or the limit according to the parameters

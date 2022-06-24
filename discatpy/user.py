@@ -29,7 +29,7 @@ from discord_typings import UserData
 from .asset import Asset
 from .object import DiscordObject
 from .types.snowflake import *
-from .utils import MISSING
+from .utils import MISSING, MissingType
 
 __all__ = ("User",)
 
@@ -88,15 +88,15 @@ class User(DiscordObject):
             if d.get("avatar")
             else Asset.from_default_user_avatar(self.client, int(self.discriminator))
         )
-        self.bot: Union[MISSING, bool] = d.get("bot", MISSING)
-        self.tfa_enabled: Union[MISSING, bool] = d.get("mfa_enabled", MISSING)
-        self.accent_color: Union[MISSING, Optional[int]] = MISSING
+        self.bot: Union[MissingType, bool] = d.get("bot", MISSING)
+        self.tfa_enabled: Union[MissingType, bool] = d.get("mfa_enabled", MISSING)
+        self.accent_color: Union[MissingType, Optional[int]] = MISSING
         if d.get("accent_color", MISSING) is not MISSING:
             self.accent_color = (
                 int(d.get("accent_color")) if d.get("accent_color") is not None else None
             )
-        _banner_hash: Union[MISSING, Optional[str]] = d.get("banner", MISSING)
-        self.banner: Union[MISSING, Optional[Asset]] = MISSING
+        _banner_hash: Union[MissingType, Optional[str]] = d.get("banner", MISSING)
+        self.banner: Union[MissingType, Optional[Asset]] = MISSING
         if _banner_hash is not MISSING:
             self.banner = (
                 Asset.from_user_banner(self.client, self.id, _banner_hash)
@@ -104,9 +104,9 @@ class User(DiscordObject):
                 else None
             )
         # TODO: Locales
-        self.flags: Union[MISSING, int] = d.get("flags", MISSING)
-        self.premium_type: Union[MISSING, int] = d.get("premium_type", MISSING)
-        self.public_flags: Union[MISSING, int] = d.get("public_flags", MISSING)
+        self.flags: Union[MissingType, int] = d.get("flags", MISSING)
+        self.premium_type: Union[MissingType, int] = d.get("premium_type", MISSING)
+        self.public_flags: Union[MissingType, int] = d.get("public_flags", MISSING)
 
     @property
     def mention(self) -> str:

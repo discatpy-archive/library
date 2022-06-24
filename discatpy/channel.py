@@ -24,7 +24,8 @@ DEALINGS IN THE SOFTWARE.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, overload
+from typing import TYPE_CHECKING, final, List, Optional, Union
+from typing_extensions import TypedDict, NotRequired
 
 from discord_typings import (
     CategoryChannelData,
@@ -41,7 +42,7 @@ from .enums.channel import ChannelType
 from .object import DiscordObject
 from .types.snowflake import *
 from .user import User
-from .utils import MISSING
+from .utils import MISSING, MissingType
 
 if TYPE_CHECKING:
     from .guild import Guild
@@ -55,10 +56,16 @@ __all__ = (
     "CategoryChannel",
 )
 
-GuildChannelData = (
-    CategoryChannelData  # there isn't anything extra in CategoryChannelData, so it's assigned here
-)
-
+@final
+class GuildChannelData(TypedDict):
+    id: Snowflake
+    type: int
+    guild_id: NotRequired[Snowflake]
+    position: int
+    permission_overwrites: List[PermissionOverwriteData]
+    name: str
+    nsfw: bool
+    parent_id: Optional[Snowflake]
 
 class RawChannel(DiscordObject):
     """
@@ -90,17 +97,17 @@ class RawChannel(DiscordObject):
         self.type: int = d.get("type")
 
     @classmethod
-    def from_dict(cls, client, d: Dict[str, Any]):
+    def from_dict(cls, client, d: Union[TextChannelData, VoiceChannelData, DMChannelData]):
         """Attempts to convert a dict into a channel object.
 
         Parameters
         ----------
         client: :type:`Client`
             The parent client of the channel object.
-        d: :type:`Dict[str, Any]`
+        d: :type:`Union[TextChannelData, VoiceChannelData, DMChannelData]`
             The raw channel dict.
         """
-        channel_type: int = d.get("type")  # type: ignore
+        channel_type: int = d.get("type") # type: ignore
 
         if channel_type == ChannelType.DM.value:
             return DMChannel(d, client)
@@ -114,11 +121,12 @@ class RawChannel(DiscordObject):
             or channel_type == ChannelType.GUILD_STAGE_VOICE.value
         ):
             return VoiceChannel(d, client)
+        # TODO: categories
 
         raise TypeError("Invalid channel dict provided")
 
     def to_dict(self) -> PartialChannelData:
-        ret_dict: PartialChannelData = {"id": self.id, "type": self.type}
+        ret_dict = PartialChannelData(id=self.id, type=self.type)
         return ret_dict
 
 
@@ -160,7 +168,7 @@ class GuildChannel(RawChannel):
         if self.type == ChannelType.DM.value or self.type == ChannelType.GROUP_DM.value:
             raise TypeError("Expecting Guild channel type, got DM channel type instead")
 
-        self._guild_id: Snowflake = d.get("guild_id")
+        self._guild_id: Union[MissingType, Snowflake] = d.get("guild_id", MISSING)
         self.guild: Optional[Guild] = None
         self._update(d)
 
@@ -170,26 +178,26 @@ class GuildChannel(RawChannel):
         self.nsfw: bool = d.get("nsfw", False)
         self.permission_overwrites: List[PermissionOverwriteData] = (
             [PermissionOverwriteData(i) for i in d.get("permission_overwrites")]
-            if d.get("permission_overwrites") is not None
-            else []
         )
-        self._parent_id = d.get("parent_id")
+        self._parent_id: Union[MissingType, Optional[Snowflake]] = d.get("parent_id", MISSING)
         self.parent: Optional[GuildChannel] = None
 
     def to_dict(self) -> GuildChannelData:
         ret_dict: GuildChannelData = super(RawChannel, self).to_dict()
         ret_dict.update(
             {
-                "guild_id": self._guild_id,
                 "name": self.name,
                 "position": self.position,
                 "nsfw": self.nsfw,
-                "parent_id": self._parent_id,
+                "permission_overwrites": self.permission_overwrites,
             }
         )
 
-        if self.permission_overwrites:
-            ret_dict["permission_overwrites"] = self.permission_overwrites
+        if self._guild_id is not MISSING:
+            ret_dict["guild_id"] = self._guild_id
+
+        if self._parent_id is not MISSING and self._parent_id is not None:
+            ret_dict["parent_id"] = self._parent_id
 
         return ret_dict
 
@@ -249,8 +257,8 @@ class DMChannel(RawChannel, Messageable):
     def _update(self, d: DMChannelData):
         self.last_message_id: Optional[Snowflake] = d.get("last_message_id")
         self.recipients: List[User] = [User.from_dict(self.client, u) for u in d.get("recipients")]
-        raw_last_pin_timestamp: Union[MISSING, Optional[str]] = d.get("last_pin_timestamp", MISSING)
-        self.last_pin_timestamp: Union[MISSING, Optional[datetime]] = MISSING
+        raw_last_pin_timestamp: Union[MissingType, Optional[str]] = d.get("last_pin_timestamp", MISSING)
+        self.last_pin_timestamp: Union[MissingType, Optional[datetime]] = MISSING
         if raw_last_pin_timestamp is not MISSING:
             self.last_pin_timestamp = (
                 datetime.fromisoformat(raw_last_pin_timestamp)
@@ -297,15 +305,15 @@ class TextChannel(GuildChannel, Messageable):
         self.topic: Optional[str] = d.get("topic")
         self.cooldown: int = d.get("rate_limit_per_user", 0)
         self.last_message_id: Optional[Snowflake] = d.get("last_message_id")
-        raw_last_pin_timestamp: Union[MISSING, Optional[str]] = d.get("last_pin_timestamp", MISSING)
-        self.last_pin_timestamp: Union[MISSING, Optional[datetime]] = MISSING
+        raw_last_pin_timestamp: Union[MissingType, Optional[str]] = d.get("last_pin_timestamp", MISSING)
+        self.last_pin_timestamp: Union[MissingType, Optional[datetime]] = MISSING
         if raw_last_pin_timestamp is not MISSING:
             self.last_pin_timestamp = (
                 datetime.fromisoformat(raw_last_pin_timestamp)
                 if raw_last_pin_timestamp is not None
                 else None
             )
-        self.permissions: Union[MISSING, str] = d.get("permissions", MISSING)
+        self.permissions: Union[MissingType, str] = d.get("permissions", MISSING)
 
     def to_dict(self) -> Union[TextChannelData, NewsChannelData]:
         ret_dict: Union[TextChannelData, NewsChannelData] = super(GuildChannel, self).to_dict()
@@ -365,7 +373,7 @@ class VoiceChannel(GuildChannel):
         The region of this voice channel
     automatic_rtc_region: :type:`bool`
         Whether or not this voice channel has automatic regions
-    video_quality_mode: :type:`Union[MISSING, int]`
+    video_quality_mode: :type:`Union[MissingType, int]`
         The video quality of this voice channel
     """
 
@@ -380,7 +388,7 @@ class VoiceChannel(GuildChannel):
         self.user_limit: int = d.get("user_limit")
         self.rtc_region: Optional[str] = d.get("rtc_region")
         self.automatic_rtc_region: bool = self.rtc_region is None
-        self.video_quality_mode: Union[MISSING, int] = d.get("video_quality_mode", MISSING)
+        self.video_quality_mode: Union[MissingType, int] = d.get("video_quality_mode", MISSING)
 
     def to_dict(self) -> VoiceChannelData:
         ret_dict: VoiceChannelData = super(GuildChannel, self).to_dict()

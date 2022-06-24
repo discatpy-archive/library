@@ -54,7 +54,7 @@ class ClientCache:
 
     def __init__(self, client: Client):
         self.client: Client = client
-        self._obj_cache: MultipleValuesDict[Snowflake, Any] = MultipleValuesDict()
+        self._obj_cache = MultipleValuesDict()
 
     def find(self, id: Snowflake) -> bool:
         """Checks if there is an object with that id in the cache.
@@ -133,10 +133,10 @@ class ClientCache:
             or channel_obj.type == ChannelType.GROUP_DM.value
         ):
             # TODO: Consider removing this since all guilds the bot is in should already exist in the cache
-            channel_obj._set_guild(self.client.grab(channel_obj._guild_id, "Guild"))
+            channel_obj._set_guild(self.client.grab(channel_obj._guild_id, "Guild")) # type: ignore
 
-            if channel_obj._parent_id is not None:
-                channel_obj._set_parent(self.client.grab(channel_obj._parent_id, "RawChannel"))
+            if channel_obj._parent_id is not None: # type: ignore
+                channel_obj._set_parent(self.client.grab(channel_obj._parent_id, "RawChannel")) # type: ignore
 
         self._obj_cache[channel_obj.id] = channel_obj
 

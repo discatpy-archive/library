@@ -24,7 +24,7 @@ DEALINGS IN THE SOFTWARE.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
+from typing import TYPE_CHECKING, List, Optional, Union, cast
 
 from discord_typings import GuildMemberData, MessageData, MessageReactionData, MessageReferenceData
 from typing_extensions import Literal, NotRequired, TypedDict
@@ -33,7 +33,7 @@ from .enums.channel import ChannelType
 from .object import DiscordObject
 from .types.snowflake import *
 from .user import User
-from .utils import MISSING
+from .utils import MISSING, MissingType
 
 if TYPE_CHECKING:
     from .channel import GuildChannel, RawChannel
@@ -139,7 +139,7 @@ class Message(DiscordObject):
         self.tts: bool = d.get("tts")
         self.mention_everyone: bool = d.get("mention_everyone")
         # TODO: mentions, attachments, embeds
-        self.reactions: Union[MISSING, List[MessageReactionData]] = (
+        self.reactions: Union[MissingType, List[MessageReactionData]] = (
             [cast(r, MessageReactionData) for r in d.get("reactions")]
             if d.get("reactions", MISSING) is not MISSING
             else MISSING
@@ -147,21 +147,21 @@ class Message(DiscordObject):
         self.pinned: bool = d.get("pinned")
         self.type: int = d.get("type")
         # TODO: application, application_id
-        self.activity: Union[MISSING, MessageActivityData] = (
+        self.activity: Union[MissingType, MessageActivityData] = (
             cast(d.get("activity"), MessageActivityData)
             if d.get("activity", MISSING) is not MISSING
             else MISSING
         )
-        self.message_reference: Union[MISSING, MessageReferenceData] = (
+        self.message_reference: Union[MissingType, MessageReferenceData] = (
             cast(d.get("message_reference"), MessageReferenceData)
             if d.get("message_reference", MISSING) is not MISSING
             else MISSING
         )
-        self.flags: Union[MISSING, int] = d.get("flags", MISSING)
-        raw_referenced_message: Union[MISSING, Optional[MessageData]] = d.get(
+        self.flags: Union[MissingType, int] = d.get("flags", MISSING)
+        raw_referenced_message: Union[MissingType, Optional[MessageData]] = d.get(
             "referenced_message", MISSING
         )
-        self.referenced_message: Union[MISSING, Optional[Message]] = MISSING
+        self.referenced_message: Union[MissingType, Optional[Message]] = MISSING
         if raw_referenced_message is not MISSING:
             self.referenced_message = (
                 Message(raw_referenced_message, self.client)

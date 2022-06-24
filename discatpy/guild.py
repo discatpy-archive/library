@@ -33,7 +33,7 @@ from .channel import RawChannel
 from .object import DiscordObject
 from .types.snowflake import *
 from .user import User
-from .utils import MISSING, MaybeMissing
+from .utils import MISSING, MissingType
 
 __all__ = (
     "GuildRole",
@@ -60,7 +60,7 @@ class GuildRole(DiscordObject):
         Whether or not this role is pinned.
     icon: :type:`Optional[Asset]`
         The icon of this role.
-    unicode_emoji: :type:`Union[MISSING, None, str]`
+    unicode_emoji: :type:`Union[MissingType, None, str]`
         The unicode emoji for this role.
     position: :type:`int`
         The position of this role.
@@ -142,17 +142,17 @@ class Emoji(DiscordObject):
         The id of this emoji.
     name: :type:`Optional[str]`
         The name of this emoji.
-    roles: :type:`Union[MISSING, List[GuildRole]]`
+    roles: :type:`Union[MissingType, List[GuildRole]]`
         The roles that can use this emoji.
-    creator: :type:`Union[MISSING, User]`
+    creator: :type:`Union[MissingType, User]`
         The user object that added this emoji to the guild.
-    require_colons: :type:`Union[MISSING, bool]`
+    require_colons: :type:`Union[MissingType, bool]`
         Whether or not this emoji requires colons to be used.
-    managed: :type:`Union[MISSING, bool]`
+    managed: :type:`Union[MissingType, bool]`
         Whether or not this emoji is managed.
-    animated: :type:`Union[MISSING, bool]`
+    animated: :type:`Union[MissingType, bool]`
         Whether or not this emoji is animated.
-    available: :type:`Union[MISSING, bool]`
+    available: :type:`Union[MissingType, bool]`
         Whether or not members can use this emoji. This can be False if
         the guild loses a boost level and loses extra emoji slots.
     """
@@ -173,22 +173,22 @@ class Emoji(DiscordObject):
         DiscordObject.__init__(self, d, client)
 
         self.guild: Optional[Guild] = None
-        self.roles: Union[MISSING, List[GuildRole]] = None
+        self.roles: Union[MissingType, List[GuildRole]] = None
         self._update(d)
 
     def _update(self, d: EmojiData):
         self.id: Optional[Snowflake] = d.get("id")
         self.name: Optional[str] = d.get("name")
-        self._role_ids: Union[MISSING, List[Snowflake]] = (
+        self._role_ids: Union[MissingType, List[Snowflake]] = (
             [i for i in d.get("roles")] if d.get("roles", MISSING) is not MISSING else MISSING
         )
-        self.creator: Union[MISSING, User] = (
+        self.creator: Union[MissingType, User] = (
             User(d.get("user"), self.client) if d.get("user", MISSING) is not MISSING else MISSING
         )
-        self.require_colons: Union[MISSING, bool] = d.get("require_colons", MISSING)
-        self.managed: Union[MISSING, bool] = d.get("managed", MISSING)
-        self.animated: Union[MISSING, bool] = d.get("animated", MISSING)
-        self.available: Union[MISSING, bool] = d.get("available", MISSING)
+        self.require_colons: Union[MissingType, bool] = d.get("require_colons", MISSING)
+        self.managed: Union[MissingType, bool] = d.get("managed", MISSING)
+        self.animated: Union[MissingType, bool] = d.get("animated", MISSING)
+        self.available: Union[MissingType, bool] = d.get("available", MISSING)
 
     def _set_guild(self, new_guild: Guild):
         self.guild = new_guild
@@ -248,12 +248,12 @@ class GuildMember(DiscordObject):
         self._update(d)
 
     def _update(self, d: GuildMemberData):
-        self.user: Union[MISSING, User] = (
+        self.user: Union[MissingType, User] = (
             User.from_dict(self.client, d.get("user"))
             if d.get("user", MISSING) is not MISSING
             else MISSING
         )
-        self.nick: Union[MISSING, Optional[str]] = d.get("nick", MISSING)
+        self.nick: Union[MissingType, Optional[str]] = d.get("nick", MISSING)
         self._avatar_hash: Optional[str] = d.get("avatar")
         self._role_ids: List[Snowflake] = d.get("roles")
         self.joined_at: datetime = datetime.fromisoformat(d.get("joined_at"))
@@ -265,10 +265,10 @@ class GuildMember(DiscordObject):
         self.deaf: bool = d.get("deaf")
         self.mute: bool = d.get("mute")
         self.pending: Optional[bool] = d.get("pending")
-        raw_timeout_until: Union[MISSING, Optional[str]] = d.get(
+        raw_timeout_until: Union[MissingType, Optional[str]] = d.get(
             "communication_disabled_until", MISSING
         )
-        self.timeout_until: Union[MISSING, Optional[str]] = MISSING
+        self.timeout_until: Union[MissingType, Optional[str]] = MISSING
         if raw_timeout_until is not MISSING:
             self.timeout_until = (
                 datetime.fromisoformat(raw_timeout_until) if raw_timeout_until is not None else None
@@ -379,7 +379,7 @@ class Guild(DiscordObject):
         self._splash_hash: Optional[str] = d.get("splash")
         self._discovery_splash_hash: Optional[str] = d.get("discovery_splash")
         self._owner_id: Snowflake = d.get("owner_id")
-        self.permissions: Union[MISSING, str] = d.get("permissions", MISSING)
+        self.permissions: Union[MissingType, str] = d.get("permissions", MISSING)
         self._afk_channel_id: Snowflake = d.get("afk_channel_id")
         self.afk_timeout: int = d.get("afk_timeout")
         # TODO: widgets
@@ -402,7 +402,7 @@ class Guild(DiscordObject):
         self.description: Optional[str] = d.get("description")
         self.banner_hash: Optional[str] = d.get("banner")
         self.premium_tier: int = d.get("premium_tier")
-        self.premium_subscription_count: Union[MISSING, Optional[int]] = d.get(
+        self.premium_subscription_count: Union[MissingType, Optional[int]] = d.get(
             "premium_subscription_count", MISSING
         )
         self.preferred_locale: str = d.get("preferred_locale")
