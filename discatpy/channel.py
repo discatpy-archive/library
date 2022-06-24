@@ -24,8 +24,7 @@ DEALINGS IN THE SOFTWARE.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, final, List, Optional, Union
-from typing_extensions import TypedDict, NotRequired
+from typing import TYPE_CHECKING, List, Optional, Union, final
 
 from discord_typings import (
     CategoryChannelData,
@@ -36,6 +35,7 @@ from discord_typings import (
     TextChannelData,
     VoiceChannelData,
 )
+from typing_extensions import NotRequired, TypedDict
 
 from .abs import Messageable
 from .enums.channel import ChannelType
@@ -56,6 +56,7 @@ __all__ = (
     "CategoryChannel",
 )
 
+
 @final
 class GuildChannelData(TypedDict):
     id: Snowflake
@@ -66,6 +67,7 @@ class GuildChannelData(TypedDict):
     name: str
     nsfw: bool
     parent_id: Optional[Snowflake]
+
 
 class RawChannel(DiscordObject):
     """
@@ -107,7 +109,7 @@ class RawChannel(DiscordObject):
         d: :type:`Union[TextChannelData, VoiceChannelData, DMChannelData]`
             The raw channel dict.
         """
-        channel_type: int = d.get("type") # type: ignore
+        channel_type: int = d.get("type")  # type: ignore
 
         if channel_type == ChannelType.DM.value:
             return DMChannel(d, client)
@@ -176,9 +178,9 @@ class GuildChannel(RawChannel):
         self.name: str = d.get("name")
         self.position: int = d.get("position")
         self.nsfw: bool = d.get("nsfw", False)
-        self.permission_overwrites: List[PermissionOverwriteData] = (
-            [PermissionOverwriteData(i) for i in d.get("permission_overwrites")]
-        )
+        self.permission_overwrites: List[PermissionOverwriteData] = [
+            PermissionOverwriteData(i) for i in d.get("permission_overwrites")
+        ]
         self._parent_id: Union[MissingType, Optional[Snowflake]] = d.get("parent_id", MISSING)
         self.parent: Optional[GuildChannel] = None
 
@@ -257,7 +259,9 @@ class DMChannel(RawChannel, Messageable):
     def _update(self, d: DMChannelData):
         self.last_message_id: Optional[Snowflake] = d.get("last_message_id")
         self.recipients: List[User] = [User.from_dict(self.client, u) for u in d.get("recipients")]
-        raw_last_pin_timestamp: Union[MissingType, Optional[str]] = d.get("last_pin_timestamp", MISSING)
+        raw_last_pin_timestamp: Union[MissingType, Optional[str]] = d.get(
+            "last_pin_timestamp", MISSING
+        )
         self.last_pin_timestamp: Union[MissingType, Optional[datetime]] = MISSING
         if raw_last_pin_timestamp is not MISSING:
             self.last_pin_timestamp = (
@@ -305,7 +309,9 @@ class TextChannel(GuildChannel, Messageable):
         self.topic: Optional[str] = d.get("topic")
         self.cooldown: int = d.get("rate_limit_per_user", 0)
         self.last_message_id: Optional[Snowflake] = d.get("last_message_id")
-        raw_last_pin_timestamp: Union[MissingType, Optional[str]] = d.get("last_pin_timestamp", MISSING)
+        raw_last_pin_timestamp: Union[MissingType, Optional[str]] = d.get(
+            "last_pin_timestamp", MISSING
+        )
         self.last_pin_timestamp: Union[MissingType, Optional[datetime]] = MISSING
         if raw_last_pin_timestamp is not MISSING:
             self.last_pin_timestamp = (

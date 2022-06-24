@@ -133,10 +133,10 @@ class ClientCache:
             or channel_obj.type == ChannelType.GROUP_DM.value
         ):
             # TODO: Consider removing this since all guilds the bot is in should already exist in the cache
-            channel_obj._set_guild(self.client.grab(channel_obj._guild_id, "Guild")) # type: ignore
+            channel_obj._set_guild(self.client.grab(channel_obj._guild_id, "Guild"))  # type: ignore
 
-            if channel_obj._parent_id is not None: # type: ignore
-                channel_obj._set_parent(self.client.grab(channel_obj._parent_id, "RawChannel")) # type: ignore
+            if channel_obj._parent_id is not None:  # type: ignore
+                channel_obj._set_parent(self.client.grab(channel_obj._parent_id, "RawChannel"))  # type: ignore
 
         self._obj_cache[channel_obj.id] = channel_obj
 
