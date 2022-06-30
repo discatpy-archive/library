@@ -22,28 +22,15 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from enum import Enum
+from ...types import Snowflake
+from .._client import _HTTPClient
+from .core import APIEndpointData, generate_api_wrapper_functions
 
-__all__ = (
-    "ChannelType",
-    "VideoQualityModes",
-)
+__all__ = ("UserEndpointMixin",)
 
-
-class ChannelType(int, Enum):
-    GUILD_TEXT = 0
-    DM = 1
-    GUILD_VOICE = 2
-    GROUP_DM = 3
-    GUILD_CATEGORY = 4
-    GUILD_NEWS = 5
-    GUILD_STORE = 6
-    GUILD_NEWS_THREAD = 10
-    GUILD_PUBLIC_THREAD = 11
-    GUILD_PRIVATE_THREAD = 12
-    GUILD_STAGE_VOICE = 13
-
-
-class VideoQualityModes(int, Enum):
-    AUTO = 1
-    FULL = 2
+@generate_api_wrapper_functions
+class UserEndpointMixin(_HTTPClient):
+    get_user = APIEndpointData("GET", "/users/{user_id}", format_args={"user_id": Snowflake})
+    get_current_user = APIEndpointData("GET", "/users/@me")
+    create_user_dm = APIEndpointData("POST", "/users/@me/channels", param_args=[("recipient_id", Snowflake)])
+    modify_current_user = APIEndpointData("PATCH", "/users/@me", param_args=[("username", str)])

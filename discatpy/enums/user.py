@@ -27,7 +27,7 @@ from enum import Enum
 __all__ = ("PremiumTypes",)
 
 
-class PremiumTypes(Enum):
+class PremiumTypes(int, Enum):
     NONE = 0
     NITRO_CLASSIC = 1
     NITRO = 2

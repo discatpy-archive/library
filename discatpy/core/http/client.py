@@ -22,28 +22,38 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from enum import Enum
+from typing import Any
 
-__all__ = (
-    "ChannelType",
-    "VideoQualityModes",
-)
+from ._client import _HTTPClient
 
+__all__ = ("HTTPClient",)
 
-class ChannelType(int, Enum):
-    GUILD_TEXT = 0
-    DM = 1
-    GUILD_VOICE = 2
-    GROUP_DM = 3
-    GUILD_CATEGORY = 4
-    GUILD_NEWS = 5
-    GUILD_STORE = 6
-    GUILD_NEWS_THREAD = 10
-    GUILD_PUBLIC_THREAD = 11
-    GUILD_PRIVATE_THREAD = 12
-    GUILD_STAGE_VOICE = 13
+def _flatten_tuple(t: tuple[Any]):
+    ret: list[Any] = []
 
+    for i in t:
+        if isinstance(i, tuple):
+            ret.extend(_flatten_tuple(i))
+        else:
+            ret.append(i)
 
-class VideoQualityModes(int, Enum):
-    AUTO = 1
-    FULL = 2
+    return tuple(ret)
+
+class _InheritMetaclass(type):
+    """A helper metaclass that allows for the target class to inherit from a tuple of bases.
+    This is used because it allows for dynamic bases and it's a little easier to read.
+    
+    If you're a normal developer, you shouldn't be using this.
+    """
+    def __new__(cls, name, bases, attrs, **kwargs):
+        if "bases_tuple" in kwargs:
+            bases = list(bases)
+            bases.extend(kwargs.get("bases_tuple"))
+            bases = _flatten_tuple(tuple(bases))
+
+            return super(_InheritMetaclass, cls).__new__(cls, name, bases, attrs)
+        else:
+            raise ValueError("bases_tuple must be passed into kwargs in order to use this metaclass")
+
+class HTTPClient(metaclass=_InheritMetaclass, bases_tuple=(_HTTPClient,)):
+    pass

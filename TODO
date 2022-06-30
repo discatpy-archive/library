@@ -1,0 +1,22 @@
+# TODO List for DisCatPy API rewrite
+
+- finish the core module
+
+  - finish migrating http
+  - migrate gateway
+  - add a low level file object
+  - migrate enums, internal, and any types in utils
+  - client, incorportates everything from core into something devs can work with (migrate the current client, remove models related stuff)
+
+- start the models module
+
+  - migrate all model related files
+  - rewrite the model system to incorporate TypedDicts more
+  - rewrite the model system around the new core module
+  - bot, inherited from client and has support for models
+
+- start working on extensions
+
+  - commands core: the base extension for prefixed commands and application commnads
+  - interactions: a high level wrapper for Discord interactions (application commands/ui components)
+  - prefixed/text commands: a high level wrapper for prefixed commands, which use messages (requires message content intent)

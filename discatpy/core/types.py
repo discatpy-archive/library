@@ -22,28 +22,32 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from enum import Enum
+from typing import Any, Union, TypeVar
+
+from discord_typings.shared import Snowflake
 
 __all__ = (
-    "ChannelType",
-    "VideoQualityModes",
+    "Snowflake", 
+    "MISSING",
+    "MissingOr",
+    "MissingType",
 )
 
+class _Missing:
+    def __eq__(self, other) -> bool:
+        return False
 
-class ChannelType(int, Enum):
-    GUILD_TEXT = 0
-    DM = 1
-    GUILD_VOICE = 2
-    GROUP_DM = 3
-    GUILD_CATEGORY = 4
-    GUILD_NEWS = 5
-    GUILD_STORE = 6
-    GUILD_NEWS_THREAD = 10
-    GUILD_PUBLIC_THREAD = 11
-    GUILD_PRIVATE_THREAD = 12
-    GUILD_STAGE_VOICE = 13
+    def __repr__(self):
+        return self.__class__.__name__
 
+    def __bool__(self):
+        raise NotImplementedError("Missing is not True or False, it is undefined")
 
-class VideoQualityModes(int, Enum):
-    AUTO = 1
-    FULL = 2
+    def __str__(self):
+        return self.__repr__()
+
+T = TypeVar("T")
+
+MISSING: Any = _Missing()
+MissingOr = Union[_Missing, T]
+MissingType = type(MISSING)

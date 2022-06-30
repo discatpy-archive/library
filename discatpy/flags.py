@@ -28,6 +28,7 @@ from typing import Any, ClassVar, Dict, Tuple, Type
 __all__ = (
     "BaseFlags",
     "Intents",
+    "MessageFlags",
 )
 
 
@@ -101,11 +102,10 @@ class BaseFlags(metaclass=FlagMeta):
     VALID_FLAGS: ClassVar[Dict[str, int]]
     DEFAULT_VALUE: ClassVar[int]
 
-    value: int
     __slots__ = ("value",)
 
     def __init__(self, **kwargs):
-        self.value = self.DEFAULT_VALUE
+        self.value: int = self.DEFAULT_VALUE
 
         for k, v in kwargs.items():
             if k not in self.VALID_FLAGS:

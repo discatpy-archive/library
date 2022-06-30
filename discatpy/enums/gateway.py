@@ -27,7 +27,7 @@ from enum import Enum
 __all__ = ("GatewayOpcode",)
 
 
-class GatewayOpcode(Enum):
+class GatewayOpcode(int, Enum):
     DISPATCH = 0
     HEARTBEAT = 1
     IDENTIFY = 2

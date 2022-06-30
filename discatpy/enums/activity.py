@@ -27,7 +27,7 @@ from enum import Enum
 __all__ = ("ActivityTypes",)
 
 
-class ActivityTypes(Enum):
+class ActivityTypes(int, Enum):
     GAME = 0
     STREAMING = 1
     LISTENING = 2

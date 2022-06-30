@@ -214,10 +214,9 @@ class GatewayClient:
                 else:
                     inflated_msg = msg.data
 
-                inflated_msg = json.loads(inflated_msg)
-                self.recent_gp = GatewayPayload(inflated_msg)
+                self.recent_gp: GatewayPayload = json.loads(inflated_msg)  # type: ignore
+                self.seq_num = self.recent_gp.get("s")
 
-                self.seq_num = self.recent_gp["s"]
                 await self.poll_event()
             elif msg.type in (
                 aiohttp.WSMsgType.CLOSE,
@@ -233,16 +232,18 @@ class GatewayClient:
 
         For internal use only.
         """
+        op = self.recent_gp.get("op")
+
         # Manages all event dispatches
-        if self.recent_gp["op"] == GatewayOpcode.DISPATCH.value:
+        if op == GatewayOpcode.DISPATCH.value:
             await self.poll_dispatched_event()
 
         # Attempts to reconnect to the Gateway when prompted
-        if self.recent_gp["op"] == GatewayOpcode.RECONNECT.value:
+        if op == GatewayOpcode.RECONNECT.value:
             await self.close(code=1012)
 
         # This connection session is invalid: if we can resume, then resume. Otherwise, reconnect.
-        if self.recent_gp["op"] == GatewayOpcode.INVALID_SESSION.value:
+        if op == GatewayOpcode.INVALID_SESSION.value:
             resumable: bool = (
                 self.recent_gp["d"] if isinstance(self.recent_gp["d"], bool) else False
             )
@@ -250,13 +251,13 @@ class GatewayClient:
             await self.close(code=1012)
 
         # Handles the hello message (means we successfully connected) with the identify payload and keep alive loop
-        if self.recent_gp["op"] == GatewayOpcode.HELLO.value:
+        if op == GatewayOpcode.HELLO.value:
             self.heartbeat_interval = self.recent_gp["d"]["heartbeat_interval"] / 1000
             await self.ws.send_json(self.identify_payload())
             self.keep_alive_task = asyncio.create_task(self.keep_alive_loop())
 
         # Handles a heartbeat acknowledge to prevent our system from thinking the connection is "zombied"
-        if self.recent_gp["op"] == GatewayOpcode.HEARTBEAT_ACK.value:
+        if op == GatewayOpcode.HEARTBEAT_ACK.value:
             self._last_heartbeat_ack = datetime.datetime.now()
 
     async def poll_dispatched_event(self):

@@ -35,7 +35,7 @@ __all__ = (
 )
 
 
-class VerificationLevel(Enum):
+class VerificationLevel(int, Enum):
     NONE = 0
     LOW = 1
     MEDIUM = 2
@@ -43,12 +43,12 @@ class VerificationLevel(Enum):
     VERY_HIGH = 4
 
 
-class MessageNotificationLevel(Enum):
+class MessageNotificationLevel(int, Enum):
     ALL_MESSAGES = 0
     ONLY_MENTIONS = 1
 
 
-class ExplicitContentFilterLevel(Enum):
+class ExplicitContentFilterLevel(int, Enum):
     DISABLED = 0
     MEMBERS_WITHOUT_ROLES = 1
     ALL_MEMBERS = 2

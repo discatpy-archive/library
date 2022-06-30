@@ -75,11 +75,11 @@ class HTTPException(DisCatPyException):
         The Discord specfic error code of the request.
     """
 
+    __all__ = ()
+
     def __init__(self, response: ClientResponse, data: Optional[Union[Dict[str, Any], str]]):
         self.response = response
         self.status = response.status
-        self.code: int
-        self.text: str
 
         if isinstance(data, dict):
             self.code = data.get("code", 0)

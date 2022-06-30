@@ -30,14 +30,14 @@ __all__ = (
 )
 
 
-class MessageActivityType(Enum):
+class MessageActivityType(int, Enum):
     JOIN = 1
     SPECTATE = 2
     LISTEN = 3
     JOIN_REQUEST = 5
 
 
-class MessageType(Enum):
+class MessageType(int, Enum):
     DEFAULT = 0
     RECIPIENT_ADD = 1
     RECIPIENT_REMOVE = 2
