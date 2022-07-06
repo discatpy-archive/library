@@ -23,7 +23,8 @@ DEALINGS IN THE SOFTWARE.
 """
 
 import asyncio
-from typing import Type
+
+from ..types import Dict, Type
 
 __all__ = (
     "BucketResolutor",
@@ -39,13 +40,13 @@ class BucketResolutor:
 
     Attributes
     ----------
-    _bucket_strs: dict[:class:`str`, :class:`str`]
+    _bucket_strs: Dict[:class:`str`, :class:`str`]
         The internal bucket mapping.    
     """
     __slots__ = ("_bucket_strs",)
 
     def __init__(self):
-        self._bucket_strs: dict[str, str] = {}
+        self._bucket_strs: Dict[str, str] = {}
 
     def resolve_bucket(self, bucket: str):
         """Resolves the Discord bucket via the given client bucket.
@@ -131,7 +132,7 @@ class Ratelimiter:
 
     def __init__(self, resolutor: BucketResolutor):
         self._resolutor = resolutor
-        self._buckets: dict[str, Bucket] = {}
+        self._buckets: Dict[str, Bucket] = {}
         self._global_lock = asyncio.Event()
 
     async def acquire_bucket(self, bucket_str: str) -> Bucket:

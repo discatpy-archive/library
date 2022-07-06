@@ -26,9 +26,8 @@ from datetime import datetime
 from discord_typings import EmbedData, AllowedMentionsData, MessageReferenceData, PartialAttachmentData, PermissionOverwriteData, AttachmentData
 from typing import Optional
 
-from ...types import Snowflake, MISSING, MissingOr
-from .._client import _HTTPClient
-from .core import APIEndpointData, generate_api_wrapper_functions
+from ...types import Snowflake, MISSING, MissingOr, List
+from .core import APIEndpointData, CoreMixin
 
 __all__ = (
     "ChannelEndpointMixin",
@@ -36,10 +35,10 @@ __all__ = (
     "MessagesEndpointMixin",
 )
 
-@generate_api_wrapper_functions
-class ChannelEndpointMixin(_HTTPClient):
+class ChannelEndpointMixin(CoreMixin):
     get_channel = APIEndpointData("GET", "/channels/{channel_id}", format_args={"channel_id": Snowflake})
     get_guild_channels = APIEndpointData("GET", "/guilds/{guild_id}", format_args={"guild_id": Snowflake})
+    get_channel_invites = APIEndpointData("GET", "/channels/{channel_id}/invites", format_args={"channel_id": Snowflake})
     create_guild_channel = APIEndpointData(
         "POST", 
         "/guilds/{guild_id}", 
@@ -53,12 +52,27 @@ class ChannelEndpointMixin(_HTTPClient):
             ("user_limit", MissingOr[Optional[int]], MISSING),
             ("rate_limit_per_user", MissingOr[Optional[int]], MISSING),
             ("position", MissingOr[Optional[int]], MISSING),
-            ("permission_overwrites", MissingOr[Optional[list[PermissionOverwriteData]]], MISSING),
+            ("permission_overwrites", MissingOr[Optional[List[PermissionOverwriteData]]], MISSING),
             ("parent_id", MissingOr[Optional[Snowflake]], MISSING),
             ("nsfw", MissingOr[Optional[bool]], MISSING),
             ("rtc_region", MissingOr[Optional[str]], MISSING),
             ("video_quality_mode", MissingOr[Optional[int]], MISSING),
             ("default_auto_archive_duration", MissingOr[Optional[int]], MISSING),
+        ]
+    )
+    create_channel_invite = APIEndpointData(
+        "POST",
+        "/channels/{channel_id}/invites",
+        format_args={"channel_id": Snowflake},
+        supports_reason=True,
+        param_args=[
+            ("max_age", int, 86400),
+            ("max_uses", int, 0),
+            ("temporary", bool, False),
+            ("unique", bool, False),
+            ("target_type", int),
+            ("target_user_id", Snowflake),
+            ("target_application_id", Snowflake)
         ]
     )
     modify_channel = APIEndpointData(
@@ -67,19 +81,19 @@ class ChannelEndpointMixin(_HTTPClient):
         format_args={"channel_id": Snowflake}, 
         supports_reason=True,
         param_args=[
-            ("name",MissingOr[Optional[str]],MISSING),
-            ("type",MissingOr[Optional[int]],MISSING),
-            ("position",MissingOr[Optional[int]],MISSING),
-            ("topic",MissingOr[Optional[str]],MISSING),
-            ("nsfw",MissingOr[Optional[bool]],MISSING),
-            ("rate_limit_per_user",MissingOr[Optional[int]],MISSING),
-            ("bitrate",MissingOr[Optional[int]],MISSING),
-            ("user_limit",MissingOr[Optional[int]],MISSING),
-            ("permission_overwrites",MissingOr[Optional[list[PermissionOverwriteData]]], MISSING),
-            ("parent_id",MissingOr[Optional[Snowflake]],MISSING),
-            ("rtc_region",MissingOr[Optional[str]],MISSING),
-            ("video_quality_mode",MissingOr[Optional[int]],MISSING),
-            ("default_auto_archive_duration", MissingOr[Optional[int]],MISSING),
+            ("name", MissingOr[Optional[str]], MISSING),
+            ("type", MissingOr[Optional[int]], MISSING),
+            ("position", MissingOr[Optional[int]], MISSING),
+            ("topic", MissingOr[Optional[str]], MISSING),
+            ("nsfw", MissingOr[Optional[bool]], MISSING),
+            ("rate_limit_per_user", MissingOr[Optional[int]], MISSING),
+            ("bitrate", MissingOr[Optional[int]], MISSING),
+            ("user_limit", MissingOr[Optional[int]], MISSING),
+            ("permission_overwrites", MissingOr[Optional[List[PermissionOverwriteData]]], MISSING),
+            ("parent_id", MissingOr[Optional[Snowflake]], MISSING),
+            ("rtc_region", MissingOr[Optional[str]], MISSING),
+            ("video_quality_mode", MissingOr[Optional[int]], MISSING),
+            ("default_auto_archive_duration", MissingOr[Optional[int]], MISSING),
         ]
     )
     modify_guild_channel_positions = APIEndpointData(
@@ -93,10 +107,29 @@ class ChannelEndpointMixin(_HTTPClient):
             ("parent_id", Optional[Snowflake], None),
         ]
     )
-    delete_channel = APIEndpointData("DELETE", "/channels/{channel_id}", format_args={"channel_id": Snowflake})
+    edit_channel_permissions = APIEndpointData(
+        "PUT",
+        "/channels/{channel_id}/permissions/{overwrite_id}",
+        format_args={"channel_id": Snowflake, "overwrite_id": Snowflake},
+        supports_reason=True,
+        param_args=[
+            ("allow", MissingOr[str], MISSING),
+            ("deny", MissingOr[str], MISSING),
+            ("type", int),
+        ]
+    )
+    delete_channel = APIEndpointData("DELETE", "/channels/{channel_id}", format_args={"channel_id": Snowflake}, supports_reason=True)
+    follow_news_channel = APIEndpointData(
+        "POST", 
+        "/channels/{channel_id}/followers", 
+        format_args={"channel_id": Snowflake}, 
+        param_args=[
+            ("webhook_channel_id", Snowflake)
+        ]
+    )
+    trigger_typing = APIEndpointData("POST", "/channels/{channel_id}/typing", format_args={"channel_id": Snowflake})
 
-@generate_api_wrapper_functions
-class ThreadsEndpointMixin(_HTTPClient):
+class ThreadsEndpointMixin(CoreMixin):
     get_thread_member = APIEndpointData("GET", "/channels/{channel_id}/thread-members/{user_id}", format_args={"channel_id": Snowflake, "user_id": Snowflake})
     list_thread_members = APIEndpointData("GET", "/channels/{channel_id}/thread-members", format_args={"channel_id": Snowflake})
     list_public_archived_threads = APIEndpointData(
@@ -155,8 +188,7 @@ class ThreadsEndpointMixin(_HTTPClient):
     leave_thread = APIEndpointData("DELETE", "/channels/{channel_id}/thread-members/@me", format_args={"channel_id": Snowflake})
     remove_thread_member = APIEndpointData("DELETE", "/channels/{channel_id}/thread-members/{user_id}", format_args={"channel_id": Snowflake, "user_id": Snowflake})
 
-@generate_api_wrapper_functions
-class MessagesEndpointMixin(_HTTPClient):
+class MessagesEndpointMixin(CoreMixin):
     get_channel_message = APIEndpointData("GET", "/channels/{channel_id}/messages/{message_id}", format_args={"channel_id": Snowflake, "message_id": Snowflake})
     get_channel_messages = APIEndpointData(
         "GET", 
@@ -169,35 +201,83 @@ class MessagesEndpointMixin(_HTTPClient):
             ("limit", int, 50),
         ]
     )
-    # TODO: add custom code that checks if content, embeds, and sticker ids are all MISSING then warn
+    get_pinned_messages = APIEndpointData("GET", "/channel/{channel_id}/pins", format_args={"channel_id": Snowflake})
+    get_reactions = APIEndpointData(
+        "GET", 
+        "/channels/{channel_id}/messages/{message_id}/reactions/{emoji}",
+        format_args={"channel_id": Snowflake, "message_id": Snowflake, "emoji": str},
+        param_args=[
+            ("after", MissingOr[Snowflake], MISSING),
+            ("limit", int, 25),
+        ]
+    )
     create_message = APIEndpointData(
         "POST", 
         "/channels/{channel_id}/messages", 
         format_args={"channel_id": Snowflake},
+        supports_files=True,
         param_args=[
             ("content", MissingOr[str], MISSING),
             ("tts", MissingOr[bool], MISSING),
-            ("embeds", MissingOr[list[EmbedData]], MISSING),
+            ("embeds", MissingOr[List[EmbedData]], MISSING),
             ("allowed_mentions", MissingOr[AllowedMentionsData], MISSING),
             ("message_reference", MissingOr[MessageReferenceData], MISSING),
             # TODO: Components
-            ("sticker_ids", MissingOr[list[Snowflake]], MISSING),
-            # TODO: Files
-            ("attachments", MissingOr[list[PartialAttachmentData]], MISSING),
+            ("sticker_ids", MissingOr[List[Snowflake]], MISSING),
+            ("attachments", MissingOr[List[PartialAttachmentData]], MISSING),
             ("flags", MissingOr[int], MISSING),
         ]
+    )
+    create_reaction = APIEndpointData(
+        "PUT", 
+        "/channels/{channel_id}/messages/{message_id}/reactions/{emoji}/@me",
+        format_args={"channel_id": Snowflake, "message_id": Snowflake, "emoji": str}
     )
     edit_message = APIEndpointData(
         "PATCH",
         "/channels/{channel_id}/messages/{message_id}",
         format_args={"channel_id": Snowflake, "message_id": Snowflake},
+        supports_files=True,
         param_args=[
             ("content", MissingOr[Optional[str]], MISSING),
-            ("embeds", MissingOr[Optional[list[EmbedData]]], MISSING),
+            ("embeds", MissingOr[Optional[List[EmbedData]]], MISSING),
             ("flags", MissingOr[Optional[int]], MISSING),
             ("allowed_mentions", MissingOr[Optional[AllowedMentionsData]], MISSING),
-            # TODO: Components, Files
-            ("attachments", MissingOr[Optional[list[AttachmentData]]], MISSING)
+            # TODO: Components
+            ("attachments", MissingOr[Optional[List[AttachmentData]]], MISSING)
+        ]
+    )
+    delete_message = APIEndpointData(
+        "DELETE",
+        "/channels/{channel_id}/messages/{message_id}",
+        format_args={"channel_id": Snowflake, "message_id": Snowflake},
+        supports_reason=True
+    )
+    delete_own_reaction = APIEndpointData(
+        "DELETE", 
+        "/channels/{channel_id}/messages/{message_id}/reactions/{emoji}/@me",
+        format_args={"channel_id": Snowflake, "message_id": Snowflake, "emoji": str}
+    )
+    delete_user_reaction = APIEndpointData(
+        "DELETE",
+        "/channels/{channel_id}/messages/{message_id}/reactions/{emoji}/{user_id}",
+        format_args={"channel_id": Snowflake, "message_id": Snowflake, "emoji": str, "user_id": Snowflake}
+    )
+    delete_all_reactions = APIEndpointData("DELETE", "/channels/{channel_id}/messages/{message_id}/reactions", format_args={"channel_id": Snowflake, "message_id": Snowflake})
+    delete_all_reactions_for_emoji = APIEndpointData(
+        "DELETE", 
+        "/channels/{channel_id}/messages/{message_id}/reactions/{emoji}", 
+        format_args={"channel_id": Snowflake, "message_id": Snowflake, "emoji": str}
+    )
+    bulk_delete_messages = APIEndpointData(
+        "POST",
+        "/channels/{channel_id}/messages/bulk-delete",
+        format_args={"channel_id": Snowflake},
+        supports_reason=True,
+        param_args=[
+            ("messages", List[Snowflake])
         ]
     )
     crosspost_message = APIEndpointData("POST", "/channels/{channel_id}/messages/{message_id}/crosspost", format_args={"channel_id": Snowflake, "message_id": Snowflake})
+    pin_message = APIEndpointData("PUT", "/channels/{channel_id}/pins/{message_id}", format_args={"channel_id": Snowflake, "message_id": Snowflake}, supports_reason=True)
+    unpin_message = APIEndpointData("DELETE", "/channels/{channel_id}/pins/{message_id}", format_args={"channel_id": Snowflake, "message_id": Snowflake}, supports_reason=True)

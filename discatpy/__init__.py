@@ -24,21 +24,8 @@ DEALINGS IN THE SOFTWARE.
 
 __title__ = "DisCatPy"
 __author__ = "EmreTech"
-__version__ = "1.0.0-alpha0"
+__version__ = "0.1.0"
 __license__ = "MIT"
 
-from . import enums, types, utils
-from .abs import *
-from .asset import *
-from .cache import *
-from .channel import *
-from .client import *
-from .embed import *
-from .errors import *
-from .flags import *
-from .gateway import *
-from .guild import *
-from .http import *
-from .message import *
-from .object import *
-from .user import *
+from .core import *
+#from .models import *

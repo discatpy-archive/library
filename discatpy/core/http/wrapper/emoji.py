@@ -22,22 +22,38 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from typing import Optional
-
-from ...types import Snowflake, MISSING, MissingOr
+from ...types import Snowflake, List
 from .core import APIEndpointData, CoreMixin
 
-__all__ = ("UserEndpointMixin",)
+__all__ = ("EmojiEndpointMixin",)
 
-class UserEndpointMixin(CoreMixin):
-    get_user = APIEndpointData("GET", "/users/{user_id}", format_args={"user_id": Snowflake})
-    get_current_user = APIEndpointData("GET", "/users/@me")
-    create_user_dm = APIEndpointData("POST", "/users/@me/channels", param_args=[("recipient_id", Snowflake),])
-    modify_current_user = APIEndpointData(
-        "PATCH", 
-        "/users/@me", 
+class EmojiEndpointMixin(CoreMixin):
+    list_guild_emojis = APIEndpointData("GET", "/guilds/{guild_id}/emojis", format_args={"guild_id": Snowflake})
+    get_guild_emoji = APIEndpointData("GET", "/guilds/{guild_id}/emojis/{emoji_id}", format_args={"guild_id": Snowflake, "emoji_id": Snowflake})
+    create_guild_emoji = APIEndpointData(
+        "POST", 
+        "/guilds/{guild_id}/emojis", 
+        format_args={"guild_id": Snowflake},
+        supports_reason=True,
         param_args=[
-            ("username", MissingOr[str], MISSING), 
-            ("avatar", MissingOr[Optional[str]], MISSING),
+            ("name", str),
+            ("image", str),
+            ("roles", List[Snowflake]),
         ]
+    )
+    modify_guild_emoji = APIEndpointData(
+        "PATCH", 
+        "/guilds/{guild_id}/emojis/{emoji_id}", 
+        format_args={"guild_id": Snowflake, "emoji_id": Snowflake},
+        supports_reason=True,
+        param_args=[
+            ("name", str),
+            ("roles", List[Snowflake]),
+        ]
+    )
+    delete_guild_emoji = APIEndpointData(
+        "DELETE", 
+        "/guilds/{guild_id}/emojis/{emoji_id}", 
+        format_args={"guild_id": Snowflake, "emoji_id": Snowflake}, 
+        supports_reason=True
     )

@@ -1,6 +1,4 @@
-![Banner for DisCatPy](./assets/banner.png)
-
-# DisCatPy
+# ![Banner for DisCatPy](./assets/banner.png)
 
 A high level, asynchronous Discord API wrapper made completely from scratch.
 
@@ -23,6 +21,35 @@ DisCatPy currently supports:
 - Proper REST API ratelimiting
 
 If you want to see what DisCatPy is planning to support, check out the project board for v1.0 in the Projects tab.
+
+### API Design
+
+DisCatPy has a unique API design structured into folders. Here are the main elements of the API:
+
+- Core
+  - The core contains the main, lower level elements of the API
+  - This includes raw HTTP and Gateway handlers, as well as a client
+  - The core can be used directly by users, but it's not recommended to as you'll have to handle the Discord models yourself
+- Models
+  - The model is named after Discord Models, and it contains the more high level elements of the API relating to Discord Models (hence the name)
+  - This includes Discord Model wrappers, like for example a wrapper for a Message
+  - These models are immutable, and modifying them with an `edit` function for example returns a new model
+  - The model also contains a bot, which inherits from client and adds caching capabilities
+  - The model is encouraged to be used by users, but you aren't forced to use it
+- Extensions
+  - Extensions modify the usage of DisCatPy by adding new features
+  - Commands Base
+    - The commands base is the base for extensions that add wrappers for commands
+    - It adds a simple command, which has a callback, hooks, and other things
+    - It also adds options and command groups
+  - Interactions
+    - The high level wrapper for interactions
+    - Interactions can techincally be used without this extension, but it's more low level
+    - The interactions extension implements Appliation Commands, which inherit from the Commands Base
+    - The interactions extensions also implements UI Components
+  - Prefixed Commands
+    - The high level wrapper for prefixed commands/text based commands
+    - This wrapper is like most other ones in other libraries
 
 ## Installing
 

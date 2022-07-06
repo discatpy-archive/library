@@ -23,13 +23,14 @@ DEALINGS IN THE SOFTWARE.
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING, Any
 
-if TYPE_CHECKING:
-    from .client import Client
+from ..core.types import Mapping
+
+#if TYPE_CHECKING:
+#    from .client import Client
 
 __all__ = ("DiscordObject",)
-
 
 class DiscordObject:
     """
@@ -38,40 +39,21 @@ class DiscordObject:
 
     Attributes
     ----------
-    client: :type:`Client`
-        The parent client of this type.
-    d: :type:`Dict[str, Any]`
-        The raw data from the API.
+    bot:
+        The bot tied to this Discord Object.
     """
 
-    client: Client
-    d: Dict[str, Any]
+    __slots__ = (
+        "bot",
+    )
 
-    def __init__(self, d: Dict[str, Any], client: Client):
-        self.client = client
-        self.d = d
+    def __init__(self, *, data: Mapping[str, Any], bot, **kwargs):
+        self.bot = bot
+        self._update(data)
 
-    @classmethod
-    def from_dict(cls, client: Client, d: Dict[str, Any]):
-        """Returns this API type from a provided Dict.
-
-        Usually used to convert types directly from the API.
-
-        Parameters
-        ----------
-        client: :type:`Client`
-            The parent client of this type.
-        d: :type:`Dict[str, Any]`
-            The raw data from the API.
-        """
+    def _update(self, data: Mapping[str, Any]):
         raise NotImplementedError
 
-    def to_dict(self) -> Dict[str, Any]:
-        """Returns this type converted into a Dict.
-
-        Usually used to convert types for the API.
-        """
-        raise NotImplementedError
-
-    def _update(self, d: Dict[str, Any]):
+    def to_dict(self) -> dict[str, Any]:
+        """:class:`dict[str, Any]`: Converts this Discord Object into a dict. Not guaranteed to be implemented."""
         raise NotImplementedError

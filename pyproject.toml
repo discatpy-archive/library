@@ -1,3 +1,49 @@
+# Build system/Metadata (Flit)
+
+
+[build-system]
+requires = ["flit_core >=3.2"]
+build-backend = "flit_core.buildapi"
+
+
+[project]
+name = "discatpy"
+authors = [{name = "EmreTech"},]
+description = "A high level, asynchronous Discord API wrapper made completely from scratch."
+readme = {file = "README.md", content-type = "text/markdown"}
+requires-python = ">=3.8"
+license = {file = "LICENSE"}
+classifiers = [
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Development Status :: 3 - Alpha",
+    "Framework :: AsyncIO",
+    "Framework :: aiohttp",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "Topic :: Internet",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+dependencies = [
+    "aiohttp>=3.6.0,<3.9.0",
+    "discord-typings==0.5.1",
+]
+dynamic = ["version",]
+
+
+[project.urls]
+Source = "https://github.com/EmreTech/DisCatPy"
+"Bug Tracker" = "https://github.com/EmreTech/DisCatPy/issues"
+
+
+# Formatting
+
+
 [tool.black]
 line-length = 100
 target-version = ["py38", "py39", "py310"]

@@ -22,17 +22,20 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-import json
 import aiohttp
 import asyncio
+import json
 import sys
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any, cast, Optional
 from urllib.parse import quote as _urlquote
+
+from discord_typings import GetGatewayBotData
 
 from ... import __version__
 from ..errors import DisCatPyException, HTTPException
-from ..types import MISSING, MissingOr, MissingType
+from ..file import BasicFile
+from ..types import MISSING, List, MissingOr, Dict
 from .ratelimiter import Ratelimiter, BucketResolutor
 
 BASE_API_URL = "https://discord.com/api/v{0}"
@@ -43,8 +46,8 @@ __all__ = ("_HTTPClient",)
 
 @dataclass
 class _PreparedData:
-    json: MissingOr[Any]
-    files: MissingType # TODO: Switch this to MissingOr[Files] once files are added
+    json: MissingOr[Any] = MISSING
+    multipart_content: MissingOr[aiohttp.FormData] = MISSING
 
 class _HTTPClient:
     __slots__ = (
@@ -53,7 +56,7 @@ class _HTTPClient:
         "_ratelimiter",
         "_api_version",
         "_api_url",
-        "_session",
+        "__session",
         "user_agent",
     )
 
@@ -69,7 +72,7 @@ class _HTTPClient:
 
     @property
     def _session(self):
-        if self.__session.closed or self.__session is None:
+        if self.__session is None or self.__session.closed:  # type: ignore
             self.__session = aiohttp.ClientSession(headers={"User-Agent": self.user_agent})
 
         return self.__session
@@ -98,13 +101,24 @@ class _HTTPClient:
             await self._session.close()
 
     @staticmethod
-    def _prepare_data(json: MissingOr[dict[str, Any]]):
-        # TODO: Use aiohttp.FormData when files are included
+    def _prepare_data(json: MissingOr[Dict[str, Any]], files: MissingOr[List[BasicFile]]):
+        pd = _PreparedData()
 
-        if json is not MISSING:
-            return _PreparedData(json, MISSING)
+        if json is not MISSING and files is MISSING:
+            pd.json = json
 
-        return _PreparedData(MISSING, MISSING)
+        if json is not MISSING and files is not MISSING:
+            form_dat = aiohttp.FormData()
+            form_dat.add_field("payload_json", json, content_type="application/json")
+
+            # this has to be done because otherwise Pyright will complain about files not being an iterable type
+            if isinstance(files, list):
+                for i, f in enumerate(files):
+                    form_dat.add_field(f"files[{i}]", f.fp, content_type=f.content_type, filename=f.filename)
+
+            pd.multipart_content = form_dat
+
+        return pd
 
     @staticmethod
     async def _text_or_json(resp: aiohttp.ClientResponse):
@@ -119,29 +133,33 @@ class _HTTPClient:
         self, 
         method: str, 
         url: str, 
-        url_format_params: Optional[dict[str, Any]] = None,
+        url_format_params: Optional[Dict[str, Any]] = None,
         *, 
-        query_params: Optional[dict[str, Any]] = None,
-        json_params: MissingOr[dict[str, Any]] = MISSING,
+        query_params: Optional[Dict[str, Any]] = None,
+        json_params: MissingOr[Dict[str, Any]] = MISSING,
         reason: Optional[str] = None,
+        files: MissingOr[List[BasicFile]] = MISSING,
     ):
         url_format_params = url_format_params or {}
         url = url.format_map({k: _urlquote(v) for k, v in url_format_params.items()})
 
         query_params = query_params or {}
         max_tries = 5
-        headers: dict[str, str] = {"Authorization": f"Bot {self.token}"}
+        headers: Dict[str, str] = {"Authorization": f"Bot {self.token}"}
 
         if reason:
             headers["X-Audit-Log-Reason"] = _urlquote(reason, safe="/ ")
 
 
         for tries in range(max_tries):
-            data = self._prepare_data(json_params)
-            kwargs: dict[str, Any] = {}
+            data = self._prepare_data(json_params, files)
+            kwargs: Dict[str, Any] = {}
 
             if data.json is not MISSING:
                 kwargs["json"] = data.json
+
+            if data.multipart_content is not MISSING:
+                kwargs["data"] = data.multipart_content
 
             client_bucket = f"{method}:{url}"
             bucket = await self._ratelimiter.acquire_bucket(client_bucket)
@@ -152,7 +170,7 @@ class _HTTPClient:
             async with bucket:
                 response = await self._session.request(
                     method,
-                    url,
+                    f"{self._api_url}{url}",
                     params=query_params,
                     headers=headers,
                     **kwargs
@@ -178,7 +196,7 @@ class _HTTPClient:
                         # it means we're Cloudflare banned
                         raise HTTPException(response, await self._text_or_json(response))
 
-                    response_json: dict[str, Any] = await response.json()
+                    response_json: Dict[str, Any] = await response.json()
                     is_global = response_json.get("global", False)
 
                     if is_global:
@@ -196,3 +214,7 @@ class _HTTPClient:
                     raise HTTPException(response, await self._text_or_json(response))
 
         raise DisCatPyException(f"Tried sending request to \"{url}\" with method {method} {max_tries} times.")
+
+    async def get_gateway_bot(self) -> GetGatewayBotData:
+        gb_info = await self.request("GET", "/gateway/bot")
+        return cast(GetGatewayBotData, gb_info)

@@ -23,7 +23,11 @@ DEALINGS IN THE SOFTWARE.
 """
 from __future__ import annotations
 
-from typing import Any, ClassVar, Dict, Tuple, Type
+from functools import reduce
+from typing import Any, ClassVar
+from typing_extensions import Self
+
+from .types import Dict, Tuple, Type
 
 __all__ = (
     "BaseFlags",
@@ -113,7 +117,7 @@ class BaseFlags(metaclass=FlagMeta):
             self._set_flag(self.VALID_FLAGS[k], v)
 
     @classmethod
-    def _from_value(cls: Type[BaseFlags], value: int):
+    def _from_value(cls: Type[Self], value: int) -> Self:
         self = cls.__new__(cls)
         self.value = value
         return self
@@ -151,9 +155,8 @@ class Intents(BaseFlags):
     @classmethod
     def ALL(cls: Type[Intents]) -> Intents:
         """A classmethod that returns a :class:`Intents` instance with everything set."""
-        bits = max(cls.VALID_FLAGS.values()).bit_length()
-        val = (1 << bits) - 1
-        return cls._from_value(val)
+        value = reduce(lambda a, b: a | b, cls.VALID_FLAGS.values())
+        return cls._from_value(value)
 
     @classmethod
     def NONE(cls: Type[Intents]) -> Intents:

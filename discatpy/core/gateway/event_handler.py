@@ -2,7 +2,6 @@
 The MIT License (MIT)
 
 Copyright (c) 2022-present EmreTech
-Copyright (c) 2022-present AarushOS
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),
@@ -22,52 +21,22 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
+from __future__ import annotations
 
-from enum import Enum
-
-__all__ = (
-    "VerificationLevel",
-    "MessageNotificationLevel",
-    "ExplicitContentFilterLevel",
-    "MFALevel",
-    "NSFWLevel",
-    "PremiumTier",
-)
+from typing import TYPE_CHECKING
 
 
-class VerificationLevel(int, Enum):
-    NONE = 0
-    LOW = 1
-    MEDIUM = 2
-    HIGH = 3
-    VERY_HIGH = 4
+if TYPE_CHECKING:
+    from ..client import Client
 
+__all__ = ("GatewayEventHandler",)
 
-class MessageNotificationLevel(int, Enum):
-    ALL_MESSAGES = 0
-    ONLY_MENTIONS = 1
+class GatewayEventHandler:
+    def __init__(self, client: Client):
+        self.client = client
 
+        for k in dir(self):
+            if not k.startswith("_"):
+                self.client.dispatcher.add_event(getattr(self, k), parent=self)
 
-class ExplicitContentFilterLevel(int, Enum):
-    DISABLED = 0
-    MEMBERS_WITHOUT_ROLES = 1
-    ALL_MEMBERS = 2
-
-
-class MFALevel(Enum):
-    NONE = 0
-    ELEVATED = 1
-
-
-class NSFWLevel(Enum):
-    DEFAULT = 0
-    EXPLICIT = 1
-    SAFE = 2
-    AGE_RESTRICTED = 3
-
-
-class PremiumTier(Enum):
-    NONE = 0
-    TIER_1 = 1
-    TIER_2 = 2
-    TIER_3 = 3
+    

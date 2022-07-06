@@ -22,22 +22,37 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from typing import Optional
-
 from ...types import Snowflake, MISSING, MissingOr
 from .core import APIEndpointData, CoreMixin
 
-__all__ = ("UserEndpointMixin",)
+__all__ = ("StageInstanceEndpointMixin",)
 
-class UserEndpointMixin(CoreMixin):
-    get_user = APIEndpointData("GET", "/users/{user_id}", format_args={"user_id": Snowflake})
-    get_current_user = APIEndpointData("GET", "/users/@me")
-    create_user_dm = APIEndpointData("POST", "/users/@me/channels", param_args=[("recipient_id", Snowflake),])
-    modify_current_user = APIEndpointData(
-        "PATCH", 
-        "/users/@me", 
+class StageInstanceEndpointMixin(CoreMixin):
+    get_stage_instance = APIEndpointData("GET", "/stage-instances/{channel_id}", format_args={"channel_id": Snowflake})
+    create_stage_instance = APIEndpointData(
+        "POST",
+        "/stage-instances",
+        supports_reason=True,
         param_args=[
-            ("username", MissingOr[str], MISSING), 
-            ("avatar", MissingOr[Optional[str]], MISSING),
+            ("channel_id", Snowflake),
+            ("topic", str),
+            ("privacy_level", MissingOr[int], MISSING),
+            ("send_start_notification", MissingOr[bool], MISSING),
         ]
+    )
+    modify_stage_instance = APIEndpointData(
+        "PATCH",
+        "/stage-instances/{channel_id}",
+        format_args={"channel_id": Snowflake},
+        supports_reason=True,
+        param_args=[
+            ("topic", MissingOr[str], MISSING),
+            ("privacy_level", MissingOr[int], MISSING),
+        ]
+    )
+    delete_stage_instance = APIEndpointData(
+        "DELETE", 
+        "/stage-instances/{channel_id}", 
+        format_args={"channel_id": Snowflake},
+        supports_reason=True
     )

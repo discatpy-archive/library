@@ -22,28 +22,20 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from enum import Enum
+from ...types import Snowflake, MISSING, MissingOr
+from .core import APIEndpointData, CoreMixin
 
-__all__ = (
-    "ChannelType",
-    "VideoQualityModes",
-)
+__all__ = ("InviteEndpointMixin",)
 
-
-class ChannelType(int, Enum):
-    GUILD_TEXT = 0
-    DM = 1
-    GUILD_VOICE = 2
-    GROUP_DM = 3
-    GUILD_CATEGORY = 4
-    GUILD_NEWS = 5
-    GUILD_STORE = 6
-    GUILD_NEWS_THREAD = 10
-    GUILD_PUBLIC_THREAD = 11
-    GUILD_PRIVATE_THREAD = 12
-    GUILD_STAGE_VOICE = 13
-
-
-class VideoQualityModes(int, Enum):
-    AUTO = 1
-    FULL = 2
+class InviteEndpointMixin(CoreMixin):
+    get_invite = APIEndpointData(
+        "GET", 
+        "/invites/{invite_code}", 
+        format_args={"invite_code": str},
+        param_args=[
+            ("with_counts", MissingOr[bool], MISSING),
+            ("with_expiration", MissingOr[bool], MISSING),
+            ("guild_scheduled_event_id", MissingOr[Snowflake], MISSING),
+        ]
+    )
+    delete_invite = APIEndpointData("DELETE", "/invites/{invite_code}", format_args={"invite_code": str}, supports_reason=True)

@@ -22,4 +22,20 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from .snowflake import *
+from typing import Optional
+
+from ...types import Snowflake, MISSING, MissingOr
+
+class InviteEndpointMixin:
+    async def get_invite(
+        self, 
+        invite_code: str, 
+        *, 
+        with_counts: MissingOr[bool] = MISSING, 
+        with_expiration: MissingOr[bool] = MISSING,
+        guild_scheduled_event_id: MissingOr[Snowflake] = MISSING
+    ):
+        ...
+
+    async def delete_invite(self, invite_code: str, *, reason: Optional[str] = None):
+        ...

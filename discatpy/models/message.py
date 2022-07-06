@@ -26,7 +26,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING, List, Optional, Union, cast
 
-from discord_typings import GuildMemberData, MessageData, MessageReactionData, MessageReferenceData
+from discord_typings import GuildMemberData, MessageData, MessageReactionData, MessageReferenceData, MessageActivityData
 from typing_extensions import Literal, NotRequired, TypedDict
 
 from .enums.channel import ChannelType
@@ -44,11 +44,6 @@ __all__ = (
     "MessageActivityData",
     "Message",
 )
-
-
-class MessageActivityData(TypedDict):
-    type: Literal[1, 2, 3, 5]  # MessageActivityTypes
-    party_id: NotRequired[str]
 
 
 class Message(DiscordObject):

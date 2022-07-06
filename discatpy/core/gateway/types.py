@@ -22,20 +22,13 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from enum import Enum
+from typing import Any, Optional, TypedDict
 
-__all__ = ("GatewayOpcode",)
+__all__ = ("GatewayPayload",)
 
 
-class GatewayOpcode(int, Enum):
-    DISPATCH = 0
-    HEARTBEAT = 1
-    IDENTIFY = 2
-    PRESENCE_UPDATE = 3
-    VOICE_STATE_UPDATE = 4
-    RESUME = 6
-    RECONNECT = 7
-    REQUEST_GUILD_MEMBERS = 8
-    INVALID_SESSION = 9
-    HELLO = 10
-    HEARTBEAT_ACK = 11
+class GatewayPayload(TypedDict):
+    op: int
+    d: Optional[Any]
+    s: Optional[int]
+    t: Optional[str]

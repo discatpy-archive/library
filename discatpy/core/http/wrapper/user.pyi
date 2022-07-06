@@ -22,12 +22,19 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from enum import Enum
+from typing import Optional
 
-__all__ = ("PremiumTypes",)
+from ...types import Snowflake, MISSING, MissingOr
 
+class UserEndpoinrMixin:
+    async def get_user(self, user_id: Snowflake):
+        ...
 
-class PremiumTypes(int, Enum):
-    NONE = 0
-    NITRO_CLASSIC = 1
-    NITRO = 2
+    async def get_current_user(self):
+        ...
+
+    async def create_user_dm(self, *, recipient_id: Snowflake):
+        ...
+
+    async def modify_current_user(self, *, username: MissingOr[str] = MISSING, avatar: MissingOr[Optional[str]] = MISSING):
+        ...

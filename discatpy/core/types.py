@@ -22,15 +22,24 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
+import sys
 from typing import Any, Union, TypeVar
 
-from discord_typings.shared import Snowflake
+from discord_typings import Snowflake
 
 __all__ = (
     "Snowflake", 
     "MISSING",
     "MissingOr",
     "MissingType",
+
+    "Callable",
+    "Coroutine",
+    "Dict",
+    "List",
+    "Mapping",
+    "Tuple",
+    "Type",
 )
 
 class _Missing:
@@ -49,5 +58,16 @@ class _Missing:
 T = TypeVar("T")
 
 MISSING: Any = _Missing()
-MissingOr = Union[_Missing, T]
-MissingType = type(MISSING)
+MissingType = _Missing # aka the type of MISSING
+MissingOr = Union[MissingType, T]
+
+if sys.version_info[:2] >= (3, 9): # type hint stuff was moved to builtins in Python 3.9 (see PEP 585 for more info)
+    from collections.abc import Callable, Coroutine, Mapping
+
+    Dict = dict
+    List = list
+    Tuple = tuple
+    Type = type
+    # TODO: Add more if needed
+else:
+    from typing import Callable, Coroutine, Dict, List, Mapping, Tuple, Type

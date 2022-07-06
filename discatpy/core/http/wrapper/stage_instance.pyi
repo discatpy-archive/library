@@ -22,4 +22,34 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from .dispatcher import *
+from typing import Optional
+
+from ...types import Snowflake, MISSING, MissingOr
+
+class StageInstanceEndpointMixin:
+    async def get_stage_instance(self, channel_id: Snowflake):
+        ...
+
+    async def create_stage_instance(
+        self,
+        *,
+        channel_id: Snowflake,
+        topic: str,
+        privacy_level: MissingOr[int] = MISSING,
+        send_start_notification: MissingOr[bool] = MISSING,
+        reason: Optional[str] = None
+    ):
+        ...
+
+    async def modify_stage_instance(
+        self,
+        channel_id: Snowflake,
+        *,
+        topic: MissingOr[str] = MISSING,
+        privacy_level: MissingOr[int] = MISSING,
+        reason: Optional[str] = None
+    ):
+        ...
+
+    async def delete_stage_instance(self, channel_id: Snowflake, *, reason: Optional[str] = None):
+        ...

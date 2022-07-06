@@ -21,4 +21,23 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
-from discord_typings.shared import Snowflake
+
+from typing import Optional
+
+from ...types import Snowflake, List
+
+class EmojiEndpointMixin:
+    async def list_guild_emojis(self, guild_id: Snowflake):
+        ...
+
+    async def get_guild_emoji(self, guild_id: Snowflake, emoji_id: Snowflake):
+        ...
+
+    async def create_guild_emoji(self, guild_id: Snowflake, *, name: str, image: str, roles: List[Snowflake], reason: Optional[str] = None):
+        ...
+
+    async def modify_guild_emoji(self, guild_id: Snowflake, emoji_id: Snowflake, *, name: str, roles: List[Snowflake], reason: Optional[str] = None):
+        ...
+
+    async def delete_guild_emoji(self, guild_id: Snowflake, emoji_id: Snowflake, *, reason: Optional[str] = None):
+        ...

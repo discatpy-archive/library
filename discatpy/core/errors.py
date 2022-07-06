@@ -22,9 +22,10 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from typing import Any, Dict, List, Optional, Tuple, Union
-
+from typing import Any, Optional, Union
 from aiohttp import ClientResponse
+
+from .types import Dict, List, Tuple
 
 __all__ = (
     "DisCatPyException",
