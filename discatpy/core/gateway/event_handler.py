@@ -25,11 +25,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-
 if TYPE_CHECKING:
     from ..client import Client
 
 __all__ = ("GatewayEventHandler",)
+
 
 class GatewayEventHandler:
     def __init__(self, client: Client):
@@ -38,5 +38,3 @@ class GatewayEventHandler:
         for k in dir(self):
             if not k.startswith("_"):
                 self.client.dispatcher.add_event(getattr(self, k), parent=self)
-
-    

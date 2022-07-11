@@ -22,46 +22,41 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from discord_typings import AutoModerationTriggerMetadataData, AutoModerationActionData
+from discord_typings import AutoModerationActionData, AutoModerationTriggerMetadataData
 
-from ...types import Snowflake, MISSING, MissingOr, List
+from ...types import MISSING, List, MissingOr, Snowflake
 
 class AutoModerationEndpointMixin:
-    async def get_auto_moderation_rule(self, guild_id: Snowflake, auto_moderation_rule_id: Snowflake):
-        ...
-
-    async def list_auto_moderation_rules_for_guild(self, guild_id: Snowflake):
-        ...
-
+    async def get_auto_moderation_rule(
+        self, guild_id: Snowflake, auto_moderation_rule_id: Snowflake
+    ): ...
+    async def list_auto_moderation_rules_for_guild(self, guild_id: Snowflake): ...
     async def create_auto_moderation_rule(
-        self, 
-        guild_id: Snowflake, 
-        *, 
-        name: str, 
-        event_type: int, 
+        self,
+        guild_id: Snowflake,
+        *,
+        name: str,
+        event_type: int,
         trigger_type: int,
         trigger_metadata: MissingOr[AutoModerationTriggerMetadataData] = MISSING,
         actions: List[AutoModerationActionData],
         enabled: MissingOr[bool] = MISSING,
         exempt_roles: MissingOr[List[Snowflake]] = MISSING,
         exempt_channels: MissingOr[List[Snowflake]] = MISSING,
-    ):
-        ...
-
+    ): ...
     async def modify_auto_moderation_rule(
-        self, 
-        guild_id: Snowflake, 
-        *, 
-        name: MissingOr[str] = MISSING, 
-        event_type: MissingOr[int] = MISSING, 
+        self,
+        guild_id: Snowflake,
+        *,
+        name: MissingOr[str] = MISSING,
+        event_type: MissingOr[int] = MISSING,
         trigger_type: MissingOr[int] = MISSING,
         trigger_metadata: MissingOr[AutoModerationTriggerMetadataData] = MISSING,
         actions: MissingOr[List[AutoModerationActionData]] = MISSING,
         enabled: MissingOr[bool] = MISSING,
         exempt_roles: MissingOr[List[Snowflake]] = MISSING,
         exempt_channels: MissingOr[List[Snowflake]] = MISSING,
-    ):
-        ...
-
-    async def delete_auto_moderation_rule(self, guild_id: Snowflake, auto_moderation_rule_id: Snowflake):
-        ...
+    ): ...
+    async def delete_auto_moderation_rule(
+        self, guild_id: Snowflake, auto_moderation_rule_id: Snowflake
+    ): ...

@@ -27,7 +27,9 @@ from .wrapper import *
 
 __all__ = ("HTTPClient",)
 
-class HTTPClient(_HTTPClient, 
+
+class HTTPClient(
+    _HTTPClient,
     AutoModerationEndpointMixin,
     ChannelEndpointMixin,
     ThreadsEndpointMixin,
@@ -42,6 +44,6 @@ class HTTPClient(_HTTPClient,
     StageInstanceEndpointMixin,
     StickerEndpointMixin,
     UserEndpointMixin,
-    metaclass=type
+    metaclass=type,
 ):
     pass

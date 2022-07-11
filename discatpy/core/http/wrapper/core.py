@@ -24,21 +24,21 @@ DEALINGS IN THE SOFTWARE.
 
 import builtins
 import importlib
-from dataclasses import dataclass, KW_ONLY
+from dataclasses import KW_ONLY, dataclass
 from typing import Any, Literal, Optional, Union
 
 from ...file import BasicFile
 from ...types import (
-    Coroutine, 
-    Callable, 
-    Snowflake, 
-    MISSING, 
-    MissingOr, 
-    MissingType, 
-    Dict, 
-    List, 
-    Tuple, 
-    Type
+    MISSING,
+    Callable,
+    Coroutine,
+    Dict,
+    List,
+    MissingOr,
+    MissingType,
+    Snowflake,
+    Tuple,
+    Type,
 )
 
 __all__ = (
@@ -49,8 +49,10 @@ __all__ = (
 CoroFunc = Callable[..., Coroutine[Any, Any, Any]]
 Func = Callable[..., Any]
 
+
 def _indent_text(txt: str) -> str:
     return f"    {txt}"
+
 
 def _indent_all_text(strs: List[str]) -> List[str]:
     output: List[str] = []
@@ -60,9 +62,11 @@ def _indent_all_text(strs: List[str]) -> List[str]:
 
     return output
 
+
 # Code taken from the dataclasses module in the Python stdlib
-def _create_fn(name, args, body, *, globals=None, locals=None,
-               return_type=MISSING, asynchronous=False) -> Union[CoroFunc, Func]:
+def _create_fn(
+    name, args, body, *, globals=None, locals=None, return_type=MISSING, asynchronous=False
+) -> Union[CoroFunc, Func]:
     if locals is None:
         locals = {}
 
@@ -82,13 +86,14 @@ def _create_fn(name, args, body, *, globals=None, locals=None,
     if asynchronous:
         txt += "async "
     txt += f"def {name}({args}){return_annotation}:\n{body}"
-    #print(txt)
+    # print(txt)
 
     local_vars = ", ".join(locals.keys())
     txt = f"def __create_fn__({local_vars}):\n{_indent_text(txt)}\n    return {name}"
     ns = {}
     exec(txt, globals, ns)
     return ns["__create_fn__"](**locals)
+
 
 @dataclass
 class APIEndpointData:
@@ -99,6 +104,7 @@ class APIEndpointData:
     param_args: Optional[List[Tuple[Any, ...]]] = None
     supports_reason: bool = False
     supports_files: bool = False
+
 
 def _generate_args(data: APIEndpointData):
     func_args = ["self"]
@@ -130,6 +136,7 @@ def _generate_args(data: APIEndpointData):
 
     return func_args
 
+
 def _generate_body(data: APIEndpointData):
     body: List[str] = []
     params_dict_name = "{0}_params"
@@ -138,7 +145,7 @@ def _generate_body(data: APIEndpointData):
         params_dict_name = params_dict_name.format("query" if data.method == "GET" else "json")
         body.append(f"{params_dict_name}: Dict[str, Any] = {{}}")
 
-        template_if_statment = "if {0} is not MISSING:\n                {1}[\"{0}\"] = {0}"
+        template_if_statment = 'if {0} is not MISSING:\n                {1}["{0}"] = {0}'
 
         for arg in data.param_args:
             arg_name = str(arg[0])
@@ -148,12 +155,12 @@ def _generate_body(data: APIEndpointData):
 
             body.append(template_if_statment.format(arg_name, params_dict_name))
 
-    request_line = f"return await self.request(\"{data.method}\", \"{data.path}\", "
+    request_line = f'return await self.request("{data.method}", "{data.path}", '
 
     if data.format_args is not None:
         url_format_params = "{"
         for arg_name in data.format_args.keys():
-            url_format_params += f"\"{arg_name}\": {arg_name}, "
+            url_format_params += f'"{arg_name}": {arg_name}, '
         url_format_params += "}"
 
         request_line += f"{url_format_params}, "
@@ -169,6 +176,7 @@ def _generate_body(data: APIEndpointData):
     body.append(request_line)
     return _indent_all_text(body)
 
+
 def _from_import(module: str, locals: Dict[str, Any], objs_to_grab: Optional[List[str]] = None):
     actual_module = importlib.import_module(module)
 
@@ -177,6 +185,7 @@ def _from_import(module: str, locals: Dict[str, Any], objs_to_grab: Optional[Lis
 
     for obj in objs_to_grab:
         locals[obj] = getattr(actual_module, obj)
+
 
 class CoreMixinMeta(type):
     def __new__(cls, name: str, bases: Tuple[type], attrs: Dict[str, Any], **kwargs: Any):
@@ -210,14 +219,29 @@ class CoreMixinMeta(type):
                     "Tuple": Tuple,
                     "Type": Type,
                 }
-                _from_import("typing", func_locals, ["Any", "Optional", "Union",])
+                _from_import(
+                    "typing",
+                    func_locals,
+                    [
+                        "Any",
+                        "Optional",
+                        "Union",
+                    ],
+                )
                 _from_import("discord_typings", func_locals)
-                _from_import("datetime", func_locals, ["datetime",])
+                _from_import(
+                    "datetime",
+                    func_locals,
+                    [
+                        "datetime",
+                    ],
+                )
 
                 func = _create_fn(k, func_args, func_body, locals=func_locals, asynchronous=True)
                 attrs[k] = func
 
         return super(CoreMixinMeta, cls).__new__(cls, name, bases, attrs, **kwargs)
+
 
 class CoreMixin(metaclass=CoreMixinMeta):
     pass

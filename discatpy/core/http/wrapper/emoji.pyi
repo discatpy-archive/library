@@ -24,20 +24,29 @@ DEALINGS IN THE SOFTWARE.
 
 from typing import Optional
 
-from ...types import Snowflake, List
+from ...types import List, Snowflake
 
 class EmojiEndpointMixin:
-    async def list_guild_emojis(self, guild_id: Snowflake):
-        ...
-
-    async def get_guild_emoji(self, guild_id: Snowflake, emoji_id: Snowflake):
-        ...
-
-    async def create_guild_emoji(self, guild_id: Snowflake, *, name: str, image: str, roles: List[Snowflake], reason: Optional[str] = None):
-        ...
-
-    async def modify_guild_emoji(self, guild_id: Snowflake, emoji_id: Snowflake, *, name: str, roles: List[Snowflake], reason: Optional[str] = None):
-        ...
-
-    async def delete_guild_emoji(self, guild_id: Snowflake, emoji_id: Snowflake, *, reason: Optional[str] = None):
-        ...
+    async def list_guild_emojis(self, guild_id: Snowflake): ...
+    async def get_guild_emoji(self, guild_id: Snowflake, emoji_id: Snowflake): ...
+    async def create_guild_emoji(
+        self,
+        guild_id: Snowflake,
+        *,
+        name: str,
+        image: str,
+        roles: List[Snowflake],
+        reason: Optional[str] = None,
+    ): ...
+    async def modify_guild_emoji(
+        self,
+        guild_id: Snowflake,
+        emoji_id: Snowflake,
+        *,
+        name: str,
+        roles: List[Snowflake],
+        reason: Optional[str] = None,
+    ): ...
+    async def delete_guild_emoji(
+        self, guild_id: Snowflake, emoji_id: Snowflake, *, reason: Optional[str] = None
+    ): ...

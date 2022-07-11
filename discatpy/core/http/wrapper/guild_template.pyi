@@ -24,32 +24,23 @@ DEALINGS IN THE SOFTWARE.
 
 from typing import Optional
 
-from ...types import Snowflake, MISSING, MissingOr
+from ...types import MISSING, MissingOr, Snowflake
 
 class GuildTemplateEndpointMixin:
-    async def get_guild_template(self, template_code: str):
-        ...
-
-    async def get_guild_templates(self, guild_id: Snowflake):
-        ...
-
-    async def create_guild_template(self, guild_id: Snowflake, *, name: str, description: MissingOr[Optional[str]] = MISSING):
-        ...
-
-    async def create_guild_from_guild_template(self, template_code: str, *, name: str, icon: MissingOr[str] = MISSING):
-        ...
-
+    async def get_guild_template(self, template_code: str): ...
+    async def get_guild_templates(self, guild_id: Snowflake): ...
+    async def create_guild_template(
+        self, guild_id: Snowflake, *, name: str, description: MissingOr[Optional[str]] = MISSING
+    ): ...
+    async def create_guild_from_guild_template(
+        self, template_code: str, *, name: str, icon: MissingOr[str] = MISSING
+    ): ...
     async def modify_guild_template(
-        self, 
-        guild_id: Snowflake, 
-        *, 
-        name: MissingOr[str] = MISSING, 
-        description: MissingOr[Optional[str]] = MISSING
-    ):
-        ...
-
-    async def delete_guild_template(self, guild_id: Snowflake, template_code: str):
-        ...
-
-    async def sync_guild_template(self, guild_id: Snowflake, template_code: str):
-        ... 
+        self,
+        guild_id: Snowflake,
+        *,
+        name: MissingOr[str] = MISSING,
+        description: MissingOr[Optional[str]] = MISSING,
+    ): ...
+    async def delete_guild_template(self, guild_id: Snowflake, template_code: str): ...
+    async def sync_guild_template(self, guild_id: Snowflake, template_code: str): ...

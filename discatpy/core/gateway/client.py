@@ -23,25 +23,25 @@ DEALINGS IN THE SOFTWARE.
 """
 from __future__ import annotations
 
-import aiohttp
 import asyncio
 import datetime
 import json
 import platform
 import random
 import zlib
-from typing import TYPE_CHECKING, Any, cast, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
+
+import aiohttp
 
 from ..enums import GatewayOpcode
-from ..types import List, Snowflake, Mapping
+from ..types import List, Mapping, Snowflake
 from .types import GatewayPayload
 
 if TYPE_CHECKING:
     from ..client import Client
 
-__all__ = (
-    "GatewayClient",
-)
+__all__ = ("GatewayClient",)
+
 
 def _decompress_msg(inflator: zlib._Decompress, msg: bytes):
     ZLIB_SUFFIX = b"\x00\x00\xff\xff"
@@ -266,7 +266,7 @@ class GatewayClient:
                 break
 
     # TODO: replace
-    #async def poll_dispatched_event(self):
+    # async def poll_dispatched_event(self):
     #    """
     #    Polls the latest dispatched event from the server.
     #

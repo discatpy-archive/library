@@ -26,10 +26,10 @@ from __future__ import annotations
 import asyncio
 from typing import Optional
 
+from .dispatcher import Dispatcher
 from .flags import Intents
 from .gateway import GatewayClient, GatewayEventHandler
 from .http import HTTPClient
-from .dispatcher import Dispatcher
 
 __all__ = ("Client",)
 
@@ -74,7 +74,7 @@ class Client:
 
     def __init__(self, token: str, *, intents: Intents, api_version: Optional[int] = None):
         self.gateway: Optional[GatewayClient] = None  # initalized later
-        #self.event_handler: GatewayEventHandler = GatewayEventHandler(self) # TODO: maybe remove keeping a reference to this?
+        # self.event_handler: GatewayEventHandler = GatewayEventHandler(self) # TODO: maybe remove keeping a reference to this?
         self.http: HTTPClient = HTTPClient(token, api_version=api_version)
         self._gateway_reconnect = asyncio.Event()
         self.running: bool = False
@@ -121,9 +121,9 @@ class Client:
     async def login(self):
         """Logs into the bot user and grabs its user object."""
         # TODO: Readd?
-        #user_dict = await self.http.login(token)
-        #self.me = User(user_dict, self)
-        #self.cache.add_user(self.me)
+        # user_dict = await self.http.login(token)
+        # self.me = User(user_dict, self)
+        # self.cache.add_user(self.me)
 
     async def _end_run(self):
         if self.gateway is not None:

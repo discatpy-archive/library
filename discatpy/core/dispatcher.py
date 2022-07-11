@@ -23,10 +23,10 @@ DEALINGS IN THE SOFTWARE.
 """
 
 import asyncio
-from collections import OrderedDict
 import inspect
 import logging
 import traceback
+from collections import OrderedDict
 from dataclasses import dataclass
 from typing import Any, Optional, overload
 
@@ -129,17 +129,18 @@ class Dispatcher:
                 for i, callback in enumerate(event):
                     metadat = getattr(callback, "__event_metadata__", _EventCallbackMetadata())
                     asyncio.create_task(
-                        self.run(callback, metadat.parent, *args, **kwargs), 
-                        name=f"DisCatPy Event:{name} Index:{i}"
+                        self.run(callback, metadat.parent, *args, **kwargs),
+                        name=f"DisCatPy Event:{name} Index:{i}",
                     )
 
                     if metadat.one_shot:
-                        self.remove_event(name, _find_value_in_multidict(self.events, name, callback))
+                        self.remove_event(
+                            name, _find_value_in_multidict(self.events, name, callback)
+                        )
             else:
                 metadat = getattr(event, "__event_metadata__", _EventCallbackMetadata())
                 asyncio.create_task(
-                    self.run(event, metadat.parent, *args, **kwargs),
-                    name=f"DisCatPy Event:{name}"
+                    self.run(event, metadat.parent, *args, **kwargs), name=f"DisCatPy Event:{name}"
                 )
 
                 if metadat.one_shot:
@@ -154,10 +155,24 @@ class Dispatcher:
         ...
 
     @overload
-    def add_event(self, func: CoroFunc, *, name: Optional[str] = None, one_shot: bool = False, parent: Optional[Any] = None):
+    def add_event(
+        self,
+        func: CoroFunc,
+        *,
+        name: Optional[str] = None,
+        one_shot: bool = False,
+        parent: Optional[Any] = None,
+    ):
         ...
 
-    def add_event(self, func: CoroFunc, *, name: Optional[str] = None, one_shot: bool = False, parent: Optional[Any] = None):
+    def add_event(
+        self,
+        func: CoroFunc,
+        *,
+        name: Optional[str] = None,
+        one_shot: bool = False,
+        parent: Optional[Any] = None,
+    ):
         """Adds a new event or new event callback to this dispatcher.
 
         Parameters
@@ -179,7 +194,9 @@ class Dispatcher:
 
         if event_name in self.events:
             orig_event_callback = self.events.get_one(event_name, 0)
-            orig_callback_metadata = getattr(orig_event_callback, "__event_metadata__", _EventCallbackMetadata())
+            orig_callback_metadata = getattr(
+                orig_event_callback, "__event_metadata__", _EventCallbackMetadata()
+            )
 
             orig_callback_sig = inspect.signature(orig_event_callback)
             # pop parent parameter (if it exists)

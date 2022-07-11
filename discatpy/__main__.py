@@ -25,15 +25,17 @@ DEALINGS IN THE SOFTWARE.
 import platform
 import sys
 
-import discatpy
 import aiohttp
 import discord_typings
+
+import discatpy
+
 
 def neofetch():
     print(
         f"""
-\033[31;40md8888b. d888888b .d8888.  .o88b.  .d8b.  d888888b d8888b. db    db\033[0m 
-\033[32;40m88  `8D   `88'   88'  YP d8P  Y8 d8' `8b    88    88  `8D `8b  d8'\033[0m 
+\033[31;40md8888b. d888888b .d8888.  .o88b.  .d8b.  d888888b d8888b. db    db\033[0m
+\033[32;40m88  `8D   `88'   88'  YP d8P  Y8 d8' `8b    88    88  `8D `8b  d8'\033[0m
 \033[33;40m88   88    88    `8bo.   8P      88ooo88    88    88oodD'  `8bd8' \033[0m
 \033[34;40m88   88    88      `Y8b. 8b      88   88    88    88         88   \033[0m
 \033[35;40m88  .8D   .88.   db   8D Y8b  d8 88   88    88    88         88   \033[0m

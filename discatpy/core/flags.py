@@ -25,6 +25,7 @@ from __future__ import annotations
 
 from functools import reduce
 from typing import Any, ClassVar
+
 from typing_extensions import Self
 
 from .types import Dict, Tuple, Type

@@ -127,7 +127,7 @@ class MultipleValuesDict(dict, Generic[_KT, _VT]):
 
         If there is only one value assigned to that key then that will be returned.
 
-        If the key provided is not found or there is no value that meets the 
+        If the key provided is not found or there is no value that meets the
         conditions provided, the default value will be returned.
 
         Parameters

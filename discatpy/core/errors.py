@@ -23,6 +23,7 @@ DEALINGS IN THE SOFTWARE.
 """
 
 from typing import Any, Optional, Union
+
 from aiohttp import ClientResponse
 
 from .types import Dict, List, Tuple

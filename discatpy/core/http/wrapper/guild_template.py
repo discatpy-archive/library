@@ -24,22 +24,27 @@ DEALINGS IN THE SOFTWARE.
 
 from typing import Optional
 
-from ...types import Snowflake, MISSING, MissingOr
+from ...types import MISSING, MissingOr, Snowflake
 from .core import APIEndpointData, CoreMixin
 
 __all__ = ("GuildTemplateEndpointMixin",)
 
+
 class GuildTemplateEndpointMixin(CoreMixin):
-    get_guild_template = APIEndpointData("GET", "/guilds/templates/{template_code}", format_args={"template_code": str})
-    get_guild_templates = APIEndpointData("GET", "/guilds/{guild_id}/templates", format_args={"guild_id": Snowflake})
+    get_guild_template = APIEndpointData(
+        "GET", "/guilds/templates/{template_code}", format_args={"template_code": str}
+    )
+    get_guild_templates = APIEndpointData(
+        "GET", "/guilds/{guild_id}/templates", format_args={"guild_id": Snowflake}
+    )
     create_guild_template = APIEndpointData(
-        "POST", 
-        "/guilds/{guild_id}/templates", 
+        "POST",
+        "/guilds/{guild_id}/templates",
         format_args={"guild_id": Snowflake},
         param_args=[
             ("name", str),
             ("description", MissingOr[Optional[str]], MISSING),
-        ]
+        ],
     )
     create_guild_from_guild_template = APIEndpointData(
         "POST",
@@ -48,24 +53,24 @@ class GuildTemplateEndpointMixin(CoreMixin):
         param_args=[
             ("name", str),
             ("icon", MissingOr[str], MISSING),
-        ]
+        ],
     )
     modify_guild_template = APIEndpointData(
-        "PATCH", 
+        "PATCH",
         "/guilds/{guild_id}/templates/{template_code}",
         format_args={"guild_id": Snowflake, "template_code": str},
         param_args=[
             ("name", MissingOr[str], MISSING),
             ("description", MissingOr[Optional[str]], MISSING),
-        ]
+        ],
     )
     delete_guild_template = APIEndpointData(
-        "DELETE", 
-        "/guilds/{guild_id}/templates/{template_code}", 
-        format_args={"guild_id": Snowflake, "template_code": str}
+        "DELETE",
+        "/guilds/{guild_id}/templates/{template_code}",
+        format_args={"guild_id": Snowflake, "template_code": str},
     )
     sync_guild_template = APIEndpointData(
         "PUT",
         "/guilds/{guild_id}/templates/{template_code}",
-        format_args={"guild_id": Snowflake, "template_code": str}
+        format_args={"guild_id": Snowflake, "template_code": str},
     )

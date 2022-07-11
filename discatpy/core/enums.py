@@ -42,6 +42,7 @@ __all__ = (
 
 # Acitivties
 
+
 class ActivityTypes(int, Enum):
     GAME = 0
     STREAMING = 1
@@ -50,7 +51,9 @@ class ActivityTypes(int, Enum):
     CUSTOM = 4
     COMPETING = 5
 
+
 # Channels
+
 
 class ChannelType(int, Enum):
     GUILD_TEXT = 0
@@ -70,7 +73,9 @@ class VideoQualityModes(int, Enum):
     AUTO = 1
     FULL = 2
 
+
 # Gateway
+
 
 class GatewayOpcode(int, Enum):
     DISPATCH = 0
@@ -85,7 +90,9 @@ class GatewayOpcode(int, Enum):
     HELLO = 10
     HEARTBEAT_ACK = 11
 
+
 # Guild
+
 
 class VerificationLevel(int, Enum):
     NONE = 0
@@ -124,7 +131,9 @@ class PremiumTier(Enum):
     TIER_2 = 2
     TIER_3 = 3
 
+
 # Messages
+
 
 class MessageActivityType(int, Enum):
     JOIN = 1
@@ -158,7 +167,9 @@ class MessageType(int, Enum):
     GUILD_INVITE_REMINDER = 22
     CONTEXT_MENU_COMMAND = 23
 
+
 # Users
+
 
 class PremiumTypes(int, Enum):
     NONE = 0

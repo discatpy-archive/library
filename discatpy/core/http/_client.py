@@ -22,21 +22,21 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-import aiohttp
 import asyncio
 import json
 import sys
 from dataclasses import dataclass
-from typing import Any, cast, Optional
+from typing import Any, Optional, cast
 from urllib.parse import quote as _urlquote
 
+import aiohttp
 from discord_typings import GetGatewayBotData
 
 from ... import __version__
 from ..errors import DisCatPyException, HTTPException
 from ..file import BasicFile
-from ..types import MISSING, List, MissingOr, Dict
-from .ratelimiter import Ratelimiter, BucketResolutor
+from ..types import MISSING, Dict, List, MissingOr
+from .ratelimiter import BucketResolutor, Ratelimiter
 
 BASE_API_URL = "https://discord.com/api/v{0}"
 VALID_API_VERSIONS = [9, 10]
@@ -44,10 +44,12 @@ DEFAULT_API_VERSION = 9
 
 __all__ = ("_HTTPClient",)
 
+
 @dataclass
 class _PreparedData:
     json: MissingOr[Any] = MISSING
     multipart_content: MissingOr[aiohttp.FormData] = MISSING
+
 
 class _HTTPClient:
     __slots__ = (
@@ -64,11 +66,17 @@ class _HTTPClient:
         self.token = token
         self._resolutor = BucketResolutor()
         self._ratelimiter = Ratelimiter(self._resolutor)
-        self._api_version = api_version if api_version is not None and api_version in VALID_API_VERSIONS else DEFAULT_API_VERSION
+        self._api_version = (
+            api_version
+            if api_version is not None and api_version in VALID_API_VERSIONS
+            else DEFAULT_API_VERSION
+        )
         self._api_url = BASE_API_URL.format(self._api_version)
 
         self.__session: Optional[aiohttp.ClientSession] = None
-        self.user_agent = "DiscordBot (https://github.com/EmreTech/DisCatPy/tree/api-refactor, {0}) Python/{1.major}.{1.minor}.{1.micro}".format(__version__, sys.version_info)
+        self.user_agent = "DiscordBot (https://github.com/EmreTech/DisCatPy/tree/api-refactor, {0}) Python/{1.major}.{1.minor}.{1.micro}".format(
+            __version__, sys.version_info
+        )
 
     @property
     def _session(self):
@@ -79,7 +87,7 @@ class _HTTPClient:
 
     async def ws_connect(self, url: str):
         """Starts a websocket connection.
-        
+
         Parameters
         ----------
         url: :class:`str`
@@ -114,7 +122,9 @@ class _HTTPClient:
             # this has to be done because otherwise Pyright will complain about files not being an iterable type
             if isinstance(files, list):
                 for i, f in enumerate(files):
-                    form_dat.add_field(f"files[{i}]", f.fp, content_type=f.content_type, filename=f.filename)
+                    form_dat.add_field(
+                        f"files[{i}]", f.fp, content_type=f.content_type, filename=f.filename
+                    )
 
             pd.multipart_content = form_dat
 
@@ -130,11 +140,11 @@ class _HTTPClient:
         return text
 
     async def request(
-        self, 
-        method: str, 
-        url: str, 
+        self,
+        method: str,
+        url: str,
         url_format_params: Optional[Dict[str, Any]] = None,
-        *, 
+        *,
         query_params: Optional[Dict[str, Any]] = None,
         json_params: MissingOr[Dict[str, Any]] = MISSING,
         reason: Optional[str] = None,
@@ -149,7 +159,6 @@ class _HTTPClient:
 
         if reason:
             headers["X-Audit-Log-Reason"] = _urlquote(reason, safe="/ ")
-
 
         for tries in range(max_tries):
             data = self._prepare_data(json_params, files)
@@ -169,11 +178,7 @@ class _HTTPClient:
 
             async with bucket:
                 response = await self._session.request(
-                    method,
-                    f"{self._api_url}{url}",
-                    params=query_params,
-                    headers=headers,
-                    **kwargs
+                    method, f"{self._api_url}{url}", params=query_params, headers=headers, **kwargs
                 )
 
                 reset_after = float(response.headers.get("X-RateLimit-Reset-After", 0))
@@ -213,7 +218,9 @@ class _HTTPClient:
                 if response.status >= 400:
                     raise HTTPException(response, await self._text_or_json(response))
 
-        raise DisCatPyException(f"Tried sending request to \"{url}\" with method {method} {max_tries} times.")
+        raise DisCatPyException(
+            f'Tried sending request to "{url}" with method {method} {max_tries} times.'
+        )
 
     async def get_gateway_bot(self) -> GetGatewayBotData:
         gb_info = await self.request("GET", "/gateway/bot")

@@ -28,15 +28,22 @@ from typing import Optional, Union
 
 __all__ = ("BasicFile",)
 
+
 class BasicFile:
-    __slots__ = ("fp", "filename", "_owner", "_orig_close", "content_type",)
+    __slots__ = (
+        "fp",
+        "filename",
+        "_owner",
+        "_orig_close",
+        "content_type",
+    )
 
     def __init__(
-        self, 
-        fp: Union[io.IOBase, str, bytes], 
+        self,
+        fp: Union[io.IOBase, str, bytes],
         content_type: str,
-        *, 
-        filename: Optional[str] = None, 
+        *,
+        filename: Optional[str] = None,
         spoiler: bool = False,
     ):
         if isinstance(fp, io.IOBase):

@@ -25,44 +25,33 @@ DEALINGS IN THE SOFTWARE.
 from typing import Optional
 
 from ...file import BasicFile
-from ...types import List, Snowflake, MissingOr, MISSING
+from ...types import MISSING, List, MissingOr, Snowflake
 
 class StickerEndpointMixin:
-    async def get_sticker(self, sticker_id: Snowflake):
-        ...
-
-    async def get_guild_sticker(self, guild_id: Snowflake, sticker_id: Snowflake):
-        ...
-
-    async def list_nitro_sticker_packs(self):
-        ...
-
-    async def list_guild_stickers(self, guild_id: Snowflake):
-        ...
-
+    async def get_sticker(self, sticker_id: Snowflake): ...
+    async def get_guild_sticker(self, guild_id: Snowflake, sticker_id: Snowflake): ...
+    async def list_nitro_sticker_packs(self): ...
+    async def list_guild_stickers(self, guild_id: Snowflake): ...
     async def create_guild_sticker(
-        self, 
-        guild_id: Snowflake, 
-        *, 
+        self,
+        guild_id: Snowflake,
+        *,
         name: str,
         description: str,
         tags: str,
         reason: Optional[str] = None,
-        files: MissingOr[List[BasicFile]] = MISSING
-    ):
-        ...
-
+        files: MissingOr[List[BasicFile]] = MISSING,
+    ): ...
     async def modify_guild_sticker(
-        self, 
-        guild_id: Snowflake, 
+        self,
+        guild_id: Snowflake,
         sticker_id: Snowflake,
-        *, 
+        *,
         name: MissingOr[str] = MISSING,
         description: MissingOr[Optional[str]] = MISSING,
         tags: MissingOr[str] = MISSING,
-        reason: Optional[str] = None
-    ):
-        ...
-
-    async def delete_guild_sticker(self, guild_id: Snowflake, sticker_id: Snowflake, *, reason: Optional[str] = None):
-        ...
+        reason: Optional[str] = None,
+    ): ...
+    async def delete_guild_sticker(
+        self, guild_id: Snowflake, sticker_id: Snowflake, *, reason: Optional[str] = None
+    ): ...

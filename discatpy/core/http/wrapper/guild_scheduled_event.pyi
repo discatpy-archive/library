@@ -27,29 +27,31 @@ from typing import Optional
 
 from discord_typings import GuildScheduledEventEntityMetadata
 
-from ...types import Snowflake, MISSING, MissingOr
+from ...types import MISSING, MissingOr, Snowflake
 
 class GuildScheduledEventEndpointMixin:
-    async def get_guild_scheduled_event(self, guild_id: Snowflake, guild_scheduled_event_id: Snowflake, *, with_user_count: MissingOr[bool] = MISSING):
-        ...
-
+    async def get_guild_scheduled_event(
+        self,
+        guild_id: Snowflake,
+        guild_scheduled_event_id: Snowflake,
+        *,
+        with_user_count: MissingOr[bool] = MISSING,
+    ): ...
     async def get_guild_scheduled_event_users(
-        self, 
-        guild_id: Snowflake, 
-        guild_scheduled_event_id: Snowflake, 
+        self,
+        guild_id: Snowflake,
+        guild_scheduled_event_id: Snowflake,
         *,
         limit: int = 100,
         with_member: bool = False,
         before: MissingOr[Snowflake] = MISSING,
-        after: MissingOr[Snowflake] = MISSING
-    ):
-        ...
-
-    async def list_scheduled_events_for_guild(self, guild_id: Snowflake, *, with_user_count: MissingOr[bool] = MISSING):
-        ...
-
+        after: MissingOr[Snowflake] = MISSING,
+    ): ...
+    async def list_scheduled_events_for_guild(
+        self, guild_id: Snowflake, *, with_user_count: MissingOr[bool] = MISSING
+    ): ...
     async def create_guild_scheduled_event(
-        self, 
+        self,
         guild_id: Snowflake,
         *,
         channel_id: MissingOr[Snowflake] = MISSING,
@@ -61,12 +63,10 @@ class GuildScheduledEventEndpointMixin:
         description: MissingOr[str] = MISSING,
         entity_type: int,
         image: MissingOr[str] = MISSING,
-        reason: Optional[str] = None
-    ):
-        ...
-
+        reason: Optional[str] = None,
+    ): ...
     async def modify_guild_scheduled_event(
-        self, 
+        self,
         guild_id: Snowflake,
         guild_scheduled_event_id: Snowflake,
         *,
@@ -79,9 +79,8 @@ class GuildScheduledEventEndpointMixin:
         description: MissingOr[str] = MISSING,
         entity_type: MissingOr[int] = MISSING,
         image: MissingOr[str] = MISSING,
-        reason: Optional[str] = None
-    ):
-        ...
-
-    async def delete_guild_scheduled_event(self, guild_id: Snowflake, guild_scheduled_event_id: Snowflake):
-        ...
+        reason: Optional[str] = None,
+    ): ...
+    async def delete_guild_scheduled_event(
+        self, guild_id: Snowflake, guild_scheduled_event_id: Snowflake
+    ): ...

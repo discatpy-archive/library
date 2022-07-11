@@ -27,17 +27,18 @@ from typing import Optional
 
 from discord_typings import GuildScheduledEventEntityMetadata
 
-from ...types import Snowflake, MISSING, MissingOr
+from ...types import MISSING, MissingOr, Snowflake
 from .core import APIEndpointData, CoreMixin
 
 __all__ = ("GuildScheduledEventEndpointMixin",)
+
 
 class GuildScheduledEventEndpointMixin(CoreMixin):
     get_guild_scheduled_event = APIEndpointData(
         "GET",
         "/guilds/{guild_id}/scheduled-events/{guild_scheduled_event_id}",
         format_args={"guild_id": Snowflake, "guild_scheduled_event_id": Snowflake},
-        param_args=[("with_user_count", MissingOr[bool], MISSING)]
+        param_args=[("with_user_count", MissingOr[bool], MISSING)],
     )
     get_guild_scheduled_event_users = APIEndpointData(
         "GET",
@@ -48,13 +49,15 @@ class GuildScheduledEventEndpointMixin(CoreMixin):
             ("with_member", bool, False),
             ("before", MissingOr[Snowflake], MISSING),
             ("after", MissingOr[Snowflake], MISSING),
-        ]
+        ],
     )
     list_scheduled_events_for_guild = APIEndpointData(
         "GET",
         "/guilds/{guild_id}/scheduled-events",
         format_args={"guild_id": Snowflake},
-        param_args=[("with_user_count", MissingOr[bool], MISSING),]
+        param_args=[
+            ("with_user_count", MissingOr[bool], MISSING),
+        ],
     )
     create_guild_scheduled_event = APIEndpointData(
         "POST",
@@ -71,7 +74,7 @@ class GuildScheduledEventEndpointMixin(CoreMixin):
             ("description", MissingOr[str], MISSING),
             ("entity_type", int),
             ("image", MissingOr[str], MISSING),
-        ]
+        ],
     )
     modify_guild_scheduled_event = APIEndpointData(
         "PATCH",
@@ -89,10 +92,10 @@ class GuildScheduledEventEndpointMixin(CoreMixin):
             ("entity_type", MissingOr[int], MISSING),
             ("status", MissingOr[int], MISSING),
             ("image", MissingOr[str], MISSING),
-        ]
+        ],
     )
     delete_guild_scheduled_event = APIEndpointData(
-        "DELETE", 
+        "DELETE",
         "/guilds/{guild_id}/scheduled-events/{guild_scheduled_event_id}",
-        format_args={"guild_id": Snowflake, "guild_scheduled_event_id": Snowflake}
+        format_args={"guild_id": Snowflake, "guild_scheduled_event_id": Snowflake},
     )

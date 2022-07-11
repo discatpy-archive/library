@@ -23,16 +23,15 @@ DEALINGS IN THE SOFTWARE.
 """
 
 import sys
-from typing import Any, Union, TypeVar
+from typing import Any, TypeVar, Union
 
 from discord_typings import Snowflake
 
 __all__ = (
-    "Snowflake", 
+    "Snowflake",
     "MISSING",
     "MissingOr",
     "MissingType",
-
     "Callable",
     "Coroutine",
     "Dict",
@@ -41,6 +40,7 @@ __all__ = (
     "Tuple",
     "Type",
 )
+
 
 class _Missing:
     def __eq__(self, other) -> bool:
@@ -55,13 +55,17 @@ class _Missing:
     def __str__(self):
         return self.__repr__()
 
+
 T = TypeVar("T")
 
 MISSING: Any = _Missing()
-MissingType = _Missing # aka the type of MISSING
+MissingType = _Missing  # aka the type of MISSING
 MissingOr = Union[MissingType, T]
 
-if sys.version_info[:2] >= (3, 9): # type hint stuff was moved to builtins in Python 3.9 (see PEP 585 for more info)
+if sys.version_info[:2] >= (
+    3,
+    9,
+):  # type hint stuff was moved to builtins in Python 3.9 (see PEP 585 for more info)
     from collections.abc import Callable, Coroutine, Mapping
 
     Dict = dict

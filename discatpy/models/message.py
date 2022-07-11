@@ -26,7 +26,13 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING, List, Optional, Union, cast
 
-from discord_typings import GuildMemberData, MessageData, MessageReactionData, MessageReferenceData, MessageActivityData
+from discord_typings import (
+    GuildMemberData,
+    MessageActivityData,
+    MessageData,
+    MessageReactionData,
+    MessageReferenceData,
+)
 from typing_extensions import Literal, NotRequired, TypedDict
 
 from .enums.channel import ChannelType

@@ -23,24 +23,26 @@ DEALINGS IN THE SOFTWARE.
 """
 
 from datetime import datetime
-from discord_typings import EmbedData, AllowedMentionsData, MessageReferenceData, PartialAttachmentData, PermissionOverwriteData, AttachmentData
 from typing import Optional
 
+from discord_typings import (
+    AllowedMentionsData,
+    AttachmentData,
+    EmbedData,
+    MessageReferenceData,
+    PartialAttachmentData,
+    PermissionOverwriteData,
+)
+
 from ...file import BasicFile
-from ...types import Snowflake, MISSING, MissingOr, List
+from ...types import MISSING, List, MissingOr, Snowflake
 
 class ChannelEndpointMixin:
-    async def get_channel(self, channel_id: Snowflake):
-        ...
-
-    async def get_guild_channels(self, guild_id: Snowflake):
-        ...
-
-    async def get_channel_invites(self, channel_id: Snowflake):
-        ...
-
+    async def get_channel(self, channel_id: Snowflake): ...
+    async def get_guild_channels(self, guild_id: Snowflake): ...
+    async def get_channel_invites(self, channel_id: Snowflake): ...
     async def create_guild_channel(
-        self, 
+        self,
         guild_id: Snowflake,
         *,
         name: str,
@@ -56,12 +58,10 @@ class ChannelEndpointMixin:
         rtc_region: MissingOr[Optional[str]] = MISSING,
         video_quality_mode: MissingOr[Optional[int]] = MISSING,
         default_auto_archive_duration: MissingOr[Optional[int]] = MISSING,
-        reason: Optional[str] = None
-    ):
-        ...
-
+        reason: Optional[str] = None,
+    ): ...
     async def create_channel_invite(
-        self, 
+        self,
         channel_id: Snowflake,
         *,
         max_age: int = 86400,
@@ -71,12 +71,10 @@ class ChannelEndpointMixin:
         target_type: int,
         target_user_id: Snowflake,
         target_application_id: Snowflake,
-        reason: Optional[str] = None
-    ):
-        ...
-
+        reason: Optional[str] = None,
+    ): ...
     async def modify_channel(
-        self, 
+        self,
         guild_id: Snowflake,
         *,
         name: MissingOr[Optional[str]] = MISSING,
@@ -92,10 +90,8 @@ class ChannelEndpointMixin:
         rtc_region: MissingOr[Optional[str]] = MISSING,
         video_quality_mode: MissingOr[Optional[int]] = MISSING,
         default_auto_archive_duration: MissingOr[Optional[int]] = MISSING,
-        reason: Optional[str] = None
-    ):
-        ...
-
+        reason: Optional[str] = None,
+    ): ...
     async def modify_guild_channel_positions(
         self,
         guild_id: Snowflake,
@@ -103,133 +99,97 @@ class ChannelEndpointMixin:
         id: Snowflake,
         position: Optional[int] = None,
         lock_permissions: Optional[bool] = None,
-        parent_id: Optional[Snowflake] = None
-    ):
-        ...
-
+        parent_id: Optional[Snowflake] = None,
+    ): ...
     async def edit_channel_permissions(
-        self, 
-        channel_id: Snowflake, 
-        overwrite_id: Snowflake, 
-        *, 
-        allow: MissingOr[str] = MISSING, 
-        deny: MissingOr[str] = MISSING, 
+        self,
+        channel_id: Snowflake,
+        overwrite_id: Snowflake,
+        *,
+        allow: MissingOr[str] = MISSING,
+        deny: MissingOr[str] = MISSING,
         type: int,
-        reason: Optional[str] = None
-    ):
-        ...
-
-    async def delete_channel(self, channel_id: Snowflake, *, reason: Optional[str] = None):
-        ...
-
-    async def follow_news_channel(self, channel_id: Snowflake, *, webhook_channel_id: Snowflake):
-        ...
-
-    async def trigger_typing(self, channel_id: Snowflake):
-        ...
+        reason: Optional[str] = None,
+    ): ...
+    async def delete_channel(self, channel_id: Snowflake, *, reason: Optional[str] = None): ...
+    async def follow_news_channel(
+        self, channel_id: Snowflake, *, webhook_channel_id: Snowflake
+    ): ...
+    async def trigger_typing(self, channel_id: Snowflake): ...
 
 class ThreadsEndpointMixin:
-    async def get_thread_member(self, channel_id: Snowflake, user_id: Snowflake):
-        ...
-
-    async def list_thread_members(self, channel_id: Snowflake):
-        ...
-
+    async def get_thread_member(self, channel_id: Snowflake, user_id: Snowflake): ...
+    async def list_thread_members(self, channel_id: Snowflake): ...
     async def list_public_archived_threads(
-        self, 
-        channel_id: Snowflake, 
-        *, 
-        before: MissingOr[datetime] = MISSING, 
-        limit: MissingOr[int] = MISSING
-    ):
-        ...
-
+        self,
+        channel_id: Snowflake,
+        *,
+        before: MissingOr[datetime] = MISSING,
+        limit: MissingOr[int] = MISSING,
+    ): ...
     async def list_private_archived_threads(
-        self, 
-        channel_id: Snowflake, 
-        *, 
-        before: MissingOr[datetime] = MISSING, 
-        limit: MissingOr[int] = MISSING
-    ):
-        ...
-
+        self,
+        channel_id: Snowflake,
+        *,
+        before: MissingOr[datetime] = MISSING,
+        limit: MissingOr[int] = MISSING,
+    ): ...
     async def list_joined_private_archived_threads(
-        self, 
-        channel_id: Snowflake, 
-        *, 
-        before: MissingOr[datetime] = MISSING, 
-        limit: MissingOr[int] = MISSING
-    ):
-        ...
-
+        self,
+        channel_id: Snowflake,
+        *,
+        before: MissingOr[datetime] = MISSING,
+        limit: MissingOr[int] = MISSING,
+    ): ...
     async def start_thread_from_message(
-        self, 
-        channel_id: Snowflake, 
-        message_id: Snowflake, 
-        *, 
-        name: str, 
+        self,
+        channel_id: Snowflake,
+        message_id: Snowflake,
+        *,
+        name: str,
         auto_archive_duration: MissingOr[int] = MISSING,
         rate_limit_per_user: MissingOr[Optional[int]] = MISSING,
-        reason: Optional[str] = None
-    ):
-        ...
-
+        reason: Optional[str] = None,
+    ): ...
     async def start_thread_without_message(
-        self, 
+        self,
         channel_id: Snowflake,
-        *, 
-        name: str, 
+        *,
+        name: str,
         auto_archive_duration: MissingOr[int] = MISSING,
         type: MissingOr[int] = MISSING,
         invitable: MissingOr[bool] = MISSING,
         rate_limit_per_user: MissingOr[Optional[int]] = MISSING,
-        reason: Optional[str] = None
-    ):
-        ...
-
-    async def join_thread(self, channel_id: Snowflake):
-        ...
-
-    async def add_thread_member(self, channel_id: Snowflake, user_id: Snowflake):
-        ...
-
-    async def leave_thread(self, channel_id: Snowflake):
-        ...
-
-    async def remove_thread_member(self, channel_id: Snowflake, user_id: Snowflake):
-        ...
+        reason: Optional[str] = None,
+    ): ...
+    async def join_thread(self, channel_id: Snowflake): ...
+    async def add_thread_member(self, channel_id: Snowflake, user_id: Snowflake): ...
+    async def leave_thread(self, channel_id: Snowflake): ...
+    async def remove_thread_member(self, channel_id: Snowflake, user_id: Snowflake): ...
 
 class MessagesEndpointMixin:
-    async def get_channel_message(self, channel_id: Snowflake, message_id: Snowflake):
-        ...
-
+    async def get_channel_message(self, channel_id: Snowflake, message_id: Snowflake): ...
     async def get_channel_messages(
-        self, 
-        channel_id: Snowflake, 
-        *, 
+        self,
+        channel_id: Snowflake,
+        *,
         around: MissingOr[Snowflake] = MISSING,
         before: MissingOr[Snowflake] = MISSING,
         after: MissingOr[Snowflake] = MISSING,
-        limit: int = 50
-    ):
-        ...
-
-    async def get_pinned_messages(self, channel_id: Snowflake):
-        ...
-
+        limit: int = 50,
+    ): ...
+    async def get_pinned_messages(self, channel_id: Snowflake): ...
     async def get_reactions(
-        self, 
-        channel_id: Snowflake, 
-        message_id: Snowflake, 
+        self,
+        channel_id: Snowflake,
+        message_id: Snowflake,
         emoji: str,
         *,
         after: MissingOr[Snowflake] = MISSING,
-        limit: int = 25
-    ):
-        ...
-
+        limit: int = 25,
+    ): ...
     async def create_message(
-        self, 
+        self,
         channel_id: Snowflake,
         *,
         content: MissingOr[str] = MISSING,
@@ -241,15 +201,11 @@ class MessagesEndpointMixin:
         sticker_ids: MissingOr[List[Snowflake]] = MISSING,
         attachments: MissingOr[List[PartialAttachmentData]] = MISSING,
         flags: MissingOr[int] = MISSING,
-        files: MissingOr[List[BasicFile]] = MISSING
-    ):
-        ...
-
-    async def create_reaction(self, channel_id: Snowflake, message_id: Snowflake, emoji: str):
-        ...
-
+        files: MissingOr[List[BasicFile]] = MISSING,
+    ): ...
+    async def create_reaction(self, channel_id: Snowflake, message_id: Snowflake, emoji: str): ...
     async def edit_message(
-        self, 
+        self,
         channel_id: Snowflake,
         message_id: Snowflake,
         *,
@@ -259,33 +215,28 @@ class MessagesEndpointMixin:
         allowed_mentions: MissingOr[AllowedMentionsData] = MISSING,
         # TODO: Components
         attachments: MissingOr[List[PartialAttachmentData]] = MISSING,
-        files: MissingOr[List[BasicFile]] = MISSING
-    ):
-        ...
-
-    async def delete_message(self, channel_id: Snowflake, message_id: Snowflake, *, reason: Optional[str] = None):
-        ...
-
-    async def delete_own_reaction(self, channel_id: Snowflake, message_id: Snowflake, emoji: str):
-        ...
-
-    async def delete_user_reaction(self, channel_id: Snowflake, message_id: Snowflake, emoji: str, user_id: Snowflake):
-        ...
-
-    async def delete_all_reactions(self, channel_id: Snowflake, message_id: Snowflake):
-        ...
-
-    async def delete_all_reactions_for_emoji(self, channel_id: Snowflake, message_id: Snowflake, emoji: str):
-        ...
-
-    async def bulk_delete_messages(self, channel_id: Snowflake, *, messages: List[Snowflake], reason: Optional[str] = None):
-        ...
-
-    async def crosspost_message(self, channel_id: Snowflake, message_id: Snowflake):
-        ...
-
-    async def pin_message(self, channel_id: Snowflake, message_id: Snowflake, *, reason: Optional[str] = None):
-        ...
-
-    async def unpin_message(self, channel_id: Snowflake, message_id: Snowflake, *, reason: Optional[str] = None):
-        ...
+        files: MissingOr[List[BasicFile]] = MISSING,
+    ): ...
+    async def delete_message(
+        self, channel_id: Snowflake, message_id: Snowflake, *, reason: Optional[str] = None
+    ): ...
+    async def delete_own_reaction(
+        self, channel_id: Snowflake, message_id: Snowflake, emoji: str
+    ): ...
+    async def delete_user_reaction(
+        self, channel_id: Snowflake, message_id: Snowflake, emoji: str, user_id: Snowflake
+    ): ...
+    async def delete_all_reactions(self, channel_id: Snowflake, message_id: Snowflake): ...
+    async def delete_all_reactions_for_emoji(
+        self, channel_id: Snowflake, message_id: Snowflake, emoji: str
+    ): ...
+    async def bulk_delete_messages(
+        self, channel_id: Snowflake, *, messages: List[Snowflake], reason: Optional[str] = None
+    ): ...
+    async def crosspost_message(self, channel_id: Snowflake, message_id: Snowflake): ...
+    async def pin_message(
+        self, channel_id: Snowflake, message_id: Snowflake, *, reason: Optional[str] = None
+    ): ...
+    async def unpin_message(
+        self, channel_id: Snowflake, message_id: Snowflake, *, reason: Optional[str] = None
+    ): ...

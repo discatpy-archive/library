@@ -24,12 +24,10 @@ DEALINGS IN THE SOFTWARE.
 
 from typing import Optional
 
-from ...types import Snowflake, MISSING, MissingOr
+from ...types import MISSING, MissingOr, Snowflake
 
 class StageInstanceEndpointMixin:
-    async def get_stage_instance(self, channel_id: Snowflake):
-        ...
-
+    async def get_stage_instance(self, channel_id: Snowflake): ...
     async def create_stage_instance(
         self,
         *,
@@ -37,19 +35,16 @@ class StageInstanceEndpointMixin:
         topic: str,
         privacy_level: MissingOr[int] = MISSING,
         send_start_notification: MissingOr[bool] = MISSING,
-        reason: Optional[str] = None
-    ):
-        ...
-
+        reason: Optional[str] = None,
+    ): ...
     async def modify_stage_instance(
         self,
         channel_id: Snowflake,
         *,
         topic: MissingOr[str] = MISSING,
         privacy_level: MissingOr[int] = MISSING,
-        reason: Optional[str] = None
-    ):
-        ...
-
-    async def delete_stage_instance(self, channel_id: Snowflake, *, reason: Optional[str] = None):
-        ...
+        reason: Optional[str] = None,
+    ): ...
+    async def delete_stage_instance(
+        self, channel_id: Snowflake, *, reason: Optional[str] = None
+    ): ...

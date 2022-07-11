@@ -22,38 +22,45 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from ...types import Snowflake, List
+from ...types import List, Snowflake
 from .core import APIEndpointData, CoreMixin
 
 __all__ = ("EmojiEndpointMixin",)
 
+
 class EmojiEndpointMixin(CoreMixin):
-    list_guild_emojis = APIEndpointData("GET", "/guilds/{guild_id}/emojis", format_args={"guild_id": Snowflake})
-    get_guild_emoji = APIEndpointData("GET", "/guilds/{guild_id}/emojis/{emoji_id}", format_args={"guild_id": Snowflake, "emoji_id": Snowflake})
+    list_guild_emojis = APIEndpointData(
+        "GET", "/guilds/{guild_id}/emojis", format_args={"guild_id": Snowflake}
+    )
+    get_guild_emoji = APIEndpointData(
+        "GET",
+        "/guilds/{guild_id}/emojis/{emoji_id}",
+        format_args={"guild_id": Snowflake, "emoji_id": Snowflake},
+    )
     create_guild_emoji = APIEndpointData(
-        "POST", 
-        "/guilds/{guild_id}/emojis", 
+        "POST",
+        "/guilds/{guild_id}/emojis",
         format_args={"guild_id": Snowflake},
         supports_reason=True,
         param_args=[
             ("name", str),
             ("image", str),
             ("roles", List[Snowflake]),
-        ]
+        ],
     )
     modify_guild_emoji = APIEndpointData(
-        "PATCH", 
-        "/guilds/{guild_id}/emojis/{emoji_id}", 
+        "PATCH",
+        "/guilds/{guild_id}/emojis/{emoji_id}",
         format_args={"guild_id": Snowflake, "emoji_id": Snowflake},
         supports_reason=True,
         param_args=[
             ("name", str),
             ("roles", List[Snowflake]),
-        ]
+        ],
     )
     delete_guild_emoji = APIEndpointData(
-        "DELETE", 
-        "/guilds/{guild_id}/emojis/{emoji_id}", 
-        format_args={"guild_id": Snowflake, "emoji_id": Snowflake}, 
-        supports_reason=True
+        "DELETE",
+        "/guilds/{guild_id}/emojis/{emoji_id}",
+        format_args={"guild_id": Snowflake, "emoji_id": Snowflake},
+        supports_reason=True,
     )

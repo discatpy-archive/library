@@ -32,6 +32,7 @@ __all__ = (
     "Ratelimiter",
 )
 
+
 class BucketResolutor:
     """Converts a given client bucket (method + path) into a bucket from Discord.
 
@@ -41,8 +42,9 @@ class BucketResolutor:
     Attributes
     ----------
     _bucket_strs: Dict[:class:`str`, :class:`str`]
-        The internal bucket mapping.    
+        The internal bucket mapping.
     """
+
     __slots__ = ("_bucket_strs",)
 
     def __init__(self):
@@ -50,7 +52,7 @@ class BucketResolutor:
 
     def resolve_bucket(self, bucket: str):
         """Resolves the Discord bucket via the given client bucket.
-        
+
         Parameters
         ----------
         bucket: :class:`str`
@@ -65,7 +67,7 @@ class BucketResolutor:
 
     def add_bucket_mapping(self, client_bucket: str, discord_bucket: str):
         """Adds a new client bucket to discord bucket mapping.
-        
+
         Parameters
         ----------
         client_bucket: :class:`str`
@@ -78,7 +80,7 @@ class BucketResolutor:
 
     def has_bucket_mapping(self, client_bucket: str):
         """Checks whether or not a mapping for a client bucket exists.
-        
+
         Parameters
         ----------
         client_bucket: :class:`str`
@@ -90,6 +92,7 @@ class BucketResolutor:
             Whether or not the client bucket mapping exists.
         """
         return client_bucket in self._bucket_strs
+
 
 class Bucket:
     """Represents a ratelimiting bucket."""
@@ -104,7 +107,9 @@ class Bucket:
         await self._lock.acquire()
         return self
 
-    async def __aexit__(self, exc_type: Type[BaseException], exc_val: BaseException, exc_tb: BaseException) -> None:
+    async def __aexit__(
+        self, exc_type: Type[BaseException], exc_val: BaseException, exc_tb: BaseException
+    ) -> None:
         if self._delayed:
             self._lock.release()
 
@@ -116,7 +121,7 @@ class Bucket:
 
     async def delay_unlock(self, delay: float):
         """Delays unlocking this bucket.
-        
+
         Parameters
         ----------
         delay: :class:`float`
@@ -124,6 +129,7 @@ class Bucket:
         """
         self._delayed = True
         asyncio.create_task(self._unlock(delay))
+
 
 class Ratelimiter:
     """Represents the global ratelimiter."""
@@ -136,9 +142,9 @@ class Ratelimiter:
         self._global_lock = asyncio.Event()
 
     async def acquire_bucket(self, bucket_str: str) -> Bucket:
-        """Acquires a bucket with the given bucket str. 
+        """Acquires a bucket with the given bucket str.
         This bucket str will be resolved before acquiring the bucket.
-        
+
         Parameters
         ----------
         bucket_str: :class:`str`

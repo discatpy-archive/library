@@ -24,20 +24,27 @@ DEALINGS IN THE SOFTWARE.
 
 from typing import Optional
 
-from ...types import Snowflake, MISSING, MissingOr
+from ...types import MISSING, MissingOr, Snowflake
 from .core import APIEndpointData, CoreMixin
 
 __all__ = ("UserEndpointMixin",)
 
+
 class UserEndpointMixin(CoreMixin):
     get_user = APIEndpointData("GET", "/users/{user_id}", format_args={"user_id": Snowflake})
     get_current_user = APIEndpointData("GET", "/users/@me")
-    create_user_dm = APIEndpointData("POST", "/users/@me/channels", param_args=[("recipient_id", Snowflake),])
-    modify_current_user = APIEndpointData(
-        "PATCH", 
-        "/users/@me", 
+    create_user_dm = APIEndpointData(
+        "POST",
+        "/users/@me/channels",
         param_args=[
-            ("username", MissingOr[str], MISSING), 
+            ("recipient_id", Snowflake),
+        ],
+    )
+    modify_current_user = APIEndpointData(
+        "PATCH",
+        "/users/@me",
+        param_args=[
+            ("username", MissingOr[str], MISSING),
             ("avatar", MissingOr[Optional[str]], MISSING),
-        ]
+        ],
     )

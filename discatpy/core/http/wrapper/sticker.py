@@ -24,16 +24,25 @@ DEALINGS IN THE SOFTWARE.
 
 from typing import Optional
 
-from ...types import Snowflake, MissingOr, MISSING
+from ...types import MISSING, MissingOr, Snowflake
 from .core import APIEndpointData, CoreMixin
 
 __all__ = ("StickerEndpointMixin",)
 
+
 class StickerEndpointMixin(CoreMixin):
-    get_sticker = APIEndpointData("GET", "/stickers/{sticker_id}", format_args={"sticker_id": Snowflake})
-    get_guild_sticker = APIEndpointData("GET", "/guilds/{guild_id}/stickers/{sticker_id}", format_args={"guild_id": Snowflake, "sticker_id": Snowflake})
+    get_sticker = APIEndpointData(
+        "GET", "/stickers/{sticker_id}", format_args={"sticker_id": Snowflake}
+    )
+    get_guild_sticker = APIEndpointData(
+        "GET",
+        "/guilds/{guild_id}/stickers/{sticker_id}",
+        format_args={"guild_id": Snowflake, "sticker_id": Snowflake},
+    )
     list_nitro_sticker_packs = APIEndpointData("GET", "/sticker-packs")
-    list_guild_stickers = APIEndpointData("GET", "/guilds/{guild_id}/stickers", format_args={"guild_id": Snowflake})
+    list_guild_stickers = APIEndpointData(
+        "GET", "/guilds/{guild_id}/stickers", format_args={"guild_id": Snowflake}
+    )
     create_guild_sticker = APIEndpointData(
         "POST",
         "/guilds/{guild_id}/stickers",
@@ -44,7 +53,7 @@ class StickerEndpointMixin(CoreMixin):
             ("name", str),
             ("description", str),
             ("tags", str),
-        ]
+        ],
     )
     modify_guild_sticker = APIEndpointData(
         "PATCH",
@@ -55,11 +64,11 @@ class StickerEndpointMixin(CoreMixin):
             ("name", MissingOr[str], MISSING),
             ("description", MissingOr[Optional[str]], MISSING),
             ("tags", MissingOr[str], MISSING),
-        ]
+        ],
     )
     delete_guild_sticker = APIEndpointData(
-        "DELETE", 
-        "/guilds/{guild_id}/stickers/{sticker_id}", 
+        "DELETE",
+        "/guilds/{guild_id}/stickers/{sticker_id}",
         format_args={"guild_id": Snowflake, "sticker_id": Snowflake},
-        supports_reason=True
+        supports_reason=True,
     )

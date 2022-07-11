@@ -27,10 +27,11 @@ from typing import TYPE_CHECKING, Any
 
 from ..core.types import Mapping
 
-#if TYPE_CHECKING:
+# if TYPE_CHECKING:
 #    from .client import Client
 
 __all__ = ("DiscordObject",)
+
 
 class DiscordObject:
     """
@@ -43,9 +44,7 @@ class DiscordObject:
         The bot tied to this Discord Object.
     """
 
-    __slots__ = (
-        "bot",
-    )
+    __slots__ = ("bot",)
 
     def __init__(self, *, data: Mapping[str, Any], bot, **kwargs):
         self.bot = bot

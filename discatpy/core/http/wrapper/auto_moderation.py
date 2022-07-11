@@ -22,20 +22,23 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from discord_typings import AutoModerationTriggerMetadataData, AutoModerationActionData
+from discord_typings import AutoModerationActionData, AutoModerationTriggerMetadataData
 
-from ...types import Snowflake, MISSING, MissingOr, List
+from ...types import MISSING, List, MissingOr, Snowflake
 from .core import APIEndpointData, CoreMixin
 
 __all__ = ("AutoModerationEndpointMixin",)
+
 
 class AutoModerationEndpointMixin(CoreMixin):
     get_auto_moderation_rule = APIEndpointData(
         "GET",
         "/guilds/{guild_id}/auto-moderation/rules/{auto_moderation_rule_id}",
-        format_args={"guild_id": Snowflake, "auto_moderation_rule_id": Snowflake}
+        format_args={"guild_id": Snowflake, "auto_moderation_rule_id": Snowflake},
     )
-    list_auto_moderation_rules_for_guild = APIEndpointData("GET", "/guilds/{guild_id}/auto-moderation/rules", format_args={"guild_id": Snowflake})
+    list_auto_moderation_rules_for_guild = APIEndpointData(
+        "GET", "/guilds/{guild_id}/auto-moderation/rules", format_args={"guild_id": Snowflake}
+    )
     create_auto_moderation_rule = APIEndpointData(
         "POST",
         "/guilds/{guild_id}/auto-moderation/rules",
@@ -49,7 +52,7 @@ class AutoModerationEndpointMixin(CoreMixin):
             ("enabled", MissingOr[bool], MISSING),
             ("exempt_roles", MissingOr[List[Snowflake]], MISSING),
             ("exempt_channels", MissingOr[List[Snowflake]], MISSING),
-        ]
+        ],
     )
     modify_auto_moderation_rule = APIEndpointData(
         "PATCH",
@@ -64,10 +67,10 @@ class AutoModerationEndpointMixin(CoreMixin):
             ("enabled", MissingOr[bool], MISSING),
             ("exempt_roles", MissingOr[List[Snowflake]], MISSING),
             ("exempt_channels", MissingOr[List[Snowflake]], MISSING),
-        ]
+        ],
     )
     delete_auto_moderation_rule = APIEndpointData(
-        "DELETE", 
-        "/guilds/{guild_id}/auto-moderation/rules/{auto_moderation_rule_id}", 
-        format_args={"guild_id": Snowflake, "auto_moderation_rule_id": Snowflake}
+        "DELETE",
+        "/guilds/{guild_id}/auto-moderation/rules/{auto_moderation_rule_id}",
+        format_args={"guild_id": Snowflake, "auto_moderation_rule_id": Snowflake},
     )
