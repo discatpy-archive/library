@@ -26,17 +26,17 @@ import asyncio
 import inspect
 import logging
 import traceback
-from collections import OrderedDict
 from dataclasses import dataclass
-from typing import Any, Callable, Coroutine, Optional, overload
-
+from typing import Any, Callable, Coroutine, Dict, List, Optional, overload, TypeVar
 from .utils import MultipleValuesDict
 
 _log = logging.getLogger(__name__)
 
 __all__ = ("Dispatcher",)
 
-CoroFunc = Callable[..., Coroutine[Any, Any, Any]]
+T = TypeVar("T")
+Func = Callable[..., T]
+CoroFunc = Func[Coroutine[Any, Any, Any]]
 
 
 def _find_value_in_multidict(d: MultipleValuesDict[Any, Any], k: Any, v: Any):
@@ -62,11 +62,20 @@ class Dispatcher:
     Attributes
     ----------
     events: :type:`MultipleValuesDict[str, CoroFunc]`
-        The event and its callbacks for this Dispatcher.
+        The callbacks for each event.
+    event_protos: :type:`Dict[str, inspect.Signature]`
+        The event callback prototypes for each event. This is checked alongside a new
+        event callback to see if the parameters match up.
+    valid_events: :type:`List[str]`
+        The list of the name of valid events.
     """
+
+    __slots__ = ("events", "event_protos", "valid_events",)
 
     def __init__(self):
         self.events: MultipleValuesDict[str, CoroFunc] = MultipleValuesDict()
+        self.event_protos: Dict[str, inspect.Signature] = {}
+        self.valid_events: List[str] = []
 
     async def error_handler(self, exception: Exception):
         """Basic error handler for dispatched events.
@@ -127,52 +136,75 @@ class Dispatcher:
             if isinstance(event, list):
                 for i, callback in enumerate(event):
                     metadat = getattr(callback, "__event_metadata__", _EventCallbackMetadata())
+                    _log.debug("Running event callback under event %s with index %s", name, i)
                     asyncio.create_task(
                         self.run(callback, metadat.parent, *args, **kwargs),
                         name=f"DisCatPy Event:{name} Index:{i}",
                     )
 
                     if metadat.one_shot:
-                        self.remove_event(
-                            name, _find_value_in_multidict(self.events, name, callback)
-                        )
+                        _log.debug("Removing event callback under event %s with index %s", name, i)
+                        self.remove_event_callback(name, _find_value_in_multidict(self.events, name, callback))
             else:
                 metadat = getattr(event, "__event_metadata__", _EventCallbackMetadata())
+                _log.debug("Running event callback under event %s", name)
                 asyncio.create_task(
                     self.run(event, metadat.parent, *args, **kwargs), name=f"DisCatPy Event:{name}"
                 )
 
                 if metadat.one_shot:
-                    self.remove_event(name)
+                    _log.debug("Removing event callback under event %s", name)
+                    self.remove_event_callback(name)
+
+    @staticmethod
+    def _get_event_name(func: Func, name: Optional[str]):
+        return func.__name__ if not name else name
 
     @overload
-    def add_event(self, func: CoroFunc, *, name: Optional[str] = None):
+    def set_event_proto(self, proto_func: Func[Any], *, name: Optional[str] = None):
         ...
 
     @overload
-    def add_event(self, func: CoroFunc, *, name: Optional[str] = None, one_shot: bool = False):
+    def set_event_proto(self, proto_func: Func[Any], *, name: Optional[str] = None, parent: Optional[Any] = None):
+        ...
+
+    def set_event_proto(self, proto_func: Func[Any], *, name: Optional[str] = None, parent: Optional[Any] = None):
+        is_static = isinstance(proto_func, staticmethod)
+        if is_static:
+            proto_func = proto_func.__func__
+
+        event_name = self._get_event_name(proto_func, name)
+
+        if event_name not in self.event_protos:
+            sig = inspect.signature(proto_func)
+            if parent is not None and not is_static:
+                new_params = list(sig.parameters.values())
+                new_params.pop(0)
+                sig = sig.replace(parameters=new_params)
+            self.event_protos[event_name] = sig
+
+            _log.debug("Registered new event proto under event %s", event_name)
+        else:
+            raise ValueError(f"Event prototype for event {event_name} has already been set!")
+
+    def remove_event_proto(self, name: str):
+        del self.event_protos[name]
+        _log.debug("Removed event under name %s", name)
+
+    @overload
+    def add_event_callback(self, func: CoroFunc, *, name: Optional[str] = None):
         ...
 
     @overload
-    def add_event(
-        self,
-        func: CoroFunc,
-        *,
-        name: Optional[str] = None,
-        one_shot: bool = False,
-        parent: Optional[Any] = None,
-    ):
+    def add_event_callback(self, func: CoroFunc, *, name: Optional[str] = None, one_shot: bool = False):
         ...
 
-    def add_event(
-        self,
-        func: CoroFunc,
-        *,
-        name: Optional[str] = None,
-        one_shot: bool = False,
-        parent: Optional[Any] = None,
-    ):
-        """Adds a new event or new event callback to this dispatcher.
+    @overload
+    def add_event_callback(self, func: CoroFunc, *, name: Optional[str] = None, one_shot: bool = False, parent: Optional[Any] = None):
+        ...
+
+    def add_event_callback(self, func: CoroFunc, *, name: Optional[str] = None, one_shot: bool = False, parent: Optional[Any] = None):
+        """Adds a new event callback to an event.
 
         Parameters
         ----------
@@ -189,32 +221,19 @@ class Dispatcher:
         if not asyncio.iscoroutinefunction(func):
             raise TypeError("Callback provided is not a coroutine.")
 
-        event_name = func.__name__ if not name else name
+        event_name = self._get_event_name(func, name)
+        if event_name not in self.event_protos:
+            raise ValueError("Event prototype for this event has not been defined.")
 
-        if event_name in self.events:
-            orig_event_callback = self.events.get_one(event_name, 0)
-            orig_callback_metadata = getattr(
-                orig_event_callback, "__event_metadata__", _EventCallbackMetadata()
-            )
+        event_proto = self.event_protos[event_name]
+        callback_sig = inspect.signature(func)
+        if parent is not None:
+            new_params = list(callback_sig.parameters.values())
+            new_params.pop(0)
+            callback_sig = callback_sig.replace(parameters=new_params)
 
-            orig_callback_sig = inspect.signature(orig_event_callback)
-            # pop parent parameter (if it exists)
-            if orig_callback_metadata.parent is not None:
-                new_params = list(OrderedDict(orig_callback_sig.parameters).values())
-                new_params.pop(0)
-                orig_callback_sig = orig_callback_sig.replace(parameters=new_params)
-
-            new_callback_sig = inspect.signature(func)
-            # pop parent parameter (if it exists)
-            if parent is not None:
-                new_params = list(OrderedDict(new_callback_sig.parameters).values())
-                new_params.pop(0)
-                new_callback_sig = new_callback_sig.replace(parameters=new_params)
-
-            if orig_callback_sig.parameters != new_callback_sig.parameters:
-                raise TypeError(
-                    "Overloaded function does not have the same parameters as original function."
-                )
+        if len(event_proto.parameters) != len(callback_sig.parameters):
+            raise TypeError("Event callback parameters do not match up with the event prototype parameters.")
 
         metadat = _EventCallbackMetadata(one_shot, parent)
         setattr(func, "__event_metadata__", metadat)
@@ -223,27 +242,31 @@ class Dispatcher:
         _log.debug("Registered new event callback under event %s", event_name)
 
     @overload
-    def remove_event(self, name: str):
+    def remove_event_callback(self, name: str):
         ...
 
     @overload
-    def remove_event(self, name: str, index: Optional[int] = None):
+    def remove_event_callback(self, name: str, index: Optional[int] = None):
         ...
 
-    def remove_event(self, name: str, index: Optional[int] = None):
-        """Removes an event callback or the entire event.
+    def remove_event_callback(self, name: str, index: Optional[int] = None):
+        """Removes an event callback or all event callbacks.
 
         Parameters
         ----------
         name: :type:`str`
-            The name of the event callback to remove.
+            The name of the event callback to remove. If not set, then this will
+            remove all callbacks under an event.
         """
         if index is not None and isinstance(self.events[name], list):
             del self.events[name][index]
             _log.debug("Removed event callback under event %s", name)
+        elif isinstance(self.events[name], list):
+            del self.events[name]
+            _log.debug("Removed all event callbacks under event %s", name)
         else:
             del self.events[name]
-            _log.debug("Removed event %s", name)
+            _log.debug("Removed event callback under event %s", name)
 
     def has_event(self, name: str):
         """Check if this dispatcher already has a event.
@@ -259,7 +282,7 @@ class Dispatcher:
             A bool correlating to if there is a event with that
             name or not.
         """
-        return name in self.events
+        return name in self.events and name in self.event_protos
 
     def override_error_handler(self, func: CoroFunc):
         """Overrides a new error handler for dispatched events.

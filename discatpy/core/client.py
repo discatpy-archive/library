@@ -24,11 +24,11 @@ DEALINGS IN THE SOFTWARE.
 from __future__ import annotations
 
 import asyncio
-from typing import Optional
+from typing import Any, Callable, Coroutine, Optional
 
 from .dispatcher import Dispatcher
 from .flags import Intents
-from .gateway import GatewayClient, GatewayEventHandler
+from .gateway import GatewayClient
 from .http import HTTPClient
 
 __all__ = ("Client",)
@@ -85,18 +85,12 @@ class Client:
 
     @property
     def token(self):
-        """
-        The bot's token.
-        Shortcut for :attr:`Client.http.token`.
-        """
+        """:class:`str` The bot's token. Shortcut for :attr:`Client.http.token`."""
         return self.http.token
 
     @property
     def api_version(self):
-        """
-        The api version the HTTP Client is using.
-        Shortcut for :attr:`Client.http.api_version`.
-        """
+        """:class:`int` The api version the HTTP Client is using. Shortcut for :attr:`Client.http._api_version`."""
         return self.http._api_version
 
     # Events
@@ -110,8 +104,14 @@ class Client:
             The name of this event. If none, then the function's name is used.
         """
 
-        def decorator(func):
-            self.dispatcher.add_event(func, name=name)
+        def decorator(func: Callable[..., Coroutine[Any, Any, Any]]):
+            event_name = self.dispatcher._get_event_name(func, name)
+
+            if not self.dispatcher.has_event(event_name):
+                self.dispatcher.set_event_proto(func, name=name)
+
+            # TODO: parent
+            self.dispatcher.add_event_callback(func, name=name)
             return func
 
         return decorator
