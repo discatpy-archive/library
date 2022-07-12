@@ -23,11 +23,11 @@ DEALINGS IN THE SOFTWARE.
 """
 
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 
 from discord_typings import PartialChannelData, RoleData, WelcomeChannelData
 
-from ...types import MISSING, List, MissingOr, Snowflake
+from ...types import MISSING, MissingOr, Snowflake
 from .core import APIEndpointData, CoreMixin
 
 __all__ = (

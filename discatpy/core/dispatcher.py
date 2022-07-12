@@ -28,9 +28,8 @@ import logging
 import traceback
 from collections import OrderedDict
 from dataclasses import dataclass
-from typing import Any, Optional, overload
+from typing import Any, Callable, Coroutine, Optional, overload
 
-from .types import Callable, Coroutine
 from .utils import MultipleValuesDict
 
 _log = logging.getLogger(__name__)

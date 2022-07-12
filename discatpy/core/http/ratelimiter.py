@@ -23,8 +23,7 @@ DEALINGS IN THE SOFTWARE.
 """
 
 import asyncio
-
-from ..types import Dict, Type
+from typing import Dict, Type
 
 __all__ = (
     "BucketResolutor",

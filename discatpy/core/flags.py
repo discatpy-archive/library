@@ -24,11 +24,9 @@ DEALINGS IN THE SOFTWARE.
 from __future__ import annotations
 
 from functools import reduce
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Dict, Tuple, Type, Union
 
 from typing_extensions import Self
-
-from .types import Dict, Tuple, Type
 
 __all__ = (
     "BaseFlags",
@@ -38,14 +36,24 @@ __all__ = (
 
 
 class flag_value:
-    def __init__(self, name: str, value: int):
-        self.name = name
+    __slots__ = (
+        "value",
+        "name",
+    )
+
+    def __init__(self, value: int):
         self.value = value
 
-    def __get__(self, instance: BaseFlags, owner):
+    def __get__(self, instance: BaseFlags, owner: Type[BaseFlags]):
+        if not isinstance(instance, BaseFlags):
+            raise TypeError("Owner instance has to be of type BaseFlags!")
+
         return instance._has_flag(self.value)
 
     def __set__(self, instance: BaseFlags, value: bool):
+        if not isinstance(instance, BaseFlags):
+            raise TypeError("Owner instance has to be of type BaseFlags!")
+
         instance._set_flag(self.value, value)
 
 
@@ -75,10 +83,9 @@ class FlagMeta(type):
         default_value = 0
 
         for k, v in attrs.items():
-            if isinstance(v, int):
-                valid_flags[k] = v
-                flag_val = flag_value(k, v)
-                attrs[k] = flag_val
+            if isinstance(v, flag_value):
+                valid_flags[k] = v.value
+                v.name = k
 
         if inverted:
             max_bits = max(valid_flags.values()).bit_length()
@@ -117,6 +124,54 @@ class BaseFlags(metaclass=FlagMeta):
                 raise TypeError(f"Invalid flag name {k} passed in")
             self._set_flag(self.VALID_FLAGS[k], v)
 
+    def _get_error_msg(self, other: Union[BaseFlags, flag_value, int], op: str):
+        form = '{0} and {1} are incompatible with operator "{2}"'
+        if isinstance(other, flag_value):
+            return form.format(type(self), f"flag_value {other.name}", op)
+        elif isinstance(other, int):
+            return form.format(type(self), f"int value {other}", op)
+        else:  # BaseFlags and other types
+            return form.format(type(self), type(other), op)
+
+    def __or__(self, other: Union[BaseFlags, flag_value, int]):
+        if isinstance(other, BaseFlags) and isinstance(other, self.__class__):
+            return self.__class__._from_value(self.value | other.value)
+        elif isinstance(other, flag_value) and other in self.__dict__:
+            return self.__class__._from_value(self.value | other.value)
+        elif isinstance(other, int) and other in self.VALID_FLAGS.values():
+            return self.__class__._from_value(self.value | other)
+        else:
+            raise TypeError(self._get_error_msg(other, "|"))
+
+    def __and__(self, other: Union[BaseFlags, flag_value, int]):
+        if isinstance(other, BaseFlags) and isinstance(other, self.__class__):
+            return self.__class__._from_value(self.value & other.value)
+        elif isinstance(other, flag_value) and other in self.__dict__:
+            return self.__class__._from_value(self.value & other.value)
+        elif isinstance(other, int) and other in self.VALID_FLAGS.values():
+            return self.__class__._from_value(self.value & other)
+        else:
+            raise TypeError(self._get_error_msg(other, "&"))
+
+    def __add__(self, other: Union[BaseFlags, flag_value, int]):
+        try:
+            return self | other
+        except TypeError:
+            raise TypeError(self._get_error_msg(other, "+")) from None
+
+    def __sub__(self, other: Union[BaseFlags, flag_value, int]):
+        if isinstance(other, BaseFlags) and isinstance(other, self.__class__):
+            return self.__class__._from_value(self.value & ~other.value)
+        elif isinstance(other, flag_value) and other in self.__dict__:
+            return self.__class__._from_value(self.value & ~other.value)
+        elif isinstance(other, int) and other in self.VALID_FLAGS.values():
+            return self.__class__._from_value(self.value & ~other)
+        else:
+            raise TypeError(self._get_error_msg(other, "-"))
+
+    def __invert__(self):
+        return self.__class__._from_value(~self.value)
+
     @classmethod
     def _from_value(cls: Type[Self], value: int) -> Self:
         self = cls.__new__(cls)
@@ -134,23 +189,23 @@ class BaseFlags(metaclass=FlagMeta):
 
 
 class Intents(BaseFlags):
-    GUILDS = 1 << 0
-    GUILD_MEMBERS = 1 << 1
-    GUILD_BANS = 1 << 2
-    GUILD_EMOJIS_AND_STICKERS = 1 << 3
-    GUILD_INTEGRATIONS = 1 << 4
-    GUILD_WEBHOOKS = 1 << 5
-    GUILD_INVITES = 1 << 6
-    GUILD_VOICE_STATES = 1 << 7
-    GUILD_PRESENCES = 1 << 8
-    GUILD_MESSAGES = 1 << 9
-    GUILD_MESSAGE_REACTIONS = 1 << 10
-    GUILD_MESSAGE_TYPING = 1 << 11
-    DIRECT_MESSAGES = 1 << 12
-    DIRECT_MESSAGE_REACTIONS = 1 << 13
-    DIRECT_MESSSAGE_TYPING = 1 << 14
-    MESSAGE_CONTENT = 1 << 15
-    GUILD_SCHEDULED_EVENTS = 1 << 16
+    GUILDS = flag_value(1 << 0)
+    GUILD_MEMBERS = flag_value(1 << 1)
+    GUILD_BANS = flag_value(1 << 2)
+    GUILD_EMOJIS_AND_STICKERS = flag_value(1 << 3)
+    GUILD_INTEGRATIONS = flag_value(1 << 4)
+    GUILD_WEBHOOKS = flag_value(1 << 5)
+    GUILD_INVITES = flag_value(1 << 6)
+    GUILD_VOICE_STATES = flag_value(1 << 7)
+    GUILD_PRESENCES = flag_value(1 << 8)
+    GUILD_MESSAGES = flag_value(1 << 9)
+    GUILD_MESSAGE_REACTIONS = flag_value(1 << 10)
+    GUILD_MESSAGE_TYPING = flag_value(1 << 11)
+    DIRECT_MESSAGES = flag_value(1 << 12)
+    DIRECT_MESSAGE_REACTIONS = flag_value(1 << 13)
+    DIRECT_MESSSAGE_TYPING = flag_value(1 << 14)
+    MESSAGE_CONTENT = flag_value(1 << 15)
+    GUILD_SCHEDULED_EVENTS = flag_value(1 << 16)
     # TODO: Automod
 
     @classmethod
@@ -175,12 +230,12 @@ class Intents(BaseFlags):
 
 
 class MessageFlags(BaseFlags):
-    CROSSPOSTED = 1 << 0
-    IS_CROSSPOST = 1 << 1
-    SUPPRESS_EMBEDS = 1 << 2
-    SOURCE_MESSAGE_DELETED = 1 << 3
-    URGENT = 1 << 4
-    HAS_THREAD = 1 << 5
-    EPHEMERAL = 1 << 6
-    LOADING = 1 << 7
-    FAILED_TO_MENTION_SOME_ROLES_IN_THREAD = 1 << 8
+    CROSSPOSTED = flag_value(1 << 0)
+    IS_CROSSPOST = flag_value(1 << 1)
+    SUPPRESS_EMBEDS = flag_value(1 << 2)
+    SOURCE_MESSAGE_DELETED = flag_value(1 << 3)
+    URGENT = flag_value(1 << 4)
+    HAS_THREAD = flag_value(1 << 5)
+    EPHEMERAL = flag_value(1 << 6)
+    LOADING = flag_value(1 << 7)
+    FAILED_TO_MENTION_SOME_ROLES_IN_THREAD = flag_value(1 << 8)

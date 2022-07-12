@@ -22,9 +22,11 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
+from typing import List
+
 from discord_typings import AutoModerationActionData, AutoModerationTriggerMetadataData
 
-from ...types import MISSING, List, MissingOr, Snowflake
+from ...types import MISSING, MissingOr, Snowflake
 from .core import APIEndpointData, CoreMixin
 
 __all__ = ("AutoModerationEndpointMixin",)

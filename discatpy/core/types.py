@@ -22,7 +22,6 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-import sys
 from typing import Any, TypeVar, Union
 
 from discord_typings import Snowflake
@@ -32,13 +31,6 @@ __all__ = (
     "MISSING",
     "MissingOr",
     "MissingType",
-    "Callable",
-    "Coroutine",
-    "Dict",
-    "List",
-    "Mapping",
-    "Tuple",
-    "Type",
 )
 
 
@@ -61,17 +53,3 @@ T = TypeVar("T")
 MISSING: Any = _Missing()
 MissingType = _Missing  # aka the type of MISSING
 MissingOr = Union[MissingType, T]
-
-if sys.version_info[:2] >= (
-    3,
-    9,
-):  # type hint stuff was moved to builtins in Python 3.9 (see PEP 585 for more info)
-    from collections.abc import Callable, Coroutine, Mapping
-
-    Dict = dict
-    List = list
-    Tuple = tuple
-    Type = type
-    # TODO: Add more if needed
-else:
-    from typing import Callable, Coroutine, Dict, List, Mapping, Tuple, Type

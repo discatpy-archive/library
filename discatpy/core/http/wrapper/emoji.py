@@ -22,7 +22,9 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from ...types import List, Snowflake
+from typing import List
+
+from ...types import Snowflake
 from .core import APIEndpointData, CoreMixin
 
 __all__ = ("EmojiEndpointMixin",)

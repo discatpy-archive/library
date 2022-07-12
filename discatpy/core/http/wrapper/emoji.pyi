@@ -22,9 +22,9 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from typing import Optional
+from typing import List, Optional
 
-from ...types import List, Snowflake
+from ...types import Snowflake
 
 class EmojiEndpointMixin:
     async def list_guild_emojis(self, guild_id: Snowflake): ...

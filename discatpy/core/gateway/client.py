@@ -29,12 +29,12 @@ import json
 import platform
 import random
 import zlib
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Union, cast
 
 import aiohttp
 
 from ..enums import GatewayOpcode
-from ..types import List, Mapping, Snowflake
+from ..types import Snowflake
 from .types import GatewayPayload
 
 if TYPE_CHECKING:

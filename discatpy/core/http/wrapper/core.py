@@ -25,21 +25,10 @@ DEALINGS IN THE SOFTWARE.
 import builtins
 import importlib
 from dataclasses import KW_ONLY, dataclass
-from typing import Any, Literal, Optional, Union
+from typing import Any, Callable, Coroutine, Dict, List, Literal, Optional, Tuple, Type, Union
 
 from ...file import BasicFile
-from ...types import (
-    MISSING,
-    Callable,
-    Coroutine,
-    Dict,
-    List,
-    MissingOr,
-    MissingType,
-    Snowflake,
-    Tuple,
-    Type,
-)
+from ...types import MISSING, MissingOr, MissingType, Snowflake
 
 __all__ = (
     "APIEndpointData",

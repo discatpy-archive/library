@@ -26,7 +26,7 @@ import asyncio
 import json
 import sys
 from dataclasses import dataclass
-from typing import Any, Optional, cast
+from typing import Any, Dict, List, Optional, cast
 from urllib.parse import quote as _urlquote
 
 import aiohttp
@@ -35,7 +35,7 @@ from discord_typings import GetGatewayBotData
 from ... import __version__
 from ..errors import DisCatPyException, HTTPException
 from ..file import BasicFile
-from ..types import MISSING, Dict, List, MissingOr
+from ..types import MISSING, MissingOr
 from .ratelimiter import BucketResolutor, Ratelimiter
 
 BASE_API_URL = "https://discord.com/api/v{0}"
