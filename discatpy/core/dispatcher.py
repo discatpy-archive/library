@@ -27,7 +27,8 @@ import inspect
 import logging
 import traceback
 from dataclasses import dataclass
-from typing import Any, Callable, Coroutine, Dict, List, Optional, overload, TypeVar
+from typing import Any, Callable, Coroutine, Dict, List, Optional, TypeVar, overload
+
 from .utils import MultipleValuesDict
 
 _log = logging.getLogger(__name__)
@@ -70,7 +71,11 @@ class Dispatcher:
         The list of the name of valid events.
     """
 
-    __slots__ = ("events", "event_protos", "valid_events",)
+    __slots__ = (
+        "events",
+        "event_protos",
+        "valid_events",
+    )
 
     def __init__(self):
         self.events: MultipleValuesDict[str, CoroFunc] = MultipleValuesDict()
@@ -144,7 +149,9 @@ class Dispatcher:
 
                     if metadat.one_shot:
                         _log.debug("Removing event callback under event %s with index %s", name, i)
-                        self.remove_event_callback(name, _find_value_in_multidict(self.events, name, callback))
+                        self.remove_event_callback(
+                            name, _find_value_in_multidict(self.events, name, callback)
+                        )
             else:
                 metadat = getattr(event, "__event_metadata__", _EventCallbackMetadata())
                 _log.debug("Running event callback under event %s", name)
@@ -165,10 +172,14 @@ class Dispatcher:
         ...
 
     @overload
-    def set_event_proto(self, proto_func: Func[Any], *, name: Optional[str] = None, parent: Optional[Any] = None):
+    def set_event_proto(
+        self, proto_func: Func[Any], *, name: Optional[str] = None, parent: Optional[Any] = None
+    ):
         ...
 
-    def set_event_proto(self, proto_func: Func[Any], *, name: Optional[str] = None, parent: Optional[Any] = None):
+    def set_event_proto(
+        self, proto_func: Func[Any], *, name: Optional[str] = None, parent: Optional[Any] = None
+    ):
         is_static = isinstance(proto_func, staticmethod)
         if is_static:
             proto_func = proto_func.__func__
@@ -196,14 +207,30 @@ class Dispatcher:
         ...
 
     @overload
-    def add_event_callback(self, func: CoroFunc, *, name: Optional[str] = None, one_shot: bool = False):
+    def add_event_callback(
+        self, func: CoroFunc, *, name: Optional[str] = None, one_shot: bool = False
+    ):
         ...
 
     @overload
-    def add_event_callback(self, func: CoroFunc, *, name: Optional[str] = None, one_shot: bool = False, parent: Optional[Any] = None):
+    def add_event_callback(
+        self,
+        func: CoroFunc,
+        *,
+        name: Optional[str] = None,
+        one_shot: bool = False,
+        parent: Optional[Any] = None,
+    ):
         ...
 
-    def add_event_callback(self, func: CoroFunc, *, name: Optional[str] = None, one_shot: bool = False, parent: Optional[Any] = None):
+    def add_event_callback(
+        self,
+        func: CoroFunc,
+        *,
+        name: Optional[str] = None,
+        one_shot: bool = False,
+        parent: Optional[Any] = None,
+    ):
         """Adds a new event callback to an event.
 
         Parameters
@@ -233,7 +260,9 @@ class Dispatcher:
             callback_sig = callback_sig.replace(parameters=new_params)
 
         if len(event_proto.parameters) != len(callback_sig.parameters):
-            raise TypeError("Event callback parameters do not match up with the event prototype parameters.")
+            raise TypeError(
+                "Event callback parameters do not match up with the event prototype parameters."
+            )
 
         metadat = _EventCallbackMetadata(one_shot, parent)
         setattr(func, "__event_metadata__", metadat)
