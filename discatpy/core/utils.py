@@ -26,7 +26,7 @@ import builtins
 import importlib
 from typing import Any, Callable, Coroutine, Dict, Generic, List, Optional, TypeVar, Union
 
-from .types import Snowflake, MISSING
+from .types import MISSING, MissingOr, Snowflake
 
 __all__ = (
     "DISCORD_EPOCH",
@@ -160,6 +160,7 @@ class MultipleValuesDict(dict, Generic[_KT, _VT]):
 Func = Callable[..., Any]
 CoroFunc = Callable[..., Coroutine[Any, Any, Any]]
 
+
 def _indent_text(txt: str) -> str:
     return f"    {txt}"
 
@@ -172,9 +173,17 @@ def _indent_all_text(strs: List[str]) -> List[str]:
 
     return output
 
+
 # Code taken from the dataclasses module in the Python stdlib
 def _create_fn(
-    name: str, args: List[str], body: List[str], *, globals=None, locals=None, return_type=MISSING, asynchronous=False
+    name: str,
+    args: List[str],
+    body: List[str],
+    *,
+    globals: Optional[Dict[str, Any]] = None,
+    locals: Optional[Dict[str, Any]] = None,
+    return_type: MissingOr[type] = MISSING,
+    asynchronous: bool = False,
 ) -> Union[CoroFunc, Func]:
     if locals is None:
         locals = {}
@@ -201,6 +210,7 @@ def _create_fn(
     ns = {}
     exec(txt, globals, ns)
     return ns["__create_fn__"](**locals)
+
 
 def _from_import(module: str, locals: Dict[str, Any], objs_to_grab: Optional[List[str]] = None):
     actual_module = importlib.import_module(module)

@@ -28,7 +28,7 @@ from typing import Any, Callable, Coroutine, Optional
 
 from .dispatcher import Dispatcher
 from .flags import Intents
-from .gateway import GatewayClient, GatewayEventProtos, GatewayEventHandler
+from .gateway import GatewayClient, GatewayEventHandler, GatewayEventProtos
 from .http import HTTPClient
 
 __all__ = ("Client",)
@@ -86,7 +86,9 @@ class Client:
         self.gateway: Optional[GatewayClient] = None  # initalized later
         self.dispatcher: Dispatcher = Dispatcher()
         self._event_protos_handler_hooked: bool = False
-        self.event_protos_handler: GatewayEventProtos = GatewayEventProtos(self) # TODO: maybe remove keeping a reference to this?
+        self.event_protos_handler: GatewayEventProtos = GatewayEventProtos(
+            self
+        )  # TODO: maybe remove keeping a reference to this?
         self.event_handler: GatewayEventHandler = GatewayEventHandler(self)
         self.http: HTTPClient = HTTPClient(token, api_version=api_version)
         self._gateway_reconnect = asyncio.Event()

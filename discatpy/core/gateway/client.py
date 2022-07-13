@@ -152,7 +152,11 @@ class GatewayClient:
             self.recent_gp = cast(GatewayPayload, json.loads(received_msg))  # type: ignore
             self.seq_num = self.recent_gp.get("s")
             return True
-        elif msg.type in (aiohttp.WSMsgType.CLOSE, aiohttp.WSMsgType.CLOSED, aiohttp.WSMsgType.CLOSING):
+        elif msg.type in (
+            aiohttp.WSMsgType.CLOSE,
+            aiohttp.WSMsgType.CLOSED,
+            aiohttp.WSMsgType.CLOSING,
+        ):
             await self.close(reconnect=False)
             return False
 
@@ -192,10 +196,7 @@ class GatewayClient:
     @property
     def heartbeat_payload(self):
         """:type:`Dict[str, Any]` Returns the heartbeat payload."""
-        return {
-            "op": GatewayOpcode.HEARTBEAT.value, 
-            "d": self.seq_num
-        }
+        return {"op": GatewayOpcode.HEARTBEAT.value, "d": self.seq_num}
 
     async def close(self, code: int = 1000, reconnect: bool = True):
         """
@@ -245,7 +246,9 @@ class GatewayClient:
                 op = self.recent_gp.get("op")
                 if op == GatewayOpcode.DISPATCH and self.recent_gp["t"] is not None:
                     event_name = self.recent_gp["t"].lower()
-                    args = getattr(self.client.event_handler, f"handle_{event_name}")(self.recent_gp["d"])
+                    args = getattr(self.client.event_handler, f"handle_{event_name}")(
+                        self.recent_gp["d"]
+                    )
                     self.client.dispatcher.dispatch(event_name, *args)
 
                 if op == GatewayOpcode.RECONNECT:

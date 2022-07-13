@@ -23,8 +23,11 @@ DEALINGS IN THE SOFTWARE.
 """
 from __future__ import annotations
 
+from datetime import datetime
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+
 from discord_typings import (
-    ApplicationCommandPermissionsUpdateData, 
+    ApplicationCommandPermissionsUpdateData,
     ChannelCreateData,
     ChannelDeleteData,
     ChannelUpdateEvent,
@@ -56,11 +59,8 @@ from discord_typings import (
     ThreadUpdateData,
     UpdatePresenceData,
     UserData,
-    VoiceStateUpdateData
+    VoiceStateUpdateData,
 )
-
-from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from ...types import MissingOr, Snowflake
 
@@ -69,8 +69,10 @@ if TYPE_CHECKING:
 
 __all__ = ("GatewayEventProtos",)
 
+
 class GatewayEventProtos:
     """Registers event protos for Gateway events."""
+
     def __init__(self, client: Client):
         self.client = client
 
@@ -79,7 +81,7 @@ class GatewayEventProtos:
                 v = getattr(self, k)
                 if not k.startswith("_") and callable(v):
                     print(v)
-                    self.client.dispatcher.set_event_proto(v) #parent=self)
+                    self.client.dispatcher.set_event_proto(v)  # parent=self)
 
             self.client._event_protos_handler_hooked = True
 
@@ -98,8 +100,10 @@ class GatewayEventProtos:
         pass
 
     # Application Command events
-    
-    async def application_command_permissions_update(self, permissions: ApplicationCommandPermissionsUpdateData):
+
+    async def application_command_permissions_update(
+        self, permissions: ApplicationCommandPermissionsUpdateData
+    ):
         pass
 
     # TODO: Auto Moderation events
@@ -125,29 +129,29 @@ class GatewayEventProtos:
         pass
 
     async def thread_list_sync(
-        self, 
-        guild_id: Snowflake, 
-        channel_ids: List[Snowflake], 
-        threads: List[ThreadChannelData], 
-        members: List[ThreadMemberData]
+        self,
+        guild_id: Snowflake,
+        channel_ids: List[Snowflake],
+        threads: List[ThreadChannelData],
+        members: List[ThreadMemberData],
     ):
         pass
 
     async def thread_members_update(
-        self, 
-        id: Snowflake, 
-        guild_id: Snowflake, 
-        member_count: int, 
+        self,
+        id: Snowflake,
+        guild_id: Snowflake,
+        member_count: int,
         added_members: MissingOr[List[ThreadMemberData]],
-        removed_member_ids: MissingOr[List[Snowflake]]
+        removed_member_ids: MissingOr[List[Snowflake]],
     ):
         pass
 
     async def channel_pins_update(
-        self, 
-        guild_id: MissingOr[Snowflake], 
-        channel_id: Snowflake, 
-        last_pin_timestamp: MissingOr[Optional[datetime]]
+        self,
+        guild_id: MissingOr[Snowflake],
+        channel_id: Snowflake,
+        last_pin_timestamp: MissingOr[Optional[datetime]],
     ):
         pass
 
@@ -187,14 +191,14 @@ class GatewayEventProtos:
         pass
 
     async def guild_members_chunk(
-        self, 
-        guild_id: Snowflake, 
+        self,
+        guild_id: Snowflake,
         members: List[GuildMemberData],
         chunk_index: int,
         chunk_count: int,
         not_found: MissingOr[List[Snowflake]],
         presences: MissingOr[List[UpdatePresenceData]],
-        nonce: MissingOr[str]
+        nonce: MissingOr[str],
     ):
         pass
 
@@ -216,10 +220,14 @@ class GatewayEventProtos:
     async def guild_scheduled_event_delete(self, scheduled_event: GuildScheduledEventDeleteData):
         pass
 
-    async def guild_scheduled_event_user_add(self, guild_scheduled_event_id: Snowflake, user_id: Snowflake, guild_id: Snowflake):
+    async def guild_scheduled_event_user_add(
+        self, guild_scheduled_event_id: Snowflake, user_id: Snowflake, guild_id: Snowflake
+    ):
         pass
 
-    async def guild_scheduled_event_user_remove(self, guild_scheduled_event_id: Snowflake, user_id: Snowflake, guild_id: Snowflake):
+    async def guild_scheduled_event_user_remove(
+        self, guild_scheduled_event_id: Snowflake, user_id: Snowflake, guild_id: Snowflake
+    ):
         pass
 
     # Integration events
@@ -250,10 +258,14 @@ class GatewayEventProtos:
     async def message_update(self, message: MessageUpdateData):
         pass
 
-    async def message_delete(self, id: Snowflake, channel_id: Snowflake, guild_id: MissingOr[Snowflake]):
+    async def message_delete(
+        self, id: Snowflake, channel_id: Snowflake, guild_id: MissingOr[Snowflake]
+    ):
         pass
 
-    async def message_delete_bulk(self, ids: List[Snowflake], channel_id: Snowflake, guild_id: MissingOr[Snowflake]):
+    async def message_delete_bulk(
+        self, ids: List[Snowflake], channel_id: Snowflake, guild_id: MissingOr[Snowflake]
+    ):
         pass
 
     async def message_reaction_add(
@@ -263,7 +275,7 @@ class GatewayEventProtos:
         message_id: Snowflake,
         guild_id: MissingOr[Snowflake],
         member: MissingOr[GuildMemberData],
-        emoji: EmojiData
+        emoji: EmojiData,
     ):
         pass
 
@@ -273,19 +285,21 @@ class GatewayEventProtos:
         channel_id: Snowflake,
         message_id: Snowflake,
         guild_id: MissingOr[Snowflake],
-        emoji: EmojiData
+        emoji: EmojiData,
     ):
         pass
 
-    async def message_reaction_remove_all(self, channel_id: Snowflake, message_id: Snowflake, guild_id: MissingOr[Snowflake]):
+    async def message_reaction_remove_all(
+        self, channel_id: Snowflake, message_id: Snowflake, guild_id: MissingOr[Snowflake]
+    ):
         pass
 
     async def message_reaction_remove_emoji(
-        self, 
-        channel_id: Snowflake, 
+        self,
+        channel_id: Snowflake,
         guild_id: MissingOr[Snowflake],
         message_id: Snowflake,
-        emoji: EmojiData
+        emoji: EmojiData,
     ):
         pass
 
@@ -294,7 +308,14 @@ class GatewayEventProtos:
     async def presence_update(self, presence: PresenceUpdateData):
         pass
 
-    async def typing_start(self, channel_id: Snowflake, guild_id: MissingOr[Snowflake], user_id: Snowflake, timestamp: int, member: MissingOr[GuildMemberData]):
+    async def typing_start(
+        self,
+        channel_id: Snowflake,
+        guild_id: MissingOr[Snowflake],
+        user_id: Snowflake,
+        timestamp: int,
+        member: MissingOr[GuildMemberData],
+    ):
         pass
 
     # User events

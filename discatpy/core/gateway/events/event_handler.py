@@ -33,8 +33,10 @@ if TYPE_CHECKING:
 
 __all__ = ("GatewayEventHandler",)
 
+
 @generate_handlers_from(GatewayEventProtos)
 class GatewayEventHandler:
     """Registers handlers that can convert raw Gateway event data into arguments."""
+
     def __init__(self, client: Client):
         self.client = client

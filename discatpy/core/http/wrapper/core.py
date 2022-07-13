@@ -27,7 +27,7 @@ from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 from ...file import BasicFile
 from ...types import MISSING, MissingOr, MissingType, Snowflake
-from ...utils import _create_fn, _indent_all_text, _from_import
+from ...utils import _create_fn, _from_import, _indent_all_text
 
 __all__ = (
     "APIEndpointData",
@@ -41,11 +41,15 @@ class APIEndpointData:
     path: str
     _: KW_ONLY
     format_args: Optional[Dict[str, MissingOr[Any]]] = None
-    param_args: Optional[List[Union[
-        Tuple[str],
-        Tuple[str, Any],
-        Tuple[str, Any, Any],
-    ]]] = None
+    param_args: Optional[
+        List[
+            Union[
+                Tuple[str],
+                Tuple[str, Any],
+                Tuple[str, Any, Any],
+            ]
+        ]
+    ] = None
     supports_reason: bool = False
     supports_files: bool = False
 

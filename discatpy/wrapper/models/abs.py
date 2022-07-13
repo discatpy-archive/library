@@ -29,7 +29,7 @@ from ..core.types import Snowflake
 from .message import Message
 
 if TYPE_CHECKING:
-    #from .client import Client
+    # from .client import Client
     from .embed import Embed
 
 __all__ = ("Messageable",)

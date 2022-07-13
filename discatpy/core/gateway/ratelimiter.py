@@ -31,14 +31,15 @@ if TYPE_CHECKING:
 
 __all__ = ("Ratelimiter",)
 
+
 class Ratelimiter:
     """Represents a ratelimiter for a Gateway Client."""
 
     __slots__ = (
-        "commands_used", 
-        "parent", 
-        "_task", 
-        "_ratelimit_done", 
+        "commands_used",
+        "parent",
+        "_task",
+        "_ratelimit_done",
         "_lock",
         "cmds_per_time_frame",
         "time_frame",

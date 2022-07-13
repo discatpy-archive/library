@@ -25,12 +25,13 @@ DEALINGS IN THE SOFTWARE.
 import inspect
 from typing import Callable, List, TypeVar
 
-from ...types import Snowflake, MISSING, MissingOr, MissingType
+from ...types import MISSING, MissingOr, MissingType, Snowflake
 from ...utils import _create_fn, _from_import, _indent_text
 
 __all__ = ("generate_handlers_from",)
 
 T = TypeVar("T")
+
 
 def _generate_body(args: List[inspect.Parameter]):
     ret_tuple = _indent_text("return (")
@@ -39,10 +40,12 @@ def _generate_body(args: List[inspect.Parameter]):
         ret_tuple += "cast({0.annotation}, raw), ".format(args[0])
     else:
         for arg in args:
-            ret_tuple += "cast({0.annotation}, raw.get(\"{0.name}\", MISSING)), ".format(arg)
+            ret_tuple += 'cast({0.annotation}, raw.get("{0.name}", MISSING)), '.format(arg)
 
     ret_tuple += ")"
-    return [ret_tuple,]
+    return [
+        ret_tuple,
+    ]
 
 
 def generate_handlers_from(src_cls: type) -> Callable[[T], T]:
@@ -85,11 +88,12 @@ def generate_handlers_from(src_cls: type) -> Callable[[T], T]:
             sig = inspect.signature(proto)
 
             params = list(sig.parameters.values())
-            params.pop(0) # this should ALWAYS be the self parameter
-            
+            params.pop(0)  # this should ALWAYS be the self parameter
+
             func_body = _generate_body(params)
             func = _create_fn(f"handle_{k}", ["self", "raw: Any"], func_body, locals=func_locals)
             setattr(cls, f"handle_{k}", func)
 
         return cls
+
     return wrapper
