@@ -22,66 +22,17 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-import builtins
-import importlib
 from dataclasses import KW_ONLY, dataclass
-from typing import Any, Callable, Coroutine, Dict, List, Literal, Optional, Tuple, Type, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 from ...file import BasicFile
 from ...types import MISSING, MissingOr, MissingType, Snowflake
+from ...utils import _create_fn, _indent_all_text, _from_import
 
 __all__ = (
     "APIEndpointData",
     "CoreMixin",
 )
-
-CoroFunc = Callable[..., Coroutine[Any, Any, Any]]
-Func = Callable[..., Any]
-
-
-def _indent_text(txt: str) -> str:
-    return f"    {txt}"
-
-
-def _indent_all_text(strs: List[str]) -> List[str]:
-    output: List[str] = []
-
-    for txt in strs:
-        output.append(_indent_text(txt))
-
-    return output
-
-
-# Code taken from the dataclasses module in the Python stdlib
-def _create_fn(
-    name, args, body, *, globals=None, locals=None, return_type=MISSING, asynchronous=False
-) -> Union[CoroFunc, Func]:
-    if locals is None:
-        locals = {}
-
-    if "BUILTINS" not in locals:
-        locals["BUILTINS"] = builtins
-
-    return_annotation = ""
-    if return_type is not MISSING:
-        locals["_return_type"] = return_type
-        return_annotation = "->_return_type"
-
-    args = ", ".join(args)
-    body = "\n".join(_indent_all_text(body))
-
-    # Compute the text of the entire function.
-    txt = ""
-    if asynchronous:
-        txt += "async "
-    txt += f"def {name}({args}){return_annotation}:\n{body}"
-    # print(txt)
-
-    local_vars = ", ".join(locals.keys())
-    txt = f"def __create_fn__({local_vars}):\n{_indent_text(txt)}\n    return {name}"
-    ns = {}
-    exec(txt, globals, ns)
-    return ns["__create_fn__"](**locals)
 
 
 @dataclass
@@ -90,7 +41,11 @@ class APIEndpointData:
     path: str
     _: KW_ONLY
     format_args: Optional[Dict[str, MissingOr[Any]]] = None
-    param_args: Optional[List[Tuple[Any, ...]]] = None
+    param_args: Optional[List[Union[
+        Tuple[str],
+        Tuple[str, Any],
+        Tuple[str, Any, Any],
+    ]]] = None
     supports_reason: bool = False
     supports_files: bool = False
 
@@ -112,14 +67,15 @@ def _generate_args(data: APIEndpointData):
         for arg in data.param_args:
             str_arg = ""
             if len(arg) >= 1:
-                arg_name = str(arg[0])
+                arg_name = arg[0]
                 str_arg += arg_name
             if len(arg) >= 2:
-                arg_annotation = arg[1]
+                # Pyright doesn't understand that this if statement only applies to two tuples
+                arg_annotation = arg[1]  # type: ignore
                 str_arg += f": {arg_annotation.__name__}"  # type: ignore
             if len(arg) == 3:
                 arg_default = arg[2]
-                str_arg += f" = {arg_default}"  # type: ignore
+                str_arg += f" = {arg_default}"
 
             func_args.append(str_arg)
 
@@ -166,16 +122,6 @@ def _generate_body(data: APIEndpointData):
     return _indent_all_text(body)
 
 
-def _from_import(module: str, locals: Dict[str, Any], objs_to_grab: Optional[List[str]] = None):
-    actual_module = importlib.import_module(module)
-
-    if not objs_to_grab:
-        objs_to_grab = [k for k in dir(actual_module) if not k.startswith("_")]
-
-    for obj in objs_to_grab:
-        locals[obj] = getattr(actual_module, obj)
-
-
 class CoreMixinMeta(type):
     def __new__(cls, name: str, bases: Tuple[type], attrs: Dict[str, Any], **kwargs: Any):
         orig_keys = list(attrs.keys())
@@ -203,17 +149,17 @@ class CoreMixinMeta(type):
                     "_Missing": MissingType,
                     "MissingOr": MissingOr,
                     "BasicFile": BasicFile,
-                    "Dict": Dict,
-                    "List": List,
-                    "Tuple": Tuple,
-                    "Type": Type,
                 }
                 _from_import(
                     "typing",
                     func_locals,
                     [
                         "Any",
+                        "Dict",
+                        "List",
                         "Optional",
+                        "Tuple",
+                        "Type",
                         "Union",
                     ],
                 )

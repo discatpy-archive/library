@@ -108,11 +108,11 @@ class Dispatcher:
         **kwargs: :type:`Any`
             Keyword arguments to pass into the coroutine.
         """
+        if parent:
+            args = (parent, *args)
+
         try:
-            if parent:
-                await coro(parent, *args, **kwargs)
-            else:
-                await coro(*args, **kwargs)
+            await coro(*args, **kwargs)
         except asyncio.CancelledError:
             pass
         except Exception as e:
@@ -190,6 +190,7 @@ class Dispatcher:
             sig = inspect.signature(proto_func)
             if parent is not None and not is_static:
                 new_params = list(sig.parameters.values())
+                print(new_params)
                 new_params.pop(0)
                 sig = sig.replace(parameters=new_params)
             self.event_protos[event_name] = sig
@@ -311,7 +312,7 @@ class Dispatcher:
             A bool correlating to if there is a event with that
             name or not.
         """
-        return name in self.events and name in self.event_protos
+        return name in self.event_protos
 
     def override_error_handler(self, func: CoroFunc):
         """Overrides a new error handler for dispatched events.

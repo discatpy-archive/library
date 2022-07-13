@@ -25,11 +25,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from ..core.types import Snowflake
 from .message import Message
-from .types.snowflake import *
 
 if TYPE_CHECKING:
-    from .client import Client
+    #from .client import Client
     from .embed import Embed
 
 __all__ = ("Messageable",)
@@ -40,7 +40,7 @@ class Messageable:
     An abstract type for API types that can send messages.
     """
 
-    client: Client
+    client: Any
     raw_id: Snowflake
 
     async def send(

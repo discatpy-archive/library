@@ -22,9 +22,11 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from typing import Any, Generic, Optional, TypeVar, Union
+import builtins
+import importlib
+from typing import Any, Callable, Coroutine, Dict, Generic, List, Optional, TypeVar, Union
 
-from .types import Snowflake
+from .types import Snowflake, MISSING
 
 __all__ = (
     "DISCORD_EPOCH",
@@ -153,3 +155,58 @@ class MultipleValuesDict(dict, Generic[_KT, _VT]):
             return val
 
         return values
+
+
+Func = Callable[..., Any]
+CoroFunc = Callable[..., Coroutine[Any, Any, Any]]
+
+def _indent_text(txt: str) -> str:
+    return f"    {txt}"
+
+
+def _indent_all_text(strs: List[str]) -> List[str]:
+    output: List[str] = []
+
+    for txt in strs:
+        output.append(_indent_text(txt))
+
+    return output
+
+# Code taken from the dataclasses module in the Python stdlib
+def _create_fn(
+    name: str, args: List[str], body: List[str], *, globals=None, locals=None, return_type=MISSING, asynchronous=False
+) -> Union[CoroFunc, Func]:
+    if locals is None:
+        locals = {}
+
+    if "BUILTINS" not in locals:
+        locals["BUILTINS"] = builtins
+
+    return_annotation = ""
+    if return_type is not MISSING:
+        locals["_return_type"] = return_type
+        return_annotation = "->_return_type"
+
+    fargs = ", ".join(args)
+    fbody = "\n".join(_indent_all_text(body))
+
+    # Compute the text of the entire function.
+    txt = ""
+    if asynchronous:
+        txt += "async "
+    txt += f"def {name}({fargs}){return_annotation}:\n{fbody}"
+
+    local_vars = ", ".join(locals.keys())
+    txt = f"def __create_fn__({local_vars}):\n{_indent_text(txt)}\n    return {name}"
+    ns = {}
+    exec(txt, globals, ns)
+    return ns["__create_fn__"](**locals)
+
+def _from_import(module: str, locals: Dict[str, Any], objs_to_grab: Optional[List[str]] = None):
+    actual_module = importlib.import_module(module)
+
+    if not objs_to_grab:
+        objs_to_grab = [k for k in dir(actual_module) if not k.startswith("_")]
+
+    for obj in objs_to_grab:
+        locals[obj] = getattr(actual_module, obj)

@@ -23,18 +23,33 @@ DEALINGS IN THE SOFTWARE.
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, Mapping
 
-if TYPE_CHECKING:
-    from ..client import Client
+# if TYPE_CHECKING:
+#    from .client import Client
 
-__all__ = ("GatewayEventHandler",)
+__all__ = ("DiscordObject",)
 
 
-class GatewayEventHandler:
-    def __init__(self, client: Client):
-        self.client = client
+class DiscordObject:
+    """A raw Discord Object.
+    All models here from the Discord API use this as a base.
 
-        for k in dir(self):
-            if not k.startswith("_"):
-                self.client.dispatcher.add_event(getattr(self, k), parent=self)
+    Attributes
+    ----------
+    bot:
+        The bot tied to this Discord Object.
+    """
+
+    __slots__ = ("bot",)
+
+    def __init__(self, *, data: Mapping[str, Any], bot, **kwargs):
+        self.bot = bot
+        self._update(data)
+
+    def _update(self, data: Mapping[str, Any]):
+        raise NotImplementedError
+
+    def to_dict(self) -> Dict[str, Any]:
+        """:class:`dict[str, Any]`: Converts this Discord Object into a dict. Not guaranteed to be implemented."""
+        raise NotImplementedError

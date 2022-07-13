@@ -214,7 +214,7 @@ class MessagesEndpointMixin:
         flags: MissingOr[int] = MISSING,
         allowed_mentions: MissingOr[AllowedMentionsData] = MISSING,
         # TODO: Components
-        attachments: MissingOr[List[PartialAttachmentData]] = MISSING,
+        attachments: MissingOr[List[AttachmentData]] = MISSING,
         files: MissingOr[List[BasicFile]] = MISSING,
     ): ...
     async def delete_message(

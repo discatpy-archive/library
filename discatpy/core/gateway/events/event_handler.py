@@ -23,36 +23,18 @@ DEALINGS IN THE SOFTWARE.
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
-from ..core.types import Mapping
+from .core import generate_handlers_from
+from .event_protos import GatewayEventProtos
 
-# if TYPE_CHECKING:
-#    from .client import Client
+if TYPE_CHECKING:
+    from ..client import Client
 
-__all__ = ("DiscordObject",)
+__all__ = ("GatewayEventHandler",)
 
-
-class DiscordObject:
-    """
-    A raw Discord Object.
-    All models here from the Discord API use this as a base.
-
-    Attributes
-    ----------
-    bot:
-        The bot tied to this Discord Object.
-    """
-
-    __slots__ = ("bot",)
-
-    def __init__(self, *, data: Mapping[str, Any], bot, **kwargs):
-        self.bot = bot
-        self._update(data)
-
-    def _update(self, data: Mapping[str, Any]):
-        raise NotImplementedError
-
-    def to_dict(self) -> dict[str, Any]:
-        """:class:`dict[str, Any]`: Converts this Discord Object into a dict. Not guaranteed to be implemented."""
-        raise NotImplementedError
+@generate_handlers_from(GatewayEventProtos)
+class GatewayEventHandler:
+    """Registers handlers that can convert raw Gateway event data into arguments."""
+    def __init__(self, client: Client):
+        self.client = client

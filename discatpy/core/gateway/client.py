@@ -29,12 +29,13 @@ import json
 import platform
 import random
 import zlib
-from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Union, cast
 
 import aiohttp
 
 from ..enums import GatewayOpcode
 from ..types import Snowflake
+from .ratelimiter import Ratelimiter
 from .types import GatewayPayload
 
 if TYPE_CHECKING:
@@ -100,6 +101,7 @@ class GatewayClient:
         "_last_heartbeat_ack",
         "heartbeat_timeout",
         "_gateway_resume",
+        "ratelimiter",
     )
 
     def __init__(
@@ -114,12 +116,45 @@ class GatewayClient:
         self.heartbeat_interval: float = 0.0
         self.seq_num: Optional[int] = None
         self.session_id: str = ""
-        self.recent_gp: Mapping[str, object] = {}
+        self.recent_gp: Optional[GatewayPayload] = None
         self.keep_alive_task: Optional[asyncio.Task] = None
         self._first_heartbeat: bool = True
         self._last_heartbeat_ack: datetime.datetime = datetime.datetime.now()
         self.heartbeat_timeout: float = heartbeat_timeout
         self._gateway_resume: bool = False
+        self.ratelimiter = Ratelimiter(self)
+        self.ratelimiter.start()
+
+    async def send(self, data: Dict[str, Any]):
+        if self.ratelimiter.is_ratelimited():
+            if not self.ratelimiter._lock.is_set():
+                await self.ratelimiter.wait()
+            else:
+                await self.ratelimiter.set()
+
+        await self.ws.send_json(data)
+
+    async def receive(self):
+        try:
+            msg = await self.ws.receive()
+        except asyncio.TimeoutError:
+            # try to re-establish the connection with the Gateway
+            await self.close(code=1012)
+            return False
+
+        if msg.type in (aiohttp.WSMsgType.BINARY, aiohttp.WSMsgType.TEXT):
+            received_msg = None
+            if msg.type == aiohttp.WSMsgType.BINARY:
+                received_msg = _decompress_msg(self.inflator, msg.data)
+            elif msg.type == aiohttp.WSMsgType.TEXT:
+                received_msg = msg.data
+
+            self.recent_gp = cast(GatewayPayload, json.loads(received_msg))  # type: ignore
+            self.seq_num = self.recent_gp.get("s")
+            return True
+        elif msg.type in (aiohttp.WSMsgType.CLOSE, aiohttp.WSMsgType.CLOSED, aiohttp.WSMsgType.CLOSING):
+            await self.close(reconnect=False)
+            return False
 
     @property
     def identify_payload(self):
@@ -154,6 +189,14 @@ class GatewayClient:
             },
         }
 
+    @property
+    def heartbeat_payload(self):
+        """:type:`Dict[str, Any]` Returns the heartbeat payload."""
+        return {
+            "op": GatewayOpcode.HEARTBEAT.value, 
+            "d": self.seq_num
+        }
+
     async def close(self, code: int = 1000, reconnect: bool = True):
         """
         Closes the connection with the gateway.
@@ -168,6 +211,7 @@ class GatewayClient:
             If we should reconnect or not. Set to True by default
         """
         await self.ws.close(code=code)
+        await self.ratelimiter.stop()
         if self.keep_alive_task is not None:
             await self.keep_alive_task
 
@@ -187,7 +231,7 @@ class GatewayClient:
         """
         while not self.ws.closed:
             if self._gateway_resume:
-                await self.ws.send_json(self.resume_payload)
+                await self.send(self.resume_payload)
                 self._gateway_resume = False
 
             if (
@@ -195,25 +239,14 @@ class GatewayClient:
             ).total_seconds() > self.heartbeat_timeout:
                 await self.close(code=1008)
 
-            try:
-                msg = await self.ws.receive()
-            except asyncio.TimeoutError:
-                # try to re-establish the connection with the Gateway
-                return await self.close(code=1012)
+            res = await self.receive()
 
-            if msg.type == aiohttp.WSMsgType.BINARY or msg.type == aiohttp.WSMsgType.TEXT:
-                inflated_msg: Optional[Any] = None
-                if msg.type == aiohttp.WSMsgType.BINARY:
-                    inflated_msg = _decompress_msg(self.inflator, msg.data)
-                else:
-                    inflated_msg = msg.data
-
-                self.recent_gp = cast(GatewayPayload, json.loads(inflated_msg))  # type: ignore
-                self.seq_num = self.recent_gp.get("s")
+            if res and self.recent_gp is not None:
                 op = self.recent_gp.get("op")
-
-                if op == GatewayOpcode.DISPATCH:
-                    self.client.dispatcher.dispatch(self.recent_gp.get("t"))  # type: ignore
+                if op == GatewayOpcode.DISPATCH and self.recent_gp["t"] is not None:
+                    event_name = self.recent_gp["t"].lower()
+                    args = getattr(self.client.event_handler, f"handle_{event_name}")(self.recent_gp["d"])
+                    self.client.dispatcher.dispatch(event_name, *args)
 
                 if op == GatewayOpcode.RECONNECT:
                     return await self.close(code=1012)
@@ -227,19 +260,11 @@ class GatewayClient:
 
                 if op == GatewayOpcode.HELLO:
                     self.heartbeat_interval = self.recent_gp["d"]["heartbeat_interval"] / 1000  # type: ignore
-                    await self.ws.send_json(self.identify_payload)
+                    await self.send(self.identify_payload)
                     self.keep_alive_task = asyncio.create_task(self.keep_alive_loop())
 
                 if op == GatewayOpcode.HEARTBEAT_ACK:
                     self._last_heartbeat_ack = datetime.datetime.now()
-
-            elif msg.type in (
-                aiohttp.WSMsgType.CLOSE,
-                aiohttp.WSMsgType.CLOSED,
-                aiohttp.WSMsgType.CLOSING,
-            ):
-                # we got a close code
-                return await self.close(reconnect=False)
 
     async def keep_alive_loop(self):
         """
@@ -252,8 +277,7 @@ class GatewayClient:
         Do not run this yourself. The Gateway will automatically start an `asyncio.Task` to run this.
         """
         while not self.ws.closed:
-            heartbeat_payload = {"op": GatewayOpcode.HEARTBEAT.value, "d": self.seq_num}
-            await self.ws.send_json(heartbeat_payload)
+            await self.send(self.heartbeat_payload)
 
             delta = self.heartbeat_interval
             if self._first_heartbeat:
@@ -265,26 +289,10 @@ class GatewayClient:
             except asyncio.CancelledError:
                 break
 
-    # TODO: replace
-    # async def poll_dispatched_event(self):
-    #    """
-    #    Polls the latest dispatched event from the server.
-    #
-    #    For internal use only.
-    #    """
-    #    args: List[Any] = ()
-    #
-    #    # TODO: Parse event data into arguments
-    #    if self.recent_gp["t"] == "READY":
-    #        self.session_id = self.recent_gp["d"]["session_id"]
-    #        # TODO: Add (unavailable) guilds to the client cache
-    #
-    #    name = "on_" + self.recent_gp["t"].lower()
-    #    await self.client.dispatcher.dispatch(name, *args)
-
     async def request_guild_members(
         self,
         guild_id: Snowflake,
+        *,
         user_ids: Optional[Union[Snowflake, List[Snowflake]]] = None,
         limit: int = 0,
         query: str = "",
@@ -322,9 +330,9 @@ class GatewayClient:
         if user_ids is not None:
             guild_mems_req["d"]["user_ids"] = user_ids
 
-        await self.ws.send_json(guild_mems_req)
+        await self.send(guild_mems_req)
 
-    async def update_presence(self, since: int, status: str, afk: bool):
+    async def update_presence(self, *, since: int, status: str, afk: bool):
         """
         Sends a presence update to the Gateway.
 
@@ -351,4 +359,4 @@ class GatewayClient:
 
         # TODO: Activities
 
-        await self.ws.send_json(new_presence_dict)
+        await self.send(new_presence_dict)

@@ -28,10 +28,17 @@ from typing import Any, Callable, Coroutine, Optional
 
 from .dispatcher import Dispatcher
 from .flags import Intents
-from .gateway import GatewayClient
+from .gateway import GatewayClient, GatewayEventProtos, GatewayEventHandler
 from .http import HTTPClient
 
 __all__ = ("Client",)
+
+
+def get_loop():
+    try:
+        return asyncio.get_running_loop()
+    except:
+        return asyncio.new_event_loop()
 
 
 class Client:
@@ -64,6 +71,9 @@ class Client:
 
     __slots__ = (
         "gateway",
+        "event_protos_handler",
+        "_event_protos_handler_hooked",
+        "_event_handler_hooked",
         "event_handler",
         "http",
         "_gateway_reconnect",
@@ -74,12 +84,14 @@ class Client:
 
     def __init__(self, token: str, *, intents: Intents, api_version: Optional[int] = None):
         self.gateway: Optional[GatewayClient] = None  # initalized later
-        # self.event_handler: GatewayEventHandler = GatewayEventHandler(self) # TODO: maybe remove keeping a reference to this?
+        self.dispatcher: Dispatcher = Dispatcher()
+        self._event_protos_handler_hooked: bool = False
+        self.event_protos_handler: GatewayEventProtos = GatewayEventProtos(self) # TODO: maybe remove keeping a reference to this?
+        self.event_handler: GatewayEventHandler = GatewayEventHandler(self)
         self.http: HTTPClient = HTTPClient(token, api_version=api_version)
         self._gateway_reconnect = asyncio.Event()
         self.running: bool = False
         self.intents: Intents = intents
-        self.dispatcher: Dispatcher = Dispatcher()
 
     # Properties
 
@@ -151,15 +163,17 @@ class Client:
                 await self.dispatcher.error_handler(e)
 
     def run(self):
-        """Logs into the bot user then starts the Gateway client."""
+        """Starts the Gateway client in a blocking, synchronous"""
 
         async def wrapped():
             await self.login()
             await self.gateway_run()
 
+        loop = get_loop()
         try:
-            asyncio.run(wrapped())
+            loop.run_until_complete(wrapped())
+            loop.run_forever()
         except KeyboardInterrupt:
             pass
         finally:
-            asyncio.run(self._end_run())
+            loop.run_until_complete(self._end_run())
