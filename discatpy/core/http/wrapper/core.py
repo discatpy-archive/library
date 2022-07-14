@@ -22,12 +22,14 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
+import typing
 from dataclasses import KW_ONLY, dataclass
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 from ...file import BasicFile
 from ...types import MISSING, MissingOr, MissingType, Snowflake
 from ...utils import _create_fn, _from_import, _indent_all_text
+from ..route import Route
 
 __all__ = (
     "APIEndpointData",
@@ -54,6 +56,25 @@ class APIEndpointData:
     supports_files: bool = False
 
 
+def _convert_type_to_str(anno) -> str:
+    anno_args = typing.get_args(anno)
+    ret = ""
+
+    if anno_args:
+        anno_name = anno.__name__ if anno.__name__ != "Optional" else "Union"
+        ret += f"{anno_name}["
+        for arg in anno_args:
+            if typing.get_args(arg):
+                ret += _convert_type_to_str(arg) + ", "
+            else:
+                ret += arg.__name__ + ", "
+        ret += "]"
+    else:
+        ret = anno.__name__
+
+    return ret
+
+
 def _generate_args(data: APIEndpointData):
     func_args = ["self"]
 
@@ -61,7 +82,7 @@ def _generate_args(data: APIEndpointData):
         for name, annotation in data.format_args.items():
             arg = f"{name}"
             if not isinstance(annotation, MissingType):
-                arg += f": {annotation.__name__}"
+                arg += f": {_convert_type_to_str(annotation)}"
 
             func_args.append(arg)
 
@@ -75,8 +96,8 @@ def _generate_args(data: APIEndpointData):
                 str_arg += arg_name
             if len(arg) >= 2:
                 # Pyright doesn't understand that this if statement only applies to two tuples
-                arg_annotation = arg[1]  # type: ignore
-                str_arg += f": {arg_annotation.__name__}"  # type: ignore
+                arg_annotation = _convert_type_to_str(arg[1])  # type: ignore
+                str_arg += f": {arg_annotation}"
             if len(arg) == 3:
                 arg_default = arg[2]
                 str_arg += f" = {arg_default}"
@@ -104,15 +125,13 @@ def _generate_body(data: APIEndpointData):
 
             body.append(template_if_statment.format(arg_name, params_dict_name))
 
-    request_line = f'return await self.request("{data.method}", "{data.path}", '
+    request_line = f'return await self.request("{data.method}", Route("{data.path}", '
 
     if data.format_args is not None:
-        url_format_params = "{"
         for arg_name in data.format_args.keys():
-            url_format_params += f'"{arg_name}": {arg_name}, '
-        url_format_params += "}"
+            request_line += f"{arg_name}={arg_name}, "
 
-        request_line += f"{url_format_params}, "
+    request_line += "), "
 
     if data.param_args is not None:
         request_line += f"{params_dict_name}={params_dict_name}, "
@@ -124,6 +143,38 @@ def _generate_body(data: APIEndpointData):
 
     body.append(request_line)
     return _indent_all_text(body)
+
+
+func_locals = {
+    "Snowflake": Snowflake,
+    "MISSING": MISSING,
+    "_Missing": MissingType,
+    "MissingOr": MissingOr,
+    "BasicFile": BasicFile,
+    "Optional": Union,
+    "Route": Route,
+}
+_from_import(
+    "typing",
+    func_locals,
+    [
+        "Any",
+        "Dict",
+        "List",
+        "Tuple",
+        "Type",
+        "Union",
+    ],
+)
+_from_import("types", func_locals, ["NoneType",],)
+_from_import("discord_typings", func_locals)
+_from_import(
+    "datetime",
+    func_locals,
+    [
+        "datetime",
+    ],
+)
 
 
 class CoreMixinMeta(type):
@@ -146,35 +197,6 @@ class CoreMixinMeta(type):
 
                 func_args = _generate_args(v)
                 func_body = _generate_body(v)
-
-                func_locals = {
-                    "Snowflake": Snowflake,
-                    "MISSING": MISSING,
-                    "_Missing": MissingType,
-                    "MissingOr": MissingOr,
-                    "BasicFile": BasicFile,
-                }
-                _from_import(
-                    "typing",
-                    func_locals,
-                    [
-                        "Any",
-                        "Dict",
-                        "List",
-                        "Optional",
-                        "Tuple",
-                        "Type",
-                        "Union",
-                    ],
-                )
-                _from_import("discord_typings", func_locals)
-                _from_import(
-                    "datetime",
-                    func_locals,
-                    [
-                        "datetime",
-                    ],
-                )
 
                 func = _create_fn(k, func_args, func_body, locals=func_locals, asynchronous=True)
                 attrs[k] = func

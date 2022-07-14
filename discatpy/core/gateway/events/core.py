@@ -23,7 +23,9 @@ DEALINGS IN THE SOFTWARE.
 """
 
 import inspect
-from typing import Callable, List, TypeVar
+from collections import OrderedDict
+from datetime import datetime
+from typing import Callable, get_args, get_origin, List, TypeVar
 
 from ...types import MISSING, MissingOr, MissingType, Snowflake
 from ...utils import _create_fn, _from_import, _indent_text
@@ -31,6 +33,12 @@ from ...utils import _create_fn, _from_import, _indent_text
 __all__ = ("generate_handlers_from",)
 
 T = TypeVar("T")
+_custom_type_handlers = OrderedDict(
+    {
+        (lambda t: t is datetime or datetime in get_args(t)): 'datetime.fromisoformat(raw.get("{0.name}", MISSING)) if raw.get("{0.name}", MISSING) not in (MISSING, None) else raw.get("{0.name}", MISSING)',
+        (lambda _: True): 'cast({0.annotation}, raw.get("{0.name}", MISSING))'
+    }
+)
 
 
 def _generate_body(args: List[inspect.Parameter]):
@@ -40,7 +48,12 @@ def _generate_body(args: List[inspect.Parameter]):
         ret_tuple += "cast({0.annotation}, raw), ".format(args[0])
     else:
         for arg in args:
-            ret_tuple += 'cast({0.annotation}, raw.get("{0.name}", MISSING)), '.format(arg)
+            type_cast = ""
+            for condition, tc in _custom_type_handlers.items():
+                if condition(arg.annotation):
+                    type_cast = tc + ", "
+
+            ret_tuple += type_cast.format(arg)
 
     ret_tuple += ")"
     return [
@@ -48,40 +61,41 @@ def _generate_body(args: List[inspect.Parameter]):
     ]
 
 
+func_locals = {
+    "Snowflake": Snowflake,
+    "MISSING": MISSING,
+    "_Missing": MissingType,
+    "MissingOr": MissingOr,
+}
+_from_import(
+    "typing",
+    func_locals,
+    [
+        "Any",
+        "cast",
+        "Dict",
+        "List",
+        "Optional",
+        "Tuple",
+        "Type",
+        "Union",
+    ],
+)
+_from_import("types", func_locals, ["NoneType",],)
+_from_import("discord_typings", func_locals)
+_from_import(
+    "datetime",
+    func_locals,
+    [
+        "datetime",
+    ],
+)
+
+
 def generate_handlers_from(src_cls: type) -> Callable[[T], T]:
     def wrapper(cls: T):
         ignore_keys: List[str] = getattr(src_cls, "__ignore__", [])
         proto_keys = [k for k in dir(src_cls) if k not in ignore_keys and not k.startswith("_")]
-
-        # these function locals will be reused for every function, so it's better to define them here
-        func_locals = {
-            "Snowflake": Snowflake,
-            "MISSING": MISSING,
-            "_Missing": MissingType,
-            "MissingOr": MissingOr,
-        }
-        _from_import(
-            "typing",
-            func_locals,
-            [
-                "Any",
-                "cast",
-                "Dict",
-                "List",
-                "Optional",
-                "Tuple",
-                "Type",
-                "Union",
-            ],
-        )
-        _from_import("discord_typings", func_locals)
-        _from_import(
-            "datetime",
-            func_locals,
-            [
-                "datetime",
-            ],
-        )
 
         for k in proto_keys:
             proto = getattr(src_cls, k)

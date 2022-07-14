@@ -26,6 +26,7 @@ from __future__ import annotations
 import asyncio
 import datetime
 import json
+import logging
 import platform
 import random
 import zlib
@@ -42,6 +43,8 @@ if TYPE_CHECKING:
     from ..client import Client
 
 __all__ = ("GatewayClient",)
+
+_log = logging.getLogger(__name__)
 
 
 def _decompress_msg(inflator: zlib._Decompress, msg: bytes):
@@ -133,6 +136,7 @@ class GatewayClient:
                 await self.ratelimiter.set()
 
         await self.ws.send_json(data)
+        _log.debug("Sent JSON payload %s to the Gateway.", data)
 
     async def receive(self):
         try:
@@ -142,6 +146,8 @@ class GatewayClient:
             await self.close(code=1012)
             return False
 
+        _log.debug("Received WS message from Gateway with type %s", msg.type.name)
+
         if msg.type in (aiohttp.WSMsgType.BINARY, aiohttp.WSMsgType.TEXT):
             received_msg = None
             if msg.type == aiohttp.WSMsgType.BINARY:
@@ -150,15 +156,40 @@ class GatewayClient:
                 received_msg = msg.data
 
             self.recent_gp = cast(GatewayPayload, json.loads(received_msg))  # type: ignore
+            _log.debug("Received payload from the Gateway: %s", self.recent_gp)
             self.seq_num = self.recent_gp.get("s")
             return True
-        elif msg.type in (
-            aiohttp.WSMsgType.CLOSE,
-            aiohttp.WSMsgType.CLOSED,
-            aiohttp.WSMsgType.CLOSING,
-        ):
+        elif msg.type == aiohttp.WSMsgType.CLOSE:
             await self.close(reconnect=False)
             return False
+
+    async def close(self, code: int = 1000, reconnect: bool = True):
+        """
+        Closes the connection with the gateway.
+
+        For internal use only.
+
+        Parameters
+        ----------
+        code: :type:`int`
+            The websocket code to close with. Set to 1000 by default
+        reconnect: :type:`bool`
+            If we should reconnect or not. Set to True by default
+        """
+        _log.info("Closing Gateway connection with code %d that %s reconnect.", code, "will" if reconnect else "will not")
+
+        # Close the websocket connection
+        await self.ws.close(code=code)
+
+        # Clean up lingering tasks (this will throw exceptions if we get the client to do it)
+        await self.ratelimiter.stop()
+        if self.keep_alive_task is not None:
+            self.keep_alive_task.cancel()
+            await self.keep_alive_task
+
+        # if we need to reconnect, set the event
+        if reconnect:
+            self.client._gateway_reconnect.set()
 
     @property
     def identify_payload(self):
@@ -198,27 +229,6 @@ class GatewayClient:
         """:type:`Dict[str, Any]` Returns the heartbeat payload."""
         return {"op": GatewayOpcode.HEARTBEAT.value, "d": self.seq_num}
 
-    async def close(self, code: int = 1000, reconnect: bool = True):
-        """
-        Closes the connection with the gateway.
-
-        For internal use only.
-
-        Parameters
-        ----------
-        code: :type:`int`
-            The websocket code to close with. Set to 1000 by default
-        reconnect: :type:`bool`
-            If we should reconnect or not. Set to True by default
-        """
-        await self.ws.close(code=code)
-        await self.ratelimiter.stop()
-        if self.keep_alive_task is not None:
-            await self.keep_alive_task
-
-        if reconnect:
-            self.client._gateway_reconnect.set()
-
     async def loop(self):
         """
         Executes the main Gateway loop, which is the following:
@@ -233,11 +243,13 @@ class GatewayClient:
         while not self.ws.closed:
             if self._gateway_resume:
                 await self.send(self.resume_payload)
+                _log.info("Resumed connection with the Gateway.")
                 self._gateway_resume = False
 
             if (
                 datetime.datetime.now() - self._last_heartbeat_ack
             ).total_seconds() > self.heartbeat_timeout:
+                _log.debug("Zombified connection detected. Closing connection with code 1008.")
                 await self.close(code=1008)
 
             res = await self.receive()
@@ -265,6 +277,7 @@ class GatewayClient:
                     self.heartbeat_interval = self.recent_gp["d"]["heartbeat_interval"] / 1000  # type: ignore
                     await self.send(self.identify_payload)
                     self.keep_alive_task = asyncio.create_task(self.keep_alive_loop())
+                    _log.debug("Keep alive task has started.")
 
                 if op == GatewayOpcode.HEARTBEAT_ACK:
                     self._last_heartbeat_ack = datetime.datetime.now()
@@ -280,14 +293,14 @@ class GatewayClient:
         Do not run this yourself. The Gateway will automatically start an `asyncio.Task` to run this.
         """
         while not self.ws.closed:
-            await self.send(self.heartbeat_payload)
-
-            delta = self.heartbeat_interval
-            if self._first_heartbeat:
-                delta *= random.uniform(0.0, 1.0)
-                self._first_heartbeat = False
-
             try:
+                await self.send(self.heartbeat_payload)
+
+                delta = self.heartbeat_interval
+                if self._first_heartbeat:
+                    delta *= random.uniform(0.0, 1.0)
+                    self._first_heartbeat = False
+
                 await asyncio.sleep(delta)
             except asyncio.CancelledError:
                 break

@@ -23,158 +23,86 @@ DEALINGS IN THE SOFTWARE.
 """
 
 import asyncio
-from typing import Dict, Type
+import logging
+from typing import List
+
+from .route import Route
+
+_log = logging.getLogger(__name__)
 
 __all__ = (
-    "BucketResolutor",
     "Bucket",
     "Ratelimiter",
 )
 
 
-class BucketResolutor:
-    """Converts a given client bucket (method + path) into a bucket from Discord.
-
-    This works by having requests pair their client buckets with the bucket from Discord.
-    Then when another request with the same client bucket wants its bucket from Discord, it fetches from here.
-
-    Attributes
-    ----------
-    _bucket_strs: Dict[:class:`str`, :class:`str`]
-        The internal bucket mapping.
-    """
-
-    __slots__ = ("_bucket_strs",)
-
-    def __init__(self):
-        self._bucket_strs: Dict[str, str] = {}
-
-    def resolve_bucket(self, bucket: str):
-        """Resolves the Discord bucket via the given client bucket.
-
-        Parameters
-        ----------
-        bucket: :class:`str`
-            The client bucket to resolve.
-
-        Returns
-        -------
-        :class:`str`
-            The Discord bucket, if found. If not found, then the client bucket is returned.
-        """
-        return self._bucket_strs.get(bucket, bucket)
-
-    def add_bucket_mapping(self, client_bucket: str, discord_bucket: str):
-        """Adds a new client bucket to discord bucket mapping.
-
-        Parameters
-        ----------
-        client_bucket: :class:`str`
-            The client bucket to map for.
-        discord_bucket: :class:`str`
-            The discord bucket to map to the client bucket.
-        """
-        if client_bucket not in self._bucket_strs:
-            self._bucket_strs[client_bucket] = discord_bucket
-
-    def has_bucket_mapping(self, client_bucket: str):
-        """Checks whether or not a mapping for a client bucket exists.
-
-        Parameters
-        ----------
-        client_bucket: :class:`str`
-            The client bucket to check for.
-
-        Returns
-        -------
-        :class:`bool`
-            Whether or not the client bucket mapping exists.
-        """
-        return client_bucket in self._bucket_strs
-
-
 class Bucket:
     """Represents a ratelimiting bucket."""
 
-    __slots__ = ("_lock", "_delayed")
+    __slots__ = ("route", "_lock")
 
-    def __init__(self):
-        self._lock = asyncio.Lock()
-        self._delayed = False
+    def __init__(self, route: Route):
+        self.route = route
+        self._lock = asyncio.Event()
+        self._lock.set()
 
-    async def __aenter__(self) -> "Bucket":
-        await self._lock.acquire()
-        return self
-
-    async def __aexit__(
-        self, exc_type: Type[BaseException], exc_val: BaseException, exc_tb: BaseException
-    ) -> None:
-        if self._delayed:
-            self._lock.release()
+    async def wait(self):
+        """Waits for the bucket to be available."""
+        await self._lock.wait()
 
     async def _unlock(self, delay: float):
         await asyncio.sleep(delay)
+        self._lock.set()
+        _log.debug("Ratelimit bucket with parameters %s has been unlocked.", self.route.bucket)
 
-        self._lock.release()
-        self._delayed = False
-
-    async def delay_unlock(self, delay: float):
-        """Delays unlocking this bucket.
-
-        Parameters
-        ----------
-        delay: :class:`float`
-            The delay for when the bucket will be unlocked.
-        """
-        self._delayed = True
+    def lock_for(self, delay: float):
+        self._lock.clear()
+        _log.debug(
+            "Ratelimit bucket with parameters %s has been locked. This will be unlocked after %f seconds.", 
+            self.route.bucket, delay
+        )
         asyncio.create_task(self._unlock(delay))
+
+    def is_locked(self):
+        return not self._lock.is_set()
 
 
 class Ratelimiter:
     """Represents the global ratelimiter."""
 
-    __slots__ = ("_resolutor", "_buckets", "_global_lock")
+    __slots__ = ("_buckets", "global_bucket")
 
-    def __init__(self, resolutor: BucketResolutor):
-        self._resolutor = resolutor
-        self._buckets: Dict[str, Bucket] = {}
-        self._global_lock = asyncio.Event()
+    def __init__(self):
+        self._buckets: List[Bucket] = []
+        self.global_bucket = Bucket(Route("/"))
 
-    async def acquire_bucket(self, bucket_str: str) -> Bucket:
-        """Acquires a bucket with the given bucket str.
-        This bucket str will be resolved before acquiring the bucket.
-
-        Parameters
-        ----------
-        bucket_str: :class:`str`
-            The string representing the bucket.
-        """
-        resolved_bucket_str = self._resolutor.resolve_bucket(bucket_str)
-
-        if resolved_bucket_str not in self._buckets:
-            self._buckets[resolved_bucket_str] = Bucket()
-
-        return self._buckets[resolved_bucket_str]
-
-    async def _unlock_global(self, after: float):
-        await asyncio.sleep(after)
-        self._global_lock.clear()
-
-    async def set_global_lock(self, unlock_after: float):
-        """Sets the global lock then unsets it after some time.
+    async def acquire_buckets(self, route: Route):
+        """Acquires (a) bucket(s) with the given route.
+        This will automatically wait for each bucket that matches the provided route.
 
         Parameters
         ----------
-        unlock_after: :class:`float`
-            The delay of when to unlock the global lock.
-
-        Raises
-        ------
-        RuntimeError:
-            The global lock is already locked.
+        route: :class:`Route`
+            The route representing the bucket(s).
         """
-        if self._global_lock.is_set():
-            raise RuntimeError("Global Lock is already locked.")
+        for bucket in self._buckets:
+            if (
+                bucket.route.channel_id == route.channel_id
+                or bucket.route.guild_id == route.guild_id
+                or bucket.route.webhook_id == route.webhook_id
+                or bucket.route.webhook_token == route.webhook_token
+                or bucket.route.endpoint == route.endpoint
+            ):
+                await bucket.wait()
+                break
 
-        self._global_lock.set()
-        asyncio.create_task(self._unlock_global(unlock_after))
+    async def create_temporary_bucket_for(self, route: Route, delay: float):
+        new_bucket = Bucket(route)
+        self._buckets.append(new_bucket)
+
+        new_bucket.lock_for(delay)
+        await new_bucket.wait()
+
+        for i, bucket in enumerate(self._buckets):
+            if bucket == new_bucket:
+                del self._buckets[i]

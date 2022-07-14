@@ -39,13 +39,13 @@ class _Missing:
         return False
 
     def __repr__(self):
-        return self.__class__.__name__
+        return "MISSING"
+
+    def __str__(self):
+        return "MISSING"
 
     def __bool__(self):
         raise NotImplementedError("Missing is not True or False, it is undefined")
-
-    def __str__(self):
-        return self.__repr__()
 
 
 T = TypeVar("T")

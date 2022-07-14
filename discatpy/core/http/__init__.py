@@ -7,3 +7,4 @@ The HTTP modules for `discatpy.core`.
 
 from .client import *
 from .ratelimiter import *
+from .route import *

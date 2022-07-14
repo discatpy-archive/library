@@ -23,10 +23,12 @@ DEALINGS IN THE SOFTWARE.
 """
 
 import asyncio
+from datetime import datetime
+import logging
 import json
 import sys
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Mapping, Optional, cast
 from urllib.parse import quote as _urlquote
 
 import aiohttp
@@ -36,7 +38,8 @@ from ... import __version__
 from ..errors import DisCatPyException, HTTPException
 from ..file import BasicFile
 from ..types import MISSING, MissingOr
-from .ratelimiter import BucketResolutor, Ratelimiter
+from .ratelimiter import Ratelimiter
+from .route import Route
 from .wrapper import *
 
 BASE_API_URL = "https://discord.com/api/v{0}"
@@ -45,11 +48,27 @@ DEFAULT_API_VERSION = 9
 
 __all__ = ("HTTPClient",)
 
+_log = logging.getLogger(__name__)
+
 
 @dataclass
 class _PreparedData:
     json: MissingOr[Any] = MISSING
     multipart_content: MissingOr[aiohttp.FormData] = MISSING
+
+
+def _calculate_reset_after(headers: Mapping[str, Any]) -> float:
+    reset_after: float
+    if "X-RateLimit-Reset" in headers:
+        now = datetime.now()
+        reset = datetime.fromtimestamp(float(headers.get("X-RateLimit-Reset")))  # type: ignore
+        reset_after = (reset - now).total_seconds()
+    elif "Reset-After" in headers: # for some reason Discord includes retry after in this header and the other one?
+        reset_after = float(headers.get("Reset-After", 0.0))
+    else:
+        reset_after = float(headers.get("X-RateLimit-Reset-After", 0.0))
+
+    return reset_after if reset_after >= 0.0 else 0.0
 
 
 class HTTPClient(
@@ -71,18 +90,18 @@ class HTTPClient(
 ):
     __slots__ = (
         "token",
-        "_resolutor",
         "_ratelimiter",
         "_api_version",
         "_api_url",
         "__session",
         "user_agent",
+        "default_headers",
+        "request_id",
     )
 
     def __init__(self, token: str, *, api_version: Optional[int] = None):
         self.token = token
-        self._resolutor = BucketResolutor()
-        self._ratelimiter = Ratelimiter(self._resolutor)
+        self._ratelimiter = Ratelimiter()
         self._api_version = (
             api_version
             if api_version is not None and api_version in VALID_API_VERSIONS
@@ -94,6 +113,8 @@ class HTTPClient(
         self.user_agent = "DiscordBot (https://github.com/EmreTech/DisCatPy/tree/api-refactor, {0}) Python/{1.major}.{1.minor}.{1.micro}".format(
             __version__, sys.version_info
         )
+        self.default_headers = {"Authorization": f"Bot {self.token}"}
+        self.request_id = 0
 
     @property
     def _session(self):
@@ -159,86 +180,91 @@ class HTTPClient(
     async def request(
         self,
         method: str,
-        url: str,
-        url_format_params: Optional[Dict[str, Any]] = None,
+        route: Route,
         *,
         query_params: Optional[Dict[str, Any]] = None,
         json_params: MissingOr[Dict[str, Any]] = MISSING,
         reason: Optional[str] = None,
         files: MissingOr[List[BasicFile]] = MISSING,
     ):
-        url_format_params = url_format_params or {}
-        url = url.format_map({k: _urlquote(v) for k, v in url_format_params.items()})
+        self.request_id += 1
+        rid = self.request_id
+        _log.debug("Request with id %d has started.", rid)
+        url = route.endpoint
 
         query_params = query_params or {}
         max_tries = 5
-        headers: Dict[str, str] = {"Authorization": f"Bot {self.token}"}
+        headers: Dict[str, str] = self.default_headers
 
         if reason:
             headers["X-Audit-Log-Reason"] = _urlquote(reason, safe="/ ")
 
+        data = self._prepare_data(json_params, files)
+        kwargs: Dict[str, Any] = {}
+
+        if data.json is not MISSING:
+            kwargs["json"] = data.json
+
+        if data.multipart_content is not MISSING:
+            kwargs["data"] = data.multipart_content
+
         for tries in range(max_tries):
-            data = self._prepare_data(json_params, files)
-            kwargs: Dict[str, Any] = {}
+            await self._ratelimiter.acquire_buckets(route)
+            await self._ratelimiter.global_bucket.wait()
+            _log.debug("REQUEST:%d All ratelimit buckets have been acquired!", rid)
 
-            if data.json is not MISSING:
-                kwargs["json"] = data.json
+            response = await self._session.request(
+                method, f"{self._api_url}{url}", params=query_params, headers=headers, **kwargs
+            )
+            _log.debug("REQUEST:%d Made request to %s with method %s.", rid, f"{self._api_url}{url}", method)
 
-            if data.multipart_content is not MISSING:
-                kwargs["data"] = data.multipart_content
+            reset_after = _calculate_reset_after(response.headers)
+            remaining = int(response.headers.get("X-RateLimit-Remaining", 1))
 
-            client_bucket = f"{method}:{url}"
-            bucket = await self._ratelimiter.acquire_bucket(client_bucket)
+            # Everything is ok
+            if 200 <= response.status < 300:
+                if remaining == 0:
+                    _log.debug("REQUEST:%d Ratelimit bucket %s has expired. Waiting to refresh it.", rid, route.bucket)
+                    await self._ratelimiter.create_temporary_bucket_for(route, reset_after)
+                    _log.debug("REQUEST:%d Ratelimit bucket %s is good to go!", rid, route.bucket)
+                return await self._text_or_json(response)
 
-            if self._ratelimiter._global_lock.is_set():
-                await self._ratelimiter._global_lock.wait()
-
-            async with bucket:
-                response = await self._session.request(
-                    method, f"{self._api_url}{url}", params=query_params, headers=headers, **kwargs
-                )
-
-                reset_after = float(response.headers.get("X-RateLimit-Reset-After", 0))
-                remaining = int(response.headers.get("X-RateLimit-Remaining", 1))
-                discord_bucket = str(response.headers.get("X-RateLimit-Bucket", client_bucket))
-
-                if self._resolutor._bucket_strs.get(client_bucket) != discord_bucket:
-                    self._resolutor.add_bucket_mapping(client_bucket, discord_bucket)
-
-                # Everything is ok
-                if 200 <= response.status < 300:
-                    if remaining == 0:
-                        await bucket.delay_unlock(reset_after)
-                    return await self._text_or_json(response)
-
-                # Ratelimited
-                if response.status == 429:
-                    if "Via" not in response.headers:
-                        # something about Cloudflare and Google responding and adding something to the headers
-                        # it means we're Cloudflare banned
-                        raise HTTPException(response, await self._text_or_json(response))
-
-                    response_json: Dict[str, Any] = await response.json()
-                    is_global = response_json.get("global", False)
-
-                    if is_global:
-                        await self._ratelimiter.set_global_lock(reset_after)
-                    else:
-                        await bucket.delay_unlock(reset_after)
-
-                # Specific Server Errors, retry after some time
-                if response.status in {500, 502, 504}:
-                    await asyncio.sleep(1 + tries * 2)
-                    continue
-
-                # Client/Server errors
-                if response.status >= 400:
+            # Ratelimited
+            if response.status == 429:
+                if "Via" not in response.headers:
+                    # something about Cloudflare and Google responding and adding something to the headers
+                    # it means we're Cloudflare banned
                     raise HTTPException(response, await self._text_or_json(response))
 
+                is_global = response.headers["X-RateLimit-Scope"] == "global"
+
+                if is_global:
+                    _log.info("REQUEST:%d All requests have hit a global ratelimit! Retrying in %f.", rid, reset_after)
+                    if not self._ratelimiter.global_bucket.is_locked():
+                        self._ratelimiter.global_bucket.lock_for(reset_after)
+                    await self._ratelimiter.global_bucket.wait()
+                else:
+                    _log.info("REQUEST:%d Requests with bucket %s have hit a ratelimit! Retrying in %f.", rid, route.bucket, reset_after)
+                    await self._ratelimiter.create_temporary_bucket_for(route, reset_after)
+
+                _log.info("REQUEST:%d Ratelimit is over. Continuing with the request.", rid)
+                continue
+
+            # Specific Server Errors, retry after some time
+            if response.status in {500, 502, 504}:
+                wait_time = 1 + tries * 2
+                _log.info("REQUEST:%d Got a server error! Retrying in %d.", rid, wait_time)
+                await asyncio.sleep(wait_time)
+                continue
+
+            # Client/Server errors
+            if response.status >= 400:
+                raise HTTPException(response, await self._text_or_json(response))
+
         raise DisCatPyException(
-            f'Tried sending request to "{url}" with method {method} {max_tries} times.'
+            f'REQUEST:{rid} Tried sending request to "{url}" with method {method} {max_tries} times.'
         )
 
     async def get_gateway_bot(self) -> GetGatewayBotData:
-        gb_info = await self.request("GET", "/gateway/bot")
+        gb_info = await self.request("GET", Route("/gateway/bot"))
         return cast(GetGatewayBotData, gb_info)

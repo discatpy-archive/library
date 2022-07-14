@@ -24,6 +24,7 @@ DEALINGS IN THE SOFTWARE.
 from __future__ import annotations
 
 import asyncio
+import logging
 from typing import Any, Callable, Coroutine, Optional
 
 from .dispatcher import Dispatcher
@@ -33,12 +34,54 @@ from .http import HTTPClient
 
 __all__ = ("Client",)
 
+_log = logging.getLogger(__name__)
+
 
 def get_loop():
     try:
         return asyncio.get_running_loop()
     except:
         return asyncio.new_event_loop()
+
+
+# Taken from discord.py
+def _cancel_all_tasks():
+    loop = get_loop()
+    tasks = {t for t in asyncio.all_tasks(loop) if not t.done()}
+
+    if not tasks:
+        return
+
+    _log.info("Cleaning up %d tasks found in event loop.", len(tasks))
+    for t in tasks:
+        t.cancel()
+
+    loop.run_until_complete(asyncio.gather(*tasks, return_exceptions=True))
+    _log.info("Finish cancelling all tasks.")
+
+    for t in tasks:
+        if t.cancelled():
+            continue
+
+        if t.exception() is not None:
+            loop.call_exception_handler(
+                {
+                    "message": "Unhandled exception during Client.run shutdown.",
+                    "exception": t.exception(),
+                    "task": t,
+                }
+            )
+
+
+# Taken from discord.py
+def _cleanup_loop():
+    loop = get_loop()
+    try:
+        _cancel_all_tasks()
+        loop.run_until_complete(loop.shutdown_asyncgens())
+    finally:
+        _log.info("Closing the event loop.")
+        loop.close()
 
 
 class Client:
@@ -78,13 +121,20 @@ class Client:
         "http",
         "_gateway_reconnect",
         "running",
+        "closed",
         "intents",
         "dispatcher",
     )
 
-    def __init__(self, token: str, *, intents: Intents, api_version: Optional[int] = None):
+    def __init__(
+        self, 
+        token: str, 
+        *, 
+        intents: Intents = Intents.DEFAULT(), 
+        api_version: Optional[int] = None
+    ):
         self.gateway: Optional[GatewayClient] = None  # initalized later
-        self.dispatcher: Dispatcher = Dispatcher()
+        self.dispatcher: Dispatcher = Dispatcher(self)
         self._event_protos_handler_hooked: bool = False
         self.event_protos_handler: GatewayEventProtos = GatewayEventProtos(
             self
@@ -93,6 +143,7 @@ class Client:
         self.http: HTTPClient = HTTPClient(token, api_version=api_version)
         self._gateway_reconnect = asyncio.Event()
         self.running: bool = False
+        self.closed: bool = False
         self.intents: Intents = intents
 
     # Properties
@@ -106,6 +157,11 @@ class Client:
     def api_version(self):
         """:class:`int` The api version the HTTP Client is using. Shortcut for :attr:`Client.http._api_version`."""
         return self.http._api_version
+
+    @property
+    def loop(self):
+        """:class:`asyncio.AbstractEventLoop` The main event loop. This is either a new loop or the current running loop."""
+        return get_loop()
 
     # Events
 
@@ -134,17 +190,23 @@ class Client:
 
     async def login(self):
         """Logs into the bot user and grabs its user object."""
+        pass
         # TODO: Readd?
         # user_dict = await self.http.login(token)
         # self.me = User(user_dict, self)
         # self.cache.add_user(self.me)
 
-    async def _end_run(self):
+    async def close(self):
+        if self.closed:
+            return
+
+        self.closed = True
+
         if self.gateway is not None:
             await self.gateway.close(reconnect=False)
         await self.http.close()
 
-    async def gateway_run(self):
+    async def connect(self):
         """Runs the Gateway Client code and reconnects when prompted."""
         gateway_info = await self.http.get_gateway_bot()
         self.gateway = GatewayClient(await self.http.ws_connect(gateway_info.get("url")), self)
@@ -164,18 +226,21 @@ class Client:
             except Exception as e:
                 await self.dispatcher.error_handler(e)
 
+    async def start(self):
+        """An asynchronous function that calls :meth:`~.login` and :meth:`~.connect`."""
+        await self.login()
+        await self.connect()
+
     def run(self):
         """Starts the Gateway client in a blocking, synchronous"""
+        loop = self.loop
 
-        async def wrapped():
-            await self.login()
-            await self.gateway_run()
-
-        loop = get_loop()
         try:
-            loop.run_until_complete(wrapped())
+            loop.run_until_complete(self.start())
             loop.run_forever()
         except KeyboardInterrupt:
             pass
         finally:
-            loop.run_until_complete(self._end_run())
+            loop.run_until_complete(self.close())
+            _log.info("Cleaning up unfinished tasks.")
+            _cleanup_loop()

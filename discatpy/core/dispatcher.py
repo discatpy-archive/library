@@ -27,9 +27,12 @@ import inspect
 import logging
 import traceback
 from dataclasses import dataclass
-from typing import Any, Callable, Coroutine, Dict, List, Optional, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Callable, Coroutine, Dict, List, Optional, TypeVar, overload
 
 from .utils import MultipleValuesDict
+
+if TYPE_CHECKING:
+    from .client import Client
 
 _log = logging.getLogger(__name__)
 
@@ -72,12 +75,14 @@ class Dispatcher:
     """
 
     __slots__ = (
+        "client",
         "events",
         "event_protos",
         "valid_events",
     )
 
-    def __init__(self):
+    def __init__(self, client: "Client"):
+        self.client = client
         self.events: MultipleValuesDict[str, CoroFunc] = MultipleValuesDict()
         self.event_protos: Dict[str, inspect.Signature] = {}
         self.valid_events: List[str] = []
@@ -121,6 +126,22 @@ class Dispatcher:
             except asyncio.CancelledError:
                 pass
 
+    def schedule_task(
+        self, 
+        coro: CoroFunc, 
+        name: str, 
+        index: Optional[int], 
+        parent: Optional[Any], 
+        *args: Any, 
+        **kwargs: Any
+    ):
+        task_name = f"DisCatPy Event:{name}"
+        if index:
+            task_name = f"DisCatPy Event:{name} Index:{index}"
+        wrapped = self.run(coro, parent, *args, **kwargs)
+
+        return asyncio.create_task(wrapped, name=task_name)
+
     def dispatch(self, name: str, *args: Any, **kwargs: Any):
         """Dispatches a event. This will trigger the all of the event's
         callbacks.
@@ -142,10 +163,8 @@ class Dispatcher:
                 for i, callback in enumerate(event):
                     metadat = getattr(callback, "__event_metadata__", _EventCallbackMetadata())
                     _log.debug("Running event callback under event %s with index %s", name, i)
-                    asyncio.create_task(
-                        self.run(callback, metadat.parent, *args, **kwargs),
-                        name=f"DisCatPy Event:{name} Index:{i}",
-                    )
+
+                    self.schedule_task(callback, name, i, metadat.parent, *args, **kwargs)
 
                     if metadat.one_shot:
                         _log.debug("Removing event callback under event %s with index %s", name, i)
@@ -155,9 +174,8 @@ class Dispatcher:
             else:
                 metadat = getattr(event, "__event_metadata__", _EventCallbackMetadata())
                 _log.debug("Running event callback under event %s", name)
-                asyncio.create_task(
-                    self.run(event, metadat.parent, *args, **kwargs), name=f"DisCatPy Event:{name}"
-                )
+
+                self.schedule_task(event, name, None, metadat.parent, *args, **kwargs)
 
                 if metadat.one_shot:
                     _log.debug("Removing event callback under event %s", name)
@@ -190,7 +208,6 @@ class Dispatcher:
             sig = inspect.signature(proto_func)
             if parent is not None and not is_static:
                 new_params = list(sig.parameters.values())
-                print(new_params)
                 new_params.pop(0)
                 sig = sig.replace(parameters=new_params)
             self.event_protos[event_name] = sig

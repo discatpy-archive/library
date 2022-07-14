@@ -24,6 +24,7 @@ DEALINGS IN THE SOFTWARE.
 
 import builtins
 import importlib
+import types
 from typing import Any, Callable, Coroutine, Dict, Generic, List, Optional, TypeVar, Union
 
 from .types import MISSING, MissingOr, Snowflake
@@ -212,11 +213,24 @@ def _create_fn(
     return ns["__create_fn__"](**locals)
 
 
+def get_everything_from_module(mod):
+    everything = {}
+    keys = [k for k in dir(mod) if not k.startswith("_")]
+
+    for k in keys:
+        everything[k] = getattr(mod, k)
+        if isinstance(everything[k], types.ModuleType):
+            everything.update(get_everything_from_module(everything[k]))
+
+    return everything
+
+
 def _from_import(module: str, locals: Dict[str, Any], objs_to_grab: Optional[List[str]] = None):
     actual_module = importlib.import_module(module)
 
-    if not objs_to_grab:
-        objs_to_grab = [k for k in dir(actual_module) if not k.startswith("_")]
-
-    for obj in objs_to_grab:
-        locals[obj] = getattr(actual_module, obj)
+    if objs_to_grab:
+        for obj in objs_to_grab:
+            v = getattr(actual_module, obj)
+            locals[obj] = v
+    else:
+        locals.update(get_everything_from_module(actual_module))
