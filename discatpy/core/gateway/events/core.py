@@ -25,7 +25,7 @@ DEALINGS IN THE SOFTWARE.
 import inspect
 from collections import OrderedDict
 from datetime import datetime
-from typing import Callable, get_args, get_origin, List, TypeVar
+from typing import Callable, List, TypeVar, get_args, get_origin
 
 from ...types import MISSING, MissingOr, MissingType, Snowflake
 from ...utils import _create_fn, _from_import, _indent_text
@@ -35,8 +35,10 @@ __all__ = ("generate_handlers_from",)
 T = TypeVar("T")
 _custom_type_handlers = OrderedDict(
     {
-        (lambda t: t is datetime or datetime in get_args(t)): 'datetime.fromisoformat(raw.get("{0.name}", MISSING)) if raw.get("{0.name}", MISSING) not in (MISSING, None) else raw.get("{0.name}", MISSING)',
-        (lambda _: True): 'cast({0.annotation}, raw.get("{0.name}", MISSING))'
+        (
+            lambda t: t is datetime or datetime in get_args(t)
+        ): 'datetime.fromisoformat(raw.get("{0.name}", MISSING)) if raw.get("{0.name}", MISSING) not in (MISSING, None) else raw.get("{0.name}", MISSING)',
+        (lambda _: True): 'cast({0.annotation}, raw.get("{0.name}", MISSING))',
     }
 )
 
@@ -81,7 +83,13 @@ _from_import(
         "Union",
     ],
 )
-_from_import("types", func_locals, ["NoneType",],)
+_from_import(
+    "types",
+    func_locals,
+    [
+        "NoneType",
+    ],
+)
 _from_import("discord_typings", func_locals)
 _from_import(
     "datetime",

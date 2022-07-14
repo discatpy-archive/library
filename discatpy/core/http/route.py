@@ -22,13 +22,16 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from dataclasses import dataclass, KW_ONLY
-from urllib.parse import quote as _urlquote
+from dataclasses import KW_ONLY, dataclass
 from typing import Optional
+from urllib.parse import quote as _urlquote
 
 from ..types import Snowflake
 
-__all__ = ("BucketParams", "Route",)
+__all__ = (
+    "BucketParams",
+    "Route",
+)
 
 
 @dataclass
@@ -58,8 +61,8 @@ class Route:
     @property
     def bucket(self):
         return BucketParams(
-            guild_id=self.guild_id, 
-            channel_id=self.channel_id, 
-            webhook_id=self.webhook_id, 
-            webhook_token=self.webhook_token
+            guild_id=self.guild_id,
+            channel_id=self.channel_id,
+            webhook_id=self.webhook_id,
+            webhook_token=self.webhook_token,
         )

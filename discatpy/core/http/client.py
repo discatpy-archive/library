@@ -23,11 +23,11 @@ DEALINGS IN THE SOFTWARE.
 """
 
 import asyncio
-from datetime import datetime
-import logging
 import json
+import logging
 import sys
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any, Dict, List, Mapping, Optional, cast
 from urllib.parse import quote as _urlquote
 
@@ -63,7 +63,9 @@ def _calculate_reset_after(headers: Mapping[str, Any]) -> float:
         now = datetime.now()
         reset = datetime.fromtimestamp(float(headers.get("X-RateLimit-Reset")))  # type: ignore
         reset_after = (reset - now).total_seconds()
-    elif "Reset-After" in headers: # for some reason Discord includes retry after in this header and the other one?
+    elif (
+        "Reset-After" in headers
+    ):  # for some reason Discord includes retry after in this header and the other one?
         reset_after = float(headers.get("Reset-After", 0.0))
     else:
         reset_after = float(headers.get("X-RateLimit-Reset-After", 0.0))
@@ -216,7 +218,12 @@ class HTTPClient(
             response = await self._session.request(
                 method, f"{self._api_url}{url}", params=query_params, headers=headers, **kwargs
             )
-            _log.debug("REQUEST:%d Made request to %s with method %s.", rid, f"{self._api_url}{url}", method)
+            _log.debug(
+                "REQUEST:%d Made request to %s with method %s.",
+                rid,
+                f"{self._api_url}{url}",
+                method,
+            )
 
             reset_after = _calculate_reset_after(response.headers)
             remaining = int(response.headers.get("X-RateLimit-Remaining", 1))
@@ -224,7 +231,11 @@ class HTTPClient(
             # Everything is ok
             if 200 <= response.status < 300:
                 if remaining == 0:
-                    _log.debug("REQUEST:%d Ratelimit bucket %s has expired. Waiting to refresh it.", rid, route.bucket)
+                    _log.debug(
+                        "REQUEST:%d Ratelimit bucket %s has expired. Waiting to refresh it.",
+                        rid,
+                        route.bucket,
+                    )
                     await self._ratelimiter.create_temporary_bucket_for(route, reset_after)
                     _log.debug("REQUEST:%d Ratelimit bucket %s is good to go!", rid, route.bucket)
                 return await self._text_or_json(response)
@@ -239,12 +250,21 @@ class HTTPClient(
                 is_global = response.headers["X-RateLimit-Scope"] == "global"
 
                 if is_global:
-                    _log.info("REQUEST:%d All requests have hit a global ratelimit! Retrying in %f.", rid, reset_after)
+                    _log.info(
+                        "REQUEST:%d All requests have hit a global ratelimit! Retrying in %f.",
+                        rid,
+                        reset_after,
+                    )
                     if not self._ratelimiter.global_bucket.is_locked():
                         self._ratelimiter.global_bucket.lock_for(reset_after)
                     await self._ratelimiter.global_bucket.wait()
                 else:
-                    _log.info("REQUEST:%d Requests with bucket %s have hit a ratelimit! Retrying in %f.", rid, route.bucket, reset_after)
+                    _log.info(
+                        "REQUEST:%d Requests with bucket %s have hit a ratelimit! Retrying in %f.",
+                        rid,
+                        route.bucket,
+                        reset_after,
+                    )
                     await self._ratelimiter.create_temporary_bucket_for(route, reset_after)
 
                 _log.info("REQUEST:%d Ratelimit is over. Continuing with the request.", rid)

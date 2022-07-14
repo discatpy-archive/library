@@ -24,8 +24,8 @@ DEALINGS IN THE SOFTWARE.
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime
 import logging
+from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
@@ -101,7 +101,10 @@ class Ratelimiter:
         self._lock.set()
 
         end_time = datetime.now()
-        _log.info("Gateway ratelimiting has finished. It took %f seconds.", (end_time - start_time).total_seconds())
+        _log.info(
+            "Gateway ratelimiting has finished. It took %f seconds.",
+            (end_time - start_time).total_seconds(),
+        )
 
     async def wait(self):
         """Waits for the lock to be unlocked."""
@@ -112,4 +115,7 @@ class Ratelimiter:
             await self._lock.wait()
 
             end_time = datetime.now()
-            _log.info("Done waiting for the Gateway ratelimit lock. It took %f seconds.", (end_time - start_time).total_seconds())
+            _log.info(
+                "Done waiting for the Gateway ratelimit lock. It took %f seconds.",
+                (end_time - start_time).total_seconds(),
+            )

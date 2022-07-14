@@ -176,7 +176,11 @@ class GatewayClient:
         reconnect: :type:`bool`
             If we should reconnect or not. Set to True by default
         """
-        _log.info("Closing Gateway connection with code %d that %s reconnect.", code, "will" if reconnect else "will not")
+        _log.info(
+            "Closing Gateway connection with code %d that %s reconnect.",
+            code,
+            "will" if reconnect else "will not",
+        )
 
         # Close the websocket connection
         await self.ws.close(code=code)

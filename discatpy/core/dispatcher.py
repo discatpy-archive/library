@@ -127,13 +127,13 @@ class Dispatcher:
                 pass
 
     def schedule_task(
-        self, 
-        coro: CoroFunc, 
-        name: str, 
-        index: Optional[int], 
-        parent: Optional[Any], 
-        *args: Any, 
-        **kwargs: Any
+        self,
+        coro: CoroFunc,
+        name: str,
+        index: Optional[int],
+        parent: Optional[Any],
+        *args: Any,
+        **kwargs: Any,
     ):
         task_name = f"DisCatPy Event:{name}"
         if index:

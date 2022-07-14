@@ -127,11 +127,7 @@ class Client:
     )
 
     def __init__(
-        self, 
-        token: str, 
-        *, 
-        intents: Intents = Intents.DEFAULT(), 
-        api_version: Optional[int] = None
+        self, token: str, *, intents: Intents = Intents.DEFAULT(), api_version: Optional[int] = None
     ):
         self.gateway: Optional[GatewayClient] = None  # initalized later
         self.dispatcher: Dispatcher = Dispatcher(self)

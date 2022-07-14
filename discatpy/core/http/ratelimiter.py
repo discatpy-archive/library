@@ -58,8 +58,9 @@ class Bucket:
     def lock_for(self, delay: float):
         self._lock.clear()
         _log.debug(
-            "Ratelimit bucket with parameters %s has been locked. This will be unlocked after %f seconds.", 
-            self.route.bucket, delay
+            "Ratelimit bucket with parameters %s has been locked. This will be unlocked after %f seconds.",
+            self.route.bucket,
+            delay,
         )
         asyncio.create_task(self._unlock(delay))
 

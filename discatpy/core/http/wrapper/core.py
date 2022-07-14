@@ -166,7 +166,13 @@ _from_import(
         "Union",
     ],
 )
-_from_import("types", func_locals, ["NoneType",],)
+_from_import(
+    "types",
+    func_locals,
+    [
+        "NoneType",
+    ],
+)
 _from_import("discord_typings", func_locals)
 _from_import(
     "datetime",
