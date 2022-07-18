@@ -186,11 +186,8 @@ class Client:
 
     async def login(self):
         """Logs into the bot user and grabs its user object."""
+        # Implemented in the wrapper's bot
         pass
-        # TODO: Readd?
-        # user_dict = await self.http.login(token)
-        # self.me = User(user_dict, self)
-        # self.cache.add_user(self.me)
 
     async def close(self):
         if self.closed:
@@ -203,9 +200,10 @@ class Client:
         await self.http.close()
 
     async def connect(self):
-        """Runs the Gateway Client code and reconnects when prompted."""
+        """Runs the Gateway Client and reconnects when prompted."""
         gateway_info = await self.http.get_gateway_bot()
-        self.gateway = GatewayClient(await self.http.ws_connect(gateway_info.get("url")), self)
+        ws = await self.http.ws_connect(gateway_info["url"])
+        self.gateway = GatewayClient(ws, self)
         self.running = True
 
         while self.running:
@@ -214,7 +212,7 @@ class Client:
 
                 # if we get here, then we probably have to reconnect
                 if self._gateway_reconnect.is_set():
-                    self.gateway.ws = await self.http.ws_connect(gateway_info.get("url"))
+                    self.gateway.ws = await self.http.ws_connect(gateway_info["url"])
                     self._gateway_reconnect.clear()
                 else:
                     # we cannot reconnect, so we must stop the program
@@ -228,7 +226,10 @@ class Client:
         await self.connect()
 
     def run(self):
-        """Starts the Gateway client in a blocking, synchronous"""
+        """Starts the Gateway client in a blocking, synchronous way.
+ 
+        If you need to run another asynchronous function before the client starts, then use :meth:`~.start`.
+        """
         loop = self.loop
 
         try:

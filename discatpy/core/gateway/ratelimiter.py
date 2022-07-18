@@ -119,3 +119,7 @@ class Ratelimiter:
                 "Done waiting for the Gateway ratelimit lock. It took %f seconds.",
                 (end_time - start_time).total_seconds(),
             )
+
+    def is_set(self):
+        """:class:`bool` Returns a bool signifying if the lock is currently set or not."""
+        return not self._lock.is_set()

@@ -49,14 +49,14 @@ class ChannelEndpointMixin(CoreMixin):
         "GET", "/channels/{channel_id}", format_args={"channel_id": Snowflake}
     )
     get_guild_channels = APIEndpointData(
-        "GET", "/guilds/{guild_id}", format_args={"guild_id": Snowflake}
+        "GET", "/guilds/{guild_id}/channels", format_args={"guild_id": Snowflake}
     )
     get_channel_invites = APIEndpointData(
         "GET", "/channels/{channel_id}/invites", format_args={"channel_id": Snowflake}
     )
     create_guild_channel = APIEndpointData(
         "POST",
-        "/guilds/{guild_id}",
+        "/guilds/{guild_id}/channels",
         format_args={"guild_id": Snowflake},
         supports_reason=True,
         param_args=[

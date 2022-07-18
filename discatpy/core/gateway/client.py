@@ -61,6 +61,42 @@ def _decompress_msg(inflator: zlib._Decompress, msg: bytes):
     return out_str
 
 
+class HeartbeatHandler:
+    __slots__ = (
+        "parent", 
+        "_task", 
+        "heartbeat_payload", 
+        "heartbeat_interval",
+        "_first_heartbeat",
+    )
+
+    def __init__(self, parent: GatewayClient):
+        self.parent = parent
+        self.heartbeat_payload = parent.heartbeat_payload
+        self.heartbeat_interval = parent.heartbeat_interval
+        self._first_heartbeat = True
+
+        self._task = asyncio.create_task(self.loop())
+
+    async def loop(self):
+        while not self.parent.ws.closed:
+            try:
+                await self.parent.send(self.heartbeat_payload)
+
+                delta = self.heartbeat_interval
+                if self._first_heartbeat:
+                    delta *= random.uniform(0.0, 1.0)
+                    self._first_heartbeat = False
+
+                await asyncio.sleep(delta)
+            except asyncio.CancelledError:
+                break
+
+    async def stop(self):
+        self._task.cancel()
+        await self._task
+
+
 class GatewayClient:
     """
     The Gateway Client between your Client and Discord.
@@ -81,8 +117,6 @@ class GatewayClient:
         The Gateways inflator.
     heartbeat_interval: :class:`float`
         The interval to heartbeat given by Discord.
-    seq_num: :class:`int`
-        The current sequence number.
     session_id: :class:`str`
         The session id of this Gateway connection.
     recent_gp: :class:`GatewayPayload`
@@ -96,15 +130,14 @@ class GatewayClient:
         "inflator",
         "client",
         "heartbeat_interval",
-        "seq_num",
+        "_sequence",
         "session_id",
         "recent_gp",
-        "keep_alive_task",
-        "_first_heartbeat",
         "_last_heartbeat_ack",
         "heartbeat_timeout",
         "_gateway_resume",
         "ratelimiter",
+        "heartbeat_handler",
     )
 
     def __init__(
@@ -117,23 +150,21 @@ class GatewayClient:
         self.inflator = zlib.decompressobj()
         self.client: Client = client
         self.heartbeat_interval: float = 0.0
-        self.seq_num: Optional[int] = None
+        self._sequence: Optional[int] = None
         self.session_id: str = ""
         self.recent_gp: Optional[GatewayPayload] = None
-        self.keep_alive_task: Optional[asyncio.Task] = None
-        self._first_heartbeat: bool = True
         self._last_heartbeat_ack: datetime.datetime = datetime.datetime.now()
         self.heartbeat_timeout: float = heartbeat_timeout
         self._gateway_resume: bool = False
         self.ratelimiter = Ratelimiter(self)
         self.ratelimiter.start()
+        self.heartbeat_handler: Optional[HeartbeatHandler] = None
 
     async def send(self, data: Dict[str, Any]):
         if self.ratelimiter.is_ratelimited():
-            if not self.ratelimiter._lock.is_set():
-                await self.ratelimiter.wait()
-            else:
+            if not self.ratelimiter.is_set():
                 await self.ratelimiter.set()
+            await self.ratelimiter.wait()
 
         await self.ws.send_json(data)
         _log.debug("Sent JSON payload %s to the Gateway.", data)
@@ -157,7 +188,7 @@ class GatewayClient:
 
             self.recent_gp = cast(GatewayPayload, json.loads(received_msg))  # type: ignore
             _log.debug("Received payload from the Gateway: %s", self.recent_gp)
-            self.seq_num = self.recent_gp.get("s")
+            self._sequence = self.recent_gp.get("s")
             return True
         elif msg.type == aiohttp.WSMsgType.CLOSE:
             await self.close(reconnect=False)
@@ -187,9 +218,8 @@ class GatewayClient:
 
         # Clean up lingering tasks (this will throw exceptions if we get the client to do it)
         await self.ratelimiter.stop()
-        if self.keep_alive_task is not None:
-            self.keep_alive_task.cancel()
-            await self.keep_alive_task
+        if self.heartbeat_handler:
+            await self.heartbeat_handler.stop()
 
         # if we need to reconnect, set the event
         if reconnect:
@@ -224,14 +254,14 @@ class GatewayClient:
             "d": {
                 "token": self.client.token,
                 "session_id": self.session_id,
-                "seq": self.seq_num,
+                "seq": self._sequence,
             },
         }
 
     @property
     def heartbeat_payload(self):
         """:type:`Dict[str, Any]` Returns the heartbeat payload."""
-        return {"op": GatewayOpcode.HEARTBEAT.value, "d": self.seq_num}
+        return {"op": GatewayOpcode.HEARTBEAT.value, "d": self._sequence}
 
     async def loop(self):
         """
@@ -255,6 +285,7 @@ class GatewayClient:
             ).total_seconds() > self.heartbeat_timeout:
                 _log.debug("Zombified connection detected. Closing connection with code 1008.")
                 await self.close(code=1008)
+                break
 
             res = await self.receive()
 
@@ -267,47 +298,26 @@ class GatewayClient:
                     )
                     self.client.dispatcher.dispatch(event_name, *args)
 
-                if op == GatewayOpcode.RECONNECT:
-                    return await self.close(code=1012)
+                elif op == GatewayOpcode.RECONNECT:
+                    await self.close(code=1012)
+                    break
 
-                if op == GatewayOpcode.INVALID_SESSION:
+                elif op == GatewayOpcode.INVALID_SESSION:
                     resumable: bool = (
                         self.recent_gp["d"] if isinstance(self.recent_gp["d"], bool) else False
                     )
                     self._gateway_resume = resumable
                     await self.close(code=1012)
+                    break
 
-                if op == GatewayOpcode.HELLO:
+                elif op == GatewayOpcode.HELLO:
                     self.heartbeat_interval = self.recent_gp["d"]["heartbeat_interval"] / 1000  # type: ignore
                     await self.send(self.identify_payload)
-                    self.keep_alive_task = asyncio.create_task(self.keep_alive_loop())
-                    _log.debug("Keep alive task has started.")
+                    self.heartbeat_handler = HeartbeatHandler(self)
+                    _log.debug("Heartbeat handler has started.")
 
-                if op == GatewayOpcode.HEARTBEAT_ACK:
+                elif op == GatewayOpcode.HEARTBEAT_ACK:
                     self._last_heartbeat_ack = datetime.datetime.now()
-
-    async def keep_alive_loop(self):
-        """
-        Executes the keep alive loop, which is the following:
-
-        - sends a heartbeat payload with the sequence number
-        - wait for the set heartbeat_interval time defined by the server
-            - if this is the first heartbeat, then we multiply that time with a jitter (value between 0 and 1)
-
-        Do not run this yourself. The Gateway will automatically start an `asyncio.Task` to run this.
-        """
-        while not self.ws.closed:
-            try:
-                await self.send(self.heartbeat_payload)
-
-                delta = self.heartbeat_interval
-                if self._first_heartbeat:
-                    delta *= random.uniform(0.0, 1.0)
-                    self._first_heartbeat = False
-
-                await asyncio.sleep(delta)
-            except asyncio.CancelledError:
-                break
 
     async def request_guild_members(
         self,
