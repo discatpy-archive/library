@@ -162,8 +162,8 @@ Func = Callable[..., Any]
 CoroFunc = Callable[..., Coroutine[Any, Any, Any]]
 
 
-def _indent_text(txt: str) -> str:
-    return f"    {txt}"
+def _indent_text(txt: str, *, num_spaces: int = 4) -> str:
+    return " " * num_spaces + txt
 
 
 def _indent_all_text(strs: List[str]) -> List[str]:
@@ -195,7 +195,7 @@ def _create_fn(
     return_annotation = ""
     if return_type is not MISSING:
         locals["_return_type"] = return_type
-        return_annotation = "->_return_type"
+        return_annotation = "-> _return_type"
 
     fargs = ", ".join(args)
     fbody = "\n".join(_indent_all_text(body))
@@ -204,7 +204,7 @@ def _create_fn(
     txt = ""
     if asynchronous:
         txt += "async "
-    txt += f"def {name}({fargs}){return_annotation}:\n{fbody}"
+    txt += f"def {name}({fargs}) {return_annotation}:\n{fbody}"
 
     local_vars = ", ".join(locals.keys())
     txt = f"def __create_fn__({local_vars}):\n{_indent_text(txt)}\n    return {name}"

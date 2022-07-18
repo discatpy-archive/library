@@ -207,23 +207,24 @@ class GatewayClient:
         reconnect: :type:`bool`
             If we should reconnect or not. Set to True by default
         """
-        _log.info(
-            "Closing Gateway connection with code %d that %s reconnect.",
-            code,
-            "will" if reconnect else "will not",
-        )
+        if not self.ws.closed:
+            _log.info(
+                "Closing Gateway connection with code %d that %s reconnect.",
+                code,
+                "will" if reconnect else "will not",
+            )
 
-        # Close the websocket connection
-        await self.ws.close(code=code)
+            # Close the websocket connection
+            await self.ws.close(code=code)
 
-        # Clean up lingering tasks (this will throw exceptions if we get the client to do it)
-        await self.ratelimiter.stop()
-        if self.heartbeat_handler:
-            await self.heartbeat_handler.stop()
+            # Clean up lingering tasks (this will throw exceptions if we get the client to do it)
+            await self.ratelimiter.stop()
+            if self.heartbeat_handler:
+                await self.heartbeat_handler.stop()
 
-        # if we need to reconnect, set the event
-        if reconnect:
-            self.client._gateway_reconnect.set()
+            # if we need to reconnect, set the event
+            if reconnect:
+                self.client._gateway_reconnect.set()
 
     @property
     def identify_payload(self):

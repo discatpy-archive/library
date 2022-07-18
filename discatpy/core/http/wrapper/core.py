@@ -28,7 +28,7 @@ from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 from ...file import BasicFile
 from ...types import MISSING, MissingOr, MissingType, Snowflake
-from ...utils import _create_fn, _from_import, _indent_all_text
+from ...utils import _create_fn, _from_import, _indent_text, _indent_all_text
 from ..route import Route
 
 __all__ = (
@@ -54,6 +54,9 @@ class APIEndpointData:
     ] = None
     supports_reason: bool = False
     supports_files: bool = False
+
+
+IGNORE_PARAMETERS = ["reason", "files",]
 
 
 def _convert_type_to_str(anno) -> str:
@@ -113,17 +116,17 @@ def _generate_body(data: APIEndpointData):
 
     if data.param_args is not None:
         params_dict_name = params_dict_name.format("query" if data.method == "GET" else "json")
-        body.append(f"{params_dict_name}: Dict[str, Any] = {{}}")
+        body.append("payload: Dict[str, Any] = {}")
 
-        template_if_statment = 'if {0} is not MISSING:\n                {1}["{0}"] = {0}'
+        template_if_statment = ["if {0} is not MISSING:", _indent_text('payload["{0}"] = {0}', num_spaces=16)]
 
         for arg in data.param_args:
             arg_name = str(arg[0])
 
-            if data.supports_reason and arg_name == "reason":
+            if data.supports_reason and arg_name in IGNORE_PARAMETERS:
                 continue
 
-            body.append(template_if_statment.format(arg_name, params_dict_name))
+            body.extend([fmt.format(arg_name) for fmt in template_if_statment])
 
     request_line = f'return await self.request("{data.method}", Route("{data.path}", '
 
@@ -134,10 +137,11 @@ def _generate_body(data: APIEndpointData):
     request_line += "), "
 
     if data.param_args is not None:
-        request_line += f"{params_dict_name}={params_dict_name}, "
+        request_line += f"{params_dict_name}=payload, "
 
     if data.supports_reason:
         request_line += f"reason=reason, "
+
 
     request_line += ")"
 
