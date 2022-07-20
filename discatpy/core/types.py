@@ -22,34 +22,16 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from typing import Any, TypeVar, Union
+from types import EllipsisType
+from typing import TypeVar, Union
 
 from discord_typings import Snowflake
 
 __all__ = (
     "Snowflake",
-    "MISSING",
-    "MissingOr",
-    "MissingType",
+    "EllipsisType",
+    "EllipsisOr",
 )
 
-
-class _Missing:
-    def __eq__(self, other) -> bool:
-        return False
-
-    def __repr__(self):
-        return "MISSING"
-
-    def __str__(self):
-        return "MISSING"
-
-    def __bool__(self):
-        raise NotImplementedError("Missing is not True or False, it is undefined")
-
-
 T = TypeVar("T")
-
-MISSING: Any = _Missing()
-MissingType = _Missing  # aka the type of MISSING
-MissingOr = Union[MissingType, T]
+EllipsisOr = Union[EllipsisType, T]

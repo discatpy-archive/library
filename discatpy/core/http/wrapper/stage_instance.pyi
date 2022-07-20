@@ -24,7 +24,7 @@ DEALINGS IN THE SOFTWARE.
 
 from typing import Optional
 
-from ...types import MISSING, MissingOr, Snowflake
+from ...types import EllipsisOr, Snowflake
 
 class StageInstanceEndpointMixin:
     async def get_stage_instance(self, channel_id: Snowflake): ...
@@ -33,16 +33,16 @@ class StageInstanceEndpointMixin:
         *,
         channel_id: Snowflake,
         topic: str,
-        privacy_level: MissingOr[int] = MISSING,
-        send_start_notification: MissingOr[bool] = MISSING,
+        privacy_level: EllipsisOr[int] = ...,
+        send_start_notification: EllipsisOr[bool] = ...,
         reason: Optional[str] = None,
     ): ...
     async def modify_stage_instance(
         self,
         channel_id: Snowflake,
         *,
-        topic: MissingOr[str] = MISSING,
-        privacy_level: MissingOr[int] = MISSING,
+        topic: EllipsisOr[str] = ...,
+        privacy_level: EllipsisOr[int] = ...,
         reason: Optional[str] = None,
     ): ...
     async def delete_stage_instance(

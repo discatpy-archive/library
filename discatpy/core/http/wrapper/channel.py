@@ -34,7 +34,7 @@ from discord_typings import (
     PermissionOverwriteData,
 )
 
-from ...types import MISSING, MissingOr, Snowflake
+from ...types import EllipsisOr, Snowflake
 from .core import APIEndpointData, CoreMixin
 
 __all__ = (
@@ -61,18 +61,18 @@ class ChannelEndpointMixin(CoreMixin):
         supports_reason=True,
         param_args=[
             ("name", str),
-            ("type", MissingOr[Optional[int]], MISSING),
-            ("topic", MissingOr[Optional[str]], MISSING),
-            ("bitrate", MissingOr[Optional[int]], MISSING),
-            ("user_limit", MissingOr[Optional[int]], MISSING),
-            ("rate_limit_per_user", MissingOr[Optional[int]], MISSING),
-            ("position", MissingOr[Optional[int]], MISSING),
-            ("permission_overwrites", MissingOr[Optional[List[PermissionOverwriteData]]], MISSING),
-            ("parent_id", MissingOr[Optional[Snowflake]], MISSING),
-            ("nsfw", MissingOr[Optional[bool]], MISSING),
-            ("rtc_region", MissingOr[Optional[str]], MISSING),
-            ("video_quality_mode", MissingOr[Optional[int]], MISSING),
-            ("default_auto_archive_duration", MissingOr[Optional[int]], MISSING),
+            ("type", EllipsisOr[Optional[int]], ...),
+            ("topic", EllipsisOr[Optional[str]], ...),
+            ("bitrate", EllipsisOr[Optional[int]], ...),
+            ("user_limit", EllipsisOr[Optional[int]], ...),
+            ("rate_limit_per_user", EllipsisOr[Optional[int]], ...),
+            ("position", EllipsisOr[Optional[int]], ...),
+            ("permission_overwrites", EllipsisOr[Optional[List[PermissionOverwriteData]]], ...),
+            ("parent_id", EllipsisOr[Optional[Snowflake]], ...),
+            ("nsfw", EllipsisOr[Optional[bool]], ...),
+            ("rtc_region", EllipsisOr[Optional[str]], ...),
+            ("video_quality_mode", EllipsisOr[Optional[int]], ...),
+            ("default_auto_archive_duration", EllipsisOr[Optional[int]], ...),
         ],
     )
     create_channel_invite = APIEndpointData(
@@ -96,19 +96,19 @@ class ChannelEndpointMixin(CoreMixin):
         format_args={"channel_id": Snowflake},
         supports_reason=True,
         param_args=[
-            ("name", MissingOr[Optional[str]], MISSING),
-            ("type", MissingOr[Optional[int]], MISSING),
-            ("position", MissingOr[Optional[int]], MISSING),
-            ("topic", MissingOr[Optional[str]], MISSING),
-            ("nsfw", MissingOr[Optional[bool]], MISSING),
-            ("rate_limit_per_user", MissingOr[Optional[int]], MISSING),
-            ("bitrate", MissingOr[Optional[int]], MISSING),
-            ("user_limit", MissingOr[Optional[int]], MISSING),
-            ("permission_overwrites", MissingOr[Optional[List[PermissionOverwriteData]]], MISSING),
-            ("parent_id", MissingOr[Optional[Snowflake]], MISSING),
-            ("rtc_region", MissingOr[Optional[str]], MISSING),
-            ("video_quality_mode", MissingOr[Optional[int]], MISSING),
-            ("default_auto_archive_duration", MissingOr[Optional[int]], MISSING),
+            ("name", EllipsisOr[Optional[str]], ...),
+            ("type", EllipsisOr[Optional[int]], ...),
+            ("position", EllipsisOr[Optional[int]], ...),
+            ("topic", EllipsisOr[Optional[str]], ...),
+            ("nsfw", EllipsisOr[Optional[bool]], ...),
+            ("rate_limit_per_user", EllipsisOr[Optional[int]], ...),
+            ("bitrate", EllipsisOr[Optional[int]], ...),
+            ("user_limit", EllipsisOr[Optional[int]], ...),
+            ("permission_overwrites", EllipsisOr[Optional[List[PermissionOverwriteData]]], ...),
+            ("parent_id", EllipsisOr[Optional[Snowflake]], ...),
+            ("rtc_region", EllipsisOr[Optional[str]], ...),
+            ("video_quality_mode", EllipsisOr[Optional[int]], ...),
+            ("default_auto_archive_duration", EllipsisOr[Optional[int]], ...),
         ],
     )
     modify_guild_channel_positions = APIEndpointData(
@@ -128,8 +128,8 @@ class ChannelEndpointMixin(CoreMixin):
         format_args={"channel_id": Snowflake, "overwrite_id": Snowflake},
         supports_reason=True,
         param_args=[
-            ("allow", MissingOr[str], MISSING),
-            ("deny", MissingOr[str], MISSING),
+            ("allow", EllipsisOr[str], ...),
+            ("deny", EllipsisOr[str], ...),
             ("type", int),
         ],
     )
@@ -164,8 +164,8 @@ class ThreadsEndpointMixin(CoreMixin):
         "/channels/{channel_id}/threads/archived/public",
         format_args={"channel_id": Snowflake},
         param_args=[
-            ("before", MissingOr[datetime], MISSING),
-            ("limit", MissingOr[int], MISSING),
+            ("before", EllipsisOr[datetime], ...),
+            ("limit", EllipsisOr[int], ...),
         ],
     )
     list_private_archived_threads = APIEndpointData(
@@ -173,8 +173,8 @@ class ThreadsEndpointMixin(CoreMixin):
         "/channels/{channel_id}/threads/archived/private",
         format_args={"channel_id": Snowflake},
         param_args=[
-            ("before", MissingOr[datetime], MISSING),
-            ("limit", MissingOr[int], MISSING),
+            ("before", EllipsisOr[datetime], ...),
+            ("limit", EllipsisOr[int], ...),
         ],
     )
     list_joined_private_archived_threads = APIEndpointData(
@@ -182,8 +182,8 @@ class ThreadsEndpointMixin(CoreMixin):
         "/channels/{channel_id}/users/@me/threads/archived/private",
         format_args={"channel_id": Snowflake},
         param_args=[
-            ("before", MissingOr[datetime], MISSING),
-            ("limit", MissingOr[int], MISSING),
+            ("before", EllipsisOr[datetime], ...),
+            ("limit", EllipsisOr[int], ...),
         ],
     )
     start_thread_from_message = APIEndpointData(
@@ -193,8 +193,8 @@ class ThreadsEndpointMixin(CoreMixin):
         supports_reason=True,
         param_args=[
             ("name", str),
-            ("auto_archive_duration", MissingOr[int], MISSING),
-            ("rate_limit_per_user", MissingOr[Optional[int]], MISSING),
+            ("auto_archive_duration", EllipsisOr[int], ...),
+            ("rate_limit_per_user", EllipsisOr[Optional[int]], ...),
         ],
     )
     start_thread_without_message = APIEndpointData(
@@ -204,10 +204,10 @@ class ThreadsEndpointMixin(CoreMixin):
         supports_reason=True,
         param_args=[
             ("name", str),
-            ("auto_archive_duration", MissingOr[int], MISSING),
-            ("type", MissingOr[int], MISSING),
-            ("invitable", MissingOr[bool], MISSING),
-            ("rate_limit_per_user", MissingOr[Optional[int]], MISSING),
+            ("auto_archive_duration", EllipsisOr[int], ...),
+            ("type", EllipsisOr[int], ...),
+            ("invitable", EllipsisOr[bool], ...),
+            ("rate_limit_per_user", EllipsisOr[Optional[int]], ...),
         ],
     )
     join_thread = APIEndpointData(
@@ -239,9 +239,9 @@ class MessagesEndpointMixin(CoreMixin):
         "/channels/{channel_id}/messages",
         format_args={"channel_id": Snowflake},
         param_args=[
-            ("around", MissingOr[Snowflake], MISSING),
-            ("before", MissingOr[Snowflake], MISSING),
-            ("after", MissingOr[Snowflake], MISSING),
+            ("around", EllipsisOr[Snowflake], ...),
+            ("before", EllipsisOr[Snowflake], ...),
+            ("after", EllipsisOr[Snowflake], ...),
             ("limit", int, 50),
         ],
     )
@@ -253,7 +253,7 @@ class MessagesEndpointMixin(CoreMixin):
         "/channels/{channel_id}/messages/{message_id}/reactions/{emoji}",
         format_args={"channel_id": Snowflake, "message_id": Snowflake, "emoji": str},
         param_args=[
-            ("after", MissingOr[Snowflake], MISSING),
+            ("after", EllipsisOr[Snowflake], ...),
             ("limit", int, 25),
         ],
     )
@@ -263,15 +263,15 @@ class MessagesEndpointMixin(CoreMixin):
         format_args={"channel_id": Snowflake},
         supports_files=True,
         param_args=[
-            ("content", MissingOr[str], MISSING),
-            ("tts", MissingOr[bool], MISSING),
-            ("embeds", MissingOr[List[EmbedData]], MISSING),
-            ("allowed_mentions", MissingOr[AllowedMentionsData], MISSING),
-            ("message_reference", MissingOr[MessageReferenceData], MISSING),
+            ("content", EllipsisOr[str], ...),
+            ("tts", EllipsisOr[bool], ...),
+            ("embeds", EllipsisOr[List[EmbedData]], ...),
+            ("allowed_mentions", EllipsisOr[AllowedMentionsData], ...),
+            ("message_reference", EllipsisOr[MessageReferenceData], ...),
             # TODO: Components
-            ("sticker_ids", MissingOr[List[Snowflake]], MISSING),
-            ("attachments", MissingOr[List[PartialAttachmentData]], MISSING),
-            ("flags", MissingOr[int], MISSING),
+            ("sticker_ids", EllipsisOr[List[Snowflake]], ...),
+            ("attachments", EllipsisOr[List[PartialAttachmentData]], ...),
+            ("flags", EllipsisOr[int], ...),
         ],
     )
     create_reaction = APIEndpointData(
@@ -285,12 +285,12 @@ class MessagesEndpointMixin(CoreMixin):
         format_args={"channel_id": Snowflake, "message_id": Snowflake},
         supports_files=True,
         param_args=[
-            ("content", MissingOr[Optional[str]], MISSING),
-            ("embeds", MissingOr[Optional[List[EmbedData]]], MISSING),
-            ("flags", MissingOr[Optional[int]], MISSING),
-            ("allowed_mentions", MissingOr[Optional[AllowedMentionsData]], MISSING),
+            ("content", EllipsisOr[Optional[str]], ...),
+            ("embeds", EllipsisOr[Optional[List[EmbedData]]], ...),
+            ("flags", EllipsisOr[Optional[int]], ...),
+            ("allowed_mentions", EllipsisOr[Optional[AllowedMentionsData]], ...),
             # TODO: Components
-            ("attachments", MissingOr[Optional[List[AttachmentData]]], MISSING),
+            ("attachments", EllipsisOr[Optional[List[AttachmentData]]], ...),
         ],
     )
     delete_message = APIEndpointData(

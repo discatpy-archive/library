@@ -22,10 +22,10 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from typing import Optional
+from typing import List, Optional
 
 from ...file import BasicFile
-from ...types import MISSING, List, MissingOr, Snowflake
+from ...types import EllipsisOr, Snowflake
 
 class StickerEndpointMixin:
     async def get_sticker(self, sticker_id: Snowflake): ...
@@ -40,16 +40,16 @@ class StickerEndpointMixin:
         description: str,
         tags: str,
         reason: Optional[str] = None,
-        files: MissingOr[List[BasicFile]] = MISSING,
+        files: EllipsisOr[List[BasicFile]] = ...,
     ): ...
     async def modify_guild_sticker(
         self,
         guild_id: Snowflake,
         sticker_id: Snowflake,
         *,
-        name: MissingOr[str] = MISSING,
-        description: MissingOr[Optional[str]] = MISSING,
-        tags: MissingOr[str] = MISSING,
+        name: EllipsisOr[str] = ...,
+        description: EllipsisOr[Optional[str]] = ...,
+        tags: EllipsisOr[str] = ...,
         reason: Optional[str] = None,
     ): ...
     async def delete_guild_sticker(

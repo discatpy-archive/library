@@ -27,7 +27,7 @@ import importlib
 import types
 from typing import Any, Callable, Coroutine, Dict, Generic, List, Optional, TypeVar, Union
 
-from .types import MISSING, MissingOr, Snowflake
+from .types import Snowflake
 
 __all__ = (
     "DISCORD_EPOCH",
@@ -183,7 +183,7 @@ def _create_fn(
     *,
     globals: Optional[Dict[str, Any]] = None,
     locals: Optional[Dict[str, Any]] = None,
-    return_type: MissingOr[type] = MISSING,
+    return_type: type = ...,
     asynchronous: bool = False,
 ) -> Union[CoroFunc, Func]:
     if locals is None:
@@ -193,7 +193,7 @@ def _create_fn(
         locals["BUILTINS"] = builtins
 
     return_annotation = ""
-    if return_type is not MISSING:
+    if return_type is not ...:
         locals["_return_type"] = return_type
         return_annotation = "-> _return_type"
 

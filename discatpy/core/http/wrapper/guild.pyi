@@ -27,7 +27,7 @@ from typing import List, Optional
 
 from discord_typings import PartialChannelData, RoleData, WelcomeChannelData
 
-from ...types import MISSING, MissingOr, Snowflake
+from ...types import EllipsisOr, Snowflake
 
 class GuildEndpointMixin:
     async def get_guild(self, guild_id: Snowflake, *, with_counts: bool = False): ...
@@ -47,48 +47,48 @@ class GuildEndpointMixin:
         self,
         guild_id: Snowflake,
         *,
-        user_id: MissingOr[Snowflake] = MISSING,
-        action_type: MissingOr[int] = MISSING,
-        before: MissingOr[Snowflake] = MISSING,
+        user_id: EllipsisOr[Snowflake] = ...,
+        action_type: EllipsisOr[int] = ...,
+        before: EllipsisOr[Snowflake] = ...,
         limit: int = 50,
     ): ...
     async def create_guild(
         self,
         *,
         name: str,
-        icon: MissingOr[str] = MISSING,
-        verification_level: MissingOr[int] = MISSING,
-        default_message_notifications: MissingOr[int] = MISSING,
-        explicit_content_filter: MissingOr[int] = MISSING,
-        roles: MissingOr[List[RoleData]] = MISSING,
-        channels: MissingOr[List[PartialChannelData]] = MISSING,
-        afk_channel_id: MissingOr[Snowflake] = MISSING,
-        afk_timeout: MissingOr[int] = MISSING,
-        system_channel_id: MissingOr[Snowflake] = MISSING,
-        system_channel_flags: MissingOr[int] = MISSING,
+        icon: EllipsisOr[str] = ...,
+        verification_level: EllipsisOr[int] = ...,
+        default_message_notifications: EllipsisOr[int] = ...,
+        explicit_content_filter: EllipsisOr[int] = ...,
+        roles: EllipsisOr[List[RoleData]] = ...,
+        channels: EllipsisOr[List[PartialChannelData]] = ...,
+        afk_channel_id: EllipsisOr[Snowflake] = ...,
+        afk_timeout: EllipsisOr[int] = ...,
+        system_channel_id: EllipsisOr[Snowflake] = ...,
+        system_channel_flags: EllipsisOr[int] = ...,
     ): ...
     async def modify_guild(
         self,
         *,
-        name: MissingOr[str] = MISSING,
-        verification_level: MissingOr[Optional[int]] = MISSING,
-        default_message_notifications: MissingOr[Optional[int]] = MISSING,
-        explicit_content_filter: MissingOr[Optional[int]] = MISSING,
-        afk_channel_id: MissingOr[Optional[Snowflake]] = MISSING,
-        afk_timeout: MissingOr[int] = MISSING,
-        icon: MissingOr[Optional[str]] = MISSING,
-        owner_id: MissingOr[Snowflake] = MISSING,
-        splash: MissingOr[Optional[str]] = MISSING,
-        discovery_splash: MissingOr[Optional[str]] = MISSING,
-        banner: MissingOr[Optional[str]] = MISSING,
-        system_channel_id: MissingOr[Optional[Snowflake]] = MISSING,
-        system_channel_flags: MissingOr[int] = MISSING,
-        rules_channel_id: MissingOr[Optional[Snowflake]] = MISSING,
-        public_updates_channel_id: MissingOr[Optional[Snowflake]] = MISSING,
-        preferred_locale: MissingOr[Optional[str]] = MISSING,
-        features: MissingOr[List[str]] = MISSING,
-        description: MissingOr[Optional[str]] = MISSING,
-        premium_progress_bar_enabled: MissingOr[bool] = MISSING,
+        name: EllipsisOr[str] = ...,
+        verification_level: EllipsisOr[Optional[int]] = ...,
+        default_message_notifications: EllipsisOr[Optional[int]] = ...,
+        explicit_content_filter: EllipsisOr[Optional[int]] = ...,
+        afk_channel_id: EllipsisOr[Optional[Snowflake]] = ...,
+        afk_timeout: EllipsisOr[int] = ...,
+        icon: EllipsisOr[Optional[str]] = ...,
+        owner_id: EllipsisOr[Snowflake] = ...,
+        splash: EllipsisOr[Optional[str]] = ...,
+        discovery_splash: EllipsisOr[Optional[str]] = ...,
+        banner: EllipsisOr[Optional[str]] = ...,
+        system_channel_id: EllipsisOr[Optional[Snowflake]] = ...,
+        system_channel_flags: EllipsisOr[int] = ...,
+        rules_channel_id: EllipsisOr[Optional[Snowflake]] = ...,
+        public_updates_channel_id: EllipsisOr[Optional[Snowflake]] = ...,
+        preferred_locale: EllipsisOr[Optional[str]] = ...,
+        features: EllipsisOr[List[str]] = ...,
+        description: EllipsisOr[Optional[str]] = ...,
+        premium_progress_bar_enabled: EllipsisOr[bool] = ...,
         reason: Optional[str] = None,
     ): ...
     async def modify_guild_mfa_level(self, guild_id: Snowflake, *, level: int): ...
@@ -104,9 +104,9 @@ class GuildEndpointMixin:
         self,
         guild_id: Snowflake,
         *,
-        enabled: MissingOr[Optional[bool]] = MISSING,
-        welcome_channels: MissingOr[Optional[List[WelcomeChannelData]]],
-        description: MissingOr[Optional[str]] = MISSING,
+        enabled: EllipsisOr[Optional[bool]] = ...,
+        welcome_channels: EllipsisOr[Optional[List[WelcomeChannelData]]],
+        description: EllipsisOr[Optional[str]] = ...,
         reason: Optional[str] = None,
     ): ...
     async def delete_guild(self, guild_id: Snowflake): ...
@@ -123,7 +123,7 @@ class GuildEndpointMixin:
 class GuildMemberEndpointMixin:
     async def get_guild_member(self, guild_id: Snowflake, user_id: Snowflake): ...
     async def list_guild_members(
-        self, guild_id: Snowflake, *, limit: int = 1, after: MissingOr[Snowflake] = MISSING
+        self, guild_id: Snowflake, *, limit: int = 1, after: EllipsisOr[Snowflake] = ...
     ): ...
     async def search_guild_members(self, guild_id: Snowflake, *, query: str, limit: int = 1): ...
     async def modify_guild_member(
@@ -131,19 +131,19 @@ class GuildMemberEndpointMixin:
         guild_id: Snowflake,
         user_id: Snowflake,
         *,
-        nick: MissingOr[Optional[str]] = MISSING,
-        roles: MissingOr[Optional[List[Snowflake]]] = MISSING,
-        mute: MissingOr[Optional[bool]] = MISSING,
-        deaf: MissingOr[Optional[bool]] = MISSING,
-        channel_id: MissingOr[Optional[Snowflake]] = MISSING,
-        communication_disabled_until: MissingOr[Optional[datetime]] = MISSING,
+        nick: EllipsisOr[Optional[str]] = ...,
+        roles: EllipsisOr[Optional[List[Snowflake]]] = ...,
+        mute: EllipsisOr[Optional[bool]] = ...,
+        deaf: EllipsisOr[Optional[bool]] = ...,
+        channel_id: EllipsisOr[Optional[Snowflake]] = ...,
+        communication_disabled_until: EllipsisOr[Optional[datetime]] = ...,
         reason: Optional[str] = None,
     ): ...
     async def modify_current_member(
         self,
         guild_id: Snowflake,
         *,
-        nick: MissingOr[Optional[str]] = MISSING,
+        nick: EllipsisOr[Optional[str]] = ...,
         reason: Optional[str] = None,
     ): ...
     async def remove_guild_member(
@@ -161,8 +161,8 @@ class GuildMemberEndpointMixin:
         guild_id: Snowflake,
         *,
         limit: int = 1000,
-        before: MissingOr[Snowflake] = MISSING,
-        after: MissingOr[Snowflake] = MISSING,
+        before: EllipsisOr[Snowflake] = ...,
+        after: EllipsisOr[Snowflake] = ...,
     ): ...
     async def create_guild_ban(
         self,
@@ -183,7 +183,7 @@ class GuildRoleEndpointMixin:
         guild_id: Snowflake,
         *,
         name: str = "new role",
-        permissions: MissingOr[str] = MISSING,
+        permissions: EllipsisOr[str] = ...,
         color: int = 0,
         hoist: bool = False,
         icon: Optional[str] = None,
@@ -196,13 +196,13 @@ class GuildRoleEndpointMixin:
         guild_id: Snowflake,
         role_id: Snowflake,
         *,
-        name: MissingOr[Optional[str]] = MISSING,
-        permissions: MissingOr[Optional[str]] = MISSING,
-        color: MissingOr[Optional[int]] = MISSING,
-        hoist: MissingOr[Optional[bool]] = MISSING,
-        icon: MissingOr[Optional[str]] = MISSING,
-        unicode_emoji: MissingOr[Optional[str]] = MISSING,
-        mentionable: MissingOr[Optional[bool]] = MISSING,
+        name: EllipsisOr[Optional[str]] = ...,
+        permissions: EllipsisOr[Optional[str]] = ...,
+        color: EllipsisOr[Optional[int]] = ...,
+        hoist: EllipsisOr[Optional[bool]] = ...,
+        icon: EllipsisOr[Optional[str]] = ...,
+        unicode_emoji: EllipsisOr[Optional[str]] = ...,
+        mentionable: EllipsisOr[Optional[bool]] = ...,
         reason: Optional[str] = None,
     ): ...
     async def modify_guild_role_positions(
@@ -210,7 +210,7 @@ class GuildRoleEndpointMixin:
         guild_id: Snowflake,
         *,
         id: Snowflake,
-        position: MissingOr[Optional[int]] = MISSING,
+        position: EllipsisOr[Optional[int]] = ...,
         reason: Optional[str] = None,
     ): ...
     async def delete_guild_role(self, guild_id: Snowflake, role_id: Snowflake): ...

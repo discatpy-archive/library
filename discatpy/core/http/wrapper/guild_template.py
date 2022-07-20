@@ -24,7 +24,7 @@ DEALINGS IN THE SOFTWARE.
 
 from typing import Optional
 
-from ...types import MISSING, MissingOr, Snowflake
+from ...types import EllipsisOr, Snowflake
 from .core import APIEndpointData, CoreMixin
 
 __all__ = ("GuildTemplateEndpointMixin",)
@@ -43,7 +43,7 @@ class GuildTemplateEndpointMixin(CoreMixin):
         format_args={"guild_id": Snowflake},
         param_args=[
             ("name", str),
-            ("description", MissingOr[Optional[str]], MISSING),
+            ("description", EllipsisOr[Optional[str]], ...),
         ],
     )
     create_guild_from_guild_template = APIEndpointData(
@@ -52,7 +52,7 @@ class GuildTemplateEndpointMixin(CoreMixin):
         format_args={"template_code": str},
         param_args=[
             ("name", str),
-            ("icon", MissingOr[str], MISSING),
+            ("icon", EllipsisOr[str], ...),
         ],
     )
     modify_guild_template = APIEndpointData(
@@ -60,8 +60,8 @@ class GuildTemplateEndpointMixin(CoreMixin):
         "/guilds/{guild_id}/templates/{template_code}",
         format_args={"guild_id": Snowflake, "template_code": str},
         param_args=[
-            ("name", MissingOr[str], MISSING),
-            ("description", MissingOr[Optional[str]], MISSING),
+            ("name", EllipsisOr[str], ...),
+            ("description", EllipsisOr[Optional[str]], ...),
         ],
     )
     delete_guild_template = APIEndpointData(

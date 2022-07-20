@@ -24,15 +24,15 @@ DEALINGS IN THE SOFTWARE.
 
 from typing import Optional
 
-from ...types import MISSING, MissingOr, Snowflake
+from ...types import EllipsisOr, Snowflake
 
 class InviteEndpointMixin:
     async def get_invite(
         self,
         invite_code: str,
         *,
-        with_counts: MissingOr[bool] = MISSING,
-        with_expiration: MissingOr[bool] = MISSING,
-        guild_scheduled_event_id: MissingOr[Snowflake] = MISSING,
+        with_counts: EllipsisOr[bool] = ...,
+        with_expiration: EllipsisOr[bool] = ...,
+        guild_scheduled_event_id: EllipsisOr[Snowflake] = ...,
     ): ...
     async def delete_invite(self, invite_code: str, *, reason: Optional[str] = None): ...

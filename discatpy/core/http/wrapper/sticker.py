@@ -24,7 +24,7 @@ DEALINGS IN THE SOFTWARE.
 
 from typing import Optional
 
-from ...types import MISSING, MissingOr, Snowflake
+from ...types import EllipsisOr, Snowflake
 from .core import APIEndpointData, CoreMixin
 
 __all__ = ("StickerEndpointMixin",)
@@ -61,9 +61,9 @@ class StickerEndpointMixin(CoreMixin):
         format_args={"guild_id": Snowflake, "sticker_id": Snowflake},
         supports_reason=True,
         param_args=[
-            ("name", MissingOr[str], MISSING),
-            ("description", MissingOr[Optional[str]], MISSING),
-            ("tags", MissingOr[str], MISSING),
+            ("name", EllipsisOr[str], ...),
+            ("description", EllipsisOr[Optional[str]], ...),
+            ("tags", EllipsisOr[str], ...),
         ],
     )
     delete_guild_sticker = APIEndpointData(

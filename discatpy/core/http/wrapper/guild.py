@@ -27,7 +27,7 @@ from typing import List, Optional
 
 from discord_typings import PartialChannelData, RoleData, WelcomeChannelData
 
-from ...types import MISSING, MissingOr, Snowflake
+from ...types import EllipsisOr, Snowflake
 from .core import APIEndpointData, CoreMixin
 
 __all__ = (
@@ -90,9 +90,9 @@ class GuildEndpointMixin(CoreMixin):
         "/guilds/{guild_id}/audit-logs",
         format_args={"guild_id": Snowflake},
         param_args=[
-            ("user_id", MissingOr[Snowflake], MISSING),
-            ("action_type", MissingOr[int], MISSING),
-            ("before", MissingOr[Snowflake], MISSING),
+            ("user_id", EllipsisOr[Snowflake], ...),
+            ("action_type", EllipsisOr[int], ...),
+            ("before", EllipsisOr[Snowflake], ...),
             ("limit", int, 50),
         ],
     )
@@ -101,16 +101,16 @@ class GuildEndpointMixin(CoreMixin):
         "/guilds",
         param_args=[
             ("name", str),
-            ("icon", MissingOr[str], MISSING),
-            ("verification_level", MissingOr[int], MISSING),
-            ("default_message_notifications", MissingOr[int], MISSING),
-            ("explicit_content_filter", MissingOr[int], MISSING),
-            ("roles", MissingOr[List[RoleData]], MISSING),
-            ("channels", MissingOr[List[PartialChannelData]], MISSING),
-            ("afk_channel_id", MissingOr[Snowflake], MISSING),
-            ("afk_timeout", MissingOr[int], MISSING),
-            ("system_channel_id", MissingOr[Snowflake], MISSING),
-            ("system_channel_flags", MissingOr[int], MISSING),
+            ("icon", EllipsisOr[str], ...),
+            ("verification_level", EllipsisOr[int], ...),
+            ("default_message_notifications", EllipsisOr[int], ...),
+            ("explicit_content_filter", EllipsisOr[int], ...),
+            ("roles", EllipsisOr[List[RoleData]], ...),
+            ("channels", EllipsisOr[List[PartialChannelData]], ...),
+            ("afk_channel_id", EllipsisOr[Snowflake], ...),
+            ("afk_timeout", EllipsisOr[int], ...),
+            ("system_channel_id", EllipsisOr[Snowflake], ...),
+            ("system_channel_flags", EllipsisOr[int], ...),
         ],
     )
     modify_guild = APIEndpointData(
@@ -119,25 +119,25 @@ class GuildEndpointMixin(CoreMixin):
         format_args={"guild_id": Snowflake},
         supports_reason=True,
         param_args=[
-            ("name", MissingOr[str], MISSING),
-            ("verification_level", MissingOr[Optional[int]], MISSING),
-            ("default_message_notifications", MissingOr[Optional[int]], MISSING),
-            ("explicit_content_filter", MissingOr[Optional[int]], MISSING),
-            ("afk_channel_id", MissingOr[Optional[Snowflake]], MISSING),
-            ("afk_timeout", MissingOr[int], MISSING),
-            ("icon", MissingOr[Optional[str]], MISSING),
-            ("owner_id", MissingOr[Snowflake], MISSING),
-            ("splash", MissingOr[Optional[str]], MISSING),
-            ("discovery_splash", MissingOr[Optional[str]], MISSING),
-            ("banner", MissingOr[Optional[str]], MISSING),
-            ("system_channel_id", MissingOr[Optional[Snowflake]], MISSING),
-            ("system_channel_flags", MissingOr[int], MISSING),
-            ("rules_channel_id", MissingOr[Optional[Snowflake]], MISSING),
-            ("public_updates_channel_id", MissingOr[Optional[Snowflake]], MISSING),
-            ("preferred_locale", MissingOr[Optional[str]], MISSING),
-            ("features", MissingOr[List[str]], MISSING),
-            ("description", MissingOr[Optional[str]], MISSING),
-            ("premium_progress_bar_enabled", MissingOr[bool], MISSING),
+            ("name", EllipsisOr[str], ...),
+            ("verification_level", EllipsisOr[Optional[int]], ...),
+            ("default_message_notifications", EllipsisOr[Optional[int]], ...),
+            ("explicit_content_filter", EllipsisOr[Optional[int]], ...),
+            ("afk_channel_id", EllipsisOr[Optional[Snowflake]], ...),
+            ("afk_timeout", EllipsisOr[int], ...),
+            ("icon", EllipsisOr[Optional[str]], ...),
+            ("owner_id", EllipsisOr[Snowflake], ...),
+            ("splash", EllipsisOr[Optional[str]], ...),
+            ("discovery_splash", EllipsisOr[Optional[str]], ...),
+            ("banner", EllipsisOr[Optional[str]], ...),
+            ("system_channel_id", EllipsisOr[Optional[Snowflake]], ...),
+            ("system_channel_flags", EllipsisOr[int], ...),
+            ("rules_channel_id", EllipsisOr[Optional[Snowflake]], ...),
+            ("public_updates_channel_id", EllipsisOr[Optional[Snowflake]], ...),
+            ("preferred_locale", EllipsisOr[Optional[str]], ...),
+            ("features", EllipsisOr[List[str]], ...),
+            ("description", EllipsisOr[Optional[str]], ...),
+            ("premium_progress_bar_enabled", EllipsisOr[bool], ...),
         ],
     )
     modify_guild_mfa_level = APIEndpointData(
@@ -162,9 +162,9 @@ class GuildEndpointMixin(CoreMixin):
         format_args={"guild_id": Snowflake},
         supports_reason=True,
         param_args=[
-            ("enabled", MissingOr[Optional[bool]], MISSING),
-            ("welcome_channels", MissingOr[Optional[List[WelcomeChannelData]]], MISSING),
-            ("description", MissingOr[Optional[str]], MISSING),
+            ("enabled", EllipsisOr[Optional[bool]], ...),
+            ("welcome_channels", EllipsisOr[Optional[List[WelcomeChannelData]]], ...),
+            ("description", EllipsisOr[Optional[str]], ...),
         ],
     )
     # TODO: modify user voice state/modify current user voice state
@@ -199,7 +199,7 @@ class GuildMemberEndpointMixin(CoreMixin):
         format_args={"guild_id": Snowflake},
         param_args=[
             ("limit", int, 1),
-            ("after", MissingOr[Snowflake], MISSING),
+            ("after", EllipsisOr[Snowflake], ...),
         ],
     )
     search_guild_members = APIEndpointData(
@@ -217,12 +217,12 @@ class GuildMemberEndpointMixin(CoreMixin):
         format_args={"guild_id": Snowflake, "user_id": Snowflake},
         supports_reason=True,
         param_args=[
-            ("nick", MissingOr[Optional[str]], MISSING),
-            ("roles", MissingOr[Optional[List[Snowflake]]], MISSING),
-            ("mute", MissingOr[Optional[bool]], MISSING),
-            ("deaf", MissingOr[Optional[bool]], MISSING),
-            ("channel_id", MissingOr[Optional[Snowflake]], MISSING),
-            ("communication_disabled_until", MissingOr[Optional[datetime]], MISSING),
+            ("nick", EllipsisOr[Optional[str]], ...),
+            ("roles", EllipsisOr[Optional[List[Snowflake]]], ...),
+            ("mute", EllipsisOr[Optional[bool]], ...),
+            ("deaf", EllipsisOr[Optional[bool]], ...),
+            ("channel_id", EllipsisOr[Optional[Snowflake]], ...),
+            ("communication_disabled_until", EllipsisOr[Optional[datetime]], ...),
         ],
     )
     modify_current_member = APIEndpointData(
@@ -230,7 +230,7 @@ class GuildMemberEndpointMixin(CoreMixin):
         "/guilds/{guild_id}/members/@me",
         format_args={"guild_id": Snowflake},
         supports_reason=True,
-        param_args=[("nick", MissingOr[Optional[str]], MISSING)],
+        param_args=[("nick", EllipsisOr[Optional[str]], ...)],
     )
     remove_guild_member = APIEndpointData(
         "DELETE",
@@ -261,8 +261,8 @@ class GuildMemberEndpointMixin(CoreMixin):
         format_args={"guild_id": Snowflake},
         param_args=[
             ("limit", int, 1000),
-            ("before", MissingOr[Snowflake], MISSING),
-            ("after", MissingOr[Snowflake], MISSING),
+            ("before", EllipsisOr[Snowflake], ...),
+            ("after", EllipsisOr[Snowflake], ...),
         ],
     )
     create_guild_ban = APIEndpointData(
@@ -307,13 +307,13 @@ class GuildRoleEndpointMixin(CoreMixin):
         format_args={"guild_id": Snowflake, "role_id": Snowflake},
         supports_reason=True,
         param_args=[
-            ("name", MissingOr[Optional[str]], MISSING),
-            ("permissions", MissingOr[Optional[str]], MISSING),
-            ("color", MissingOr[Optional[int]], MISSING),
-            ("hoist", MissingOr[Optional[bool]], MISSING),
-            ("icon", MissingOr[Optional[str]], MISSING),
-            ("unicode_emoji", MissingOr[Optional[str]], MISSING),
-            ("mentionable", MissingOr[Optional[bool]], MISSING),
+            ("name", EllipsisOr[Optional[str]], ...),
+            ("permissions", EllipsisOr[Optional[str]], ...),
+            ("color", EllipsisOr[Optional[int]], ...),
+            ("hoist", EllipsisOr[Optional[bool]], ...),
+            ("icon", EllipsisOr[Optional[str]], ...),
+            ("unicode_emoji", EllipsisOr[Optional[str]], ...),
+            ("mentionable", EllipsisOr[Optional[bool]], ...),
         ],
     )
     modify_guild_role_positions = APIEndpointData(
@@ -323,7 +323,7 @@ class GuildRoleEndpointMixin(CoreMixin):
         supports_reason=True,
         param_args=[
             ("id", Snowflake),
-            ("position", MissingOr[Optional[int]], MISSING),
+            ("position", EllipsisOr[Optional[int]], ...),
         ],
     )
     delete_guild_role = APIEndpointData(

@@ -27,7 +27,7 @@ from typing import Optional
 
 from discord_typings import GuildScheduledEventEntityMetadata
 
-from ...types import MISSING, MissingOr, Snowflake
+from ...types import EllipsisOr, Snowflake
 from .core import APIEndpointData, CoreMixin
 
 __all__ = ("GuildScheduledEventEndpointMixin",)
@@ -38,7 +38,7 @@ class GuildScheduledEventEndpointMixin(CoreMixin):
         "GET",
         "/guilds/{guild_id}/scheduled-events/{guild_scheduled_event_id}",
         format_args={"guild_id": Snowflake, "guild_scheduled_event_id": Snowflake},
-        param_args=[("with_user_count", MissingOr[bool], MISSING)],
+        param_args=[("with_user_count", EllipsisOr[bool], ...)],
     )
     get_guild_scheduled_event_users = APIEndpointData(
         "GET",
@@ -47,8 +47,8 @@ class GuildScheduledEventEndpointMixin(CoreMixin):
         param_args=[
             ("limit", int, 100),
             ("with_member", bool, False),
-            ("before", MissingOr[Snowflake], MISSING),
-            ("after", MissingOr[Snowflake], MISSING),
+            ("before", EllipsisOr[Snowflake], ...),
+            ("after", EllipsisOr[Snowflake], ...),
         ],
     )
     list_scheduled_events_for_guild = APIEndpointData(
@@ -56,7 +56,7 @@ class GuildScheduledEventEndpointMixin(CoreMixin):
         "/guilds/{guild_id}/scheduled-events",
         format_args={"guild_id": Snowflake},
         param_args=[
-            ("with_user_count", MissingOr[bool], MISSING),
+            ("with_user_count", EllipsisOr[bool], ...),
         ],
     )
     create_guild_scheduled_event = APIEndpointData(
@@ -65,15 +65,15 @@ class GuildScheduledEventEndpointMixin(CoreMixin):
         format_args={"guild_id": Snowflake},
         supports_reason=True,
         param_args=[
-            ("channel_id", MissingOr[Snowflake], MISSING),
-            ("entity_metadata", MissingOr[GuildScheduledEventEntityMetadata], MISSING),
+            ("channel_id", EllipsisOr[Snowflake], ...),
+            ("entity_metadata", EllipsisOr[GuildScheduledEventEntityMetadata], ...),
             ("name", str),
             ("privacy_level", int),
             ("scheduled_start_time", datetime),
-            ("scheduled_end_time", MissingOr[datetime], MISSING),
-            ("description", MissingOr[str], MISSING),
+            ("scheduled_end_time", EllipsisOr[datetime], ...),
+            ("description", EllipsisOr[str], ...),
             ("entity_type", int),
-            ("image", MissingOr[str], MISSING),
+            ("image", EllipsisOr[str], ...),
         ],
     )
     modify_guild_scheduled_event = APIEndpointData(
@@ -82,16 +82,16 @@ class GuildScheduledEventEndpointMixin(CoreMixin):
         format_args={"guild_id": Snowflake, "guild_scheduled_event_id": Snowflake},
         supports_reason=True,
         param_args=[
-            ("channel_id", MissingOr[Snowflake], MISSING),
-            ("entity_metadata", MissingOr[GuildScheduledEventEntityMetadata], MISSING),
-            ("name", MissingOr[str], MISSING),
-            ("privacy_level", MissingOr[int], MISSING),
-            ("scheduled_start_time", MissingOr[datetime], MISSING),
-            ("scheduled_end_time", MissingOr[datetime], MISSING),
-            ("description", MissingOr[Optional[str]], MISSING),
-            ("entity_type", MissingOr[int], MISSING),
-            ("status", MissingOr[int], MISSING),
-            ("image", MissingOr[str], MISSING),
+            ("channel_id", EllipsisOr[Snowflake], ...),
+            ("entity_metadata", EllipsisOr[GuildScheduledEventEntityMetadata], ...),
+            ("name", EllipsisOr[str], ...),
+            ("privacy_level", EllipsisOr[int], ...),
+            ("scheduled_start_time", EllipsisOr[datetime], ...),
+            ("scheduled_end_time", EllipsisOr[datetime], ...),
+            ("description", EllipsisOr[Optional[str]], ...),
+            ("entity_type", EllipsisOr[int], ...),
+            ("status", EllipsisOr[int], ...),
+            ("image", EllipsisOr[str], ...),
         ],
     )
     delete_guild_scheduled_event = APIEndpointData(

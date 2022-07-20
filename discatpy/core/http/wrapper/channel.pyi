@@ -35,7 +35,7 @@ from discord_typings import (
 )
 
 from ...file import BasicFile
-from ...types import MISSING, MissingOr, Snowflake
+from ...types import EllipsisOr, Snowflake
 
 class ChannelEndpointMixin:
     async def get_channel(self, channel_id: Snowflake): ...
@@ -46,18 +46,18 @@ class ChannelEndpointMixin:
         guild_id: Snowflake,
         *,
         name: str,
-        type: MissingOr[Optional[int]] = MISSING,
-        topic: MissingOr[Optional[str]] = MISSING,
-        bitrate: MissingOr[Optional[int]] = MISSING,
-        user_limit: MissingOr[Optional[int]] = MISSING,
-        rate_limit_per_user: MissingOr[Optional[int]] = MISSING,
-        position: MissingOr[Optional[int]] = MISSING,
-        permission_overwrites: MissingOr[Optional[List[PermissionOverwriteData]]] = MISSING,
-        parent_id: MissingOr[Optional[Snowflake]] = MISSING,
-        nsfw: MissingOr[Optional[bool]] = MISSING,
-        rtc_region: MissingOr[Optional[str]] = MISSING,
-        video_quality_mode: MissingOr[Optional[int]] = MISSING,
-        default_auto_archive_duration: MissingOr[Optional[int]] = MISSING,
+        type: EllipsisOr[Optional[int]] = ...,
+        topic: EllipsisOr[Optional[str]] = ...,
+        bitrate: EllipsisOr[Optional[int]] = ...,
+        user_limit: EllipsisOr[Optional[int]] = ...,
+        rate_limit_per_user: EllipsisOr[Optional[int]] = ...,
+        position: EllipsisOr[Optional[int]] = ...,
+        permission_overwrites: EllipsisOr[Optional[List[PermissionOverwriteData]]] = ...,
+        parent_id: EllipsisOr[Optional[Snowflake]] = ...,
+        nsfw: EllipsisOr[Optional[bool]] = ...,
+        rtc_region: EllipsisOr[Optional[str]] = ...,
+        video_quality_mode: EllipsisOr[Optional[int]] = ...,
+        default_auto_archive_duration: EllipsisOr[Optional[int]] = ...,
         reason: Optional[str] = None,
     ): ...
     async def create_channel_invite(
@@ -77,19 +77,19 @@ class ChannelEndpointMixin:
         self,
         guild_id: Snowflake,
         *,
-        name: MissingOr[Optional[str]] = MISSING,
-        type: MissingOr[Optional[int]] = MISSING,
-        topic: MissingOr[Optional[str]] = MISSING,
-        bitrate: MissingOr[Optional[int]] = MISSING,
-        user_limit: MissingOr[Optional[int]] = MISSING,
-        rate_limit_per_user: MissingOr[Optional[int]] = MISSING,
-        position: MissingOr[Optional[int]] = MISSING,
-        permission_overwrites: MissingOr[Optional[List[PermissionOverwriteData]]] = MISSING,
-        parent_id: MissingOr[Optional[Snowflake]] = MISSING,
-        nsfw: MissingOr[Optional[bool]] = MISSING,
-        rtc_region: MissingOr[Optional[str]] = MISSING,
-        video_quality_mode: MissingOr[Optional[int]] = MISSING,
-        default_auto_archive_duration: MissingOr[Optional[int]] = MISSING,
+        name: EllipsisOr[Optional[str]] = ...,
+        type: EllipsisOr[Optional[int]] = ...,
+        topic: EllipsisOr[Optional[str]] = ...,
+        bitrate: EllipsisOr[Optional[int]] = ...,
+        user_limit: EllipsisOr[Optional[int]] = ...,
+        rate_limit_per_user: EllipsisOr[Optional[int]] = ...,
+        position: EllipsisOr[Optional[int]] = ...,
+        permission_overwrites: EllipsisOr[Optional[List[PermissionOverwriteData]]] = ...,
+        parent_id: EllipsisOr[Optional[Snowflake]] = ...,
+        nsfw: EllipsisOr[Optional[bool]] = ...,
+        rtc_region: EllipsisOr[Optional[str]] = ...,
+        video_quality_mode: EllipsisOr[Optional[int]] = ...,
+        default_auto_archive_duration: EllipsisOr[Optional[int]] = ...,
         reason: Optional[str] = None,
     ): ...
     async def modify_guild_channel_positions(
@@ -106,8 +106,8 @@ class ChannelEndpointMixin:
         channel_id: Snowflake,
         overwrite_id: Snowflake,
         *,
-        allow: MissingOr[str] = MISSING,
-        deny: MissingOr[str] = MISSING,
+        allow: EllipsisOr[str] = ...,
+        deny: EllipsisOr[str] = ...,
         type: int,
         reason: Optional[str] = None,
     ): ...
@@ -124,22 +124,22 @@ class ThreadsEndpointMixin:
         self,
         channel_id: Snowflake,
         *,
-        before: MissingOr[datetime] = MISSING,
-        limit: MissingOr[int] = MISSING,
+        before: EllipsisOr[datetime] = ...,
+        limit: EllipsisOr[int] = ...,
     ): ...
     async def list_private_archived_threads(
         self,
         channel_id: Snowflake,
         *,
-        before: MissingOr[datetime] = MISSING,
-        limit: MissingOr[int] = MISSING,
+        before: EllipsisOr[datetime] = ...,
+        limit: EllipsisOr[int] = ...,
     ): ...
     async def list_joined_private_archived_threads(
         self,
         channel_id: Snowflake,
         *,
-        before: MissingOr[datetime] = MISSING,
-        limit: MissingOr[int] = MISSING,
+        before: EllipsisOr[datetime] = ...,
+        limit: EllipsisOr[int] = ...,
     ): ...
     async def start_thread_from_message(
         self,
@@ -147,8 +147,8 @@ class ThreadsEndpointMixin:
         message_id: Snowflake,
         *,
         name: str,
-        auto_archive_duration: MissingOr[int] = MISSING,
-        rate_limit_per_user: MissingOr[Optional[int]] = MISSING,
+        auto_archive_duration: EllipsisOr[int] = ...,
+        rate_limit_per_user: EllipsisOr[Optional[int]] = ...,
         reason: Optional[str] = None,
     ): ...
     async def start_thread_without_message(
@@ -156,10 +156,10 @@ class ThreadsEndpointMixin:
         channel_id: Snowflake,
         *,
         name: str,
-        auto_archive_duration: MissingOr[int] = MISSING,
-        type: MissingOr[int] = MISSING,
-        invitable: MissingOr[bool] = MISSING,
-        rate_limit_per_user: MissingOr[Optional[int]] = MISSING,
+        auto_archive_duration: EllipsisOr[int] = ...,
+        type: EllipsisOr[int] = ...,
+        invitable: EllipsisOr[bool] = ...,
+        rate_limit_per_user: EllipsisOr[Optional[int]] = ...,
         reason: Optional[str] = None,
     ): ...
     async def join_thread(self, channel_id: Snowflake): ...
@@ -173,9 +173,9 @@ class MessagesEndpointMixin:
         self,
         channel_id: Snowflake,
         *,
-        around: MissingOr[Snowflake] = MISSING,
-        before: MissingOr[Snowflake] = MISSING,
-        after: MissingOr[Snowflake] = MISSING,
+        around: EllipsisOr[Snowflake] = ...,
+        before: EllipsisOr[Snowflake] = ...,
+        after: EllipsisOr[Snowflake] = ...,
         limit: int = 50,
     ): ...
     async def get_pinned_messages(self, channel_id: Snowflake): ...
@@ -185,23 +185,23 @@ class MessagesEndpointMixin:
         message_id: Snowflake,
         emoji: str,
         *,
-        after: MissingOr[Snowflake] = MISSING,
+        after: EllipsisOr[Snowflake] = ...,
         limit: int = 25,
     ): ...
     async def create_message(
         self,
         channel_id: Snowflake,
         *,
-        content: MissingOr[str] = MISSING,
-        tts: MissingOr[bool] = MISSING,
-        embeds: MissingOr[List[EmbedData]] = MISSING,
-        allowed_mentions: MissingOr[AllowedMentionsData] = MISSING,
-        message_reference: MissingOr[MessageReferenceData] = MISSING,
+        content: EllipsisOr[str] = ...,
+        tts: EllipsisOr[bool] = ...,
+        embeds: EllipsisOr[List[EmbedData]] = ...,
+        allowed_mentions: EllipsisOr[AllowedMentionsData] = ...,
+        message_reference: EllipsisOr[MessageReferenceData] = ...,
         # TODO: Components
-        sticker_ids: MissingOr[List[Snowflake]] = MISSING,
-        attachments: MissingOr[List[PartialAttachmentData]] = MISSING,
-        flags: MissingOr[int] = MISSING,
-        files: MissingOr[List[BasicFile]] = MISSING,
+        sticker_ids: EllipsisOr[List[Snowflake]] = ...,
+        attachments: EllipsisOr[List[PartialAttachmentData]] = ...,
+        flags: EllipsisOr[int] = ...,
+        files: EllipsisOr[List[BasicFile]] = ...,
     ): ...
     async def create_reaction(self, channel_id: Snowflake, message_id: Snowflake, emoji: str): ...
     async def edit_message(
@@ -209,13 +209,13 @@ class MessagesEndpointMixin:
         channel_id: Snowflake,
         message_id: Snowflake,
         *,
-        content: MissingOr[str] = MISSING,
-        embeds: MissingOr[List[EmbedData]] = MISSING,
-        flags: MissingOr[int] = MISSING,
-        allowed_mentions: MissingOr[AllowedMentionsData] = MISSING,
+        content: EllipsisOr[str] = ...,
+        embeds: EllipsisOr[List[EmbedData]] = ...,
+        flags: EllipsisOr[int] = ...,
+        allowed_mentions: EllipsisOr[AllowedMentionsData] = ...,
         # TODO: Components
-        attachments: MissingOr[List[AttachmentData]] = MISSING,
-        files: MissingOr[List[BasicFile]] = MISSING,
+        attachments: EllipsisOr[List[AttachmentData]] = ...,
+        files: EllipsisOr[List[BasicFile]] = ...,
     ): ...
     async def delete_message(
         self, channel_id: Snowflake, message_id: Snowflake, *, reason: Optional[str] = None

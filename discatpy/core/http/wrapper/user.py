@@ -24,7 +24,7 @@ DEALINGS IN THE SOFTWARE.
 
 from typing import Optional
 
-from ...types import MISSING, MissingOr, Snowflake
+from ...types import EllipsisOr, Snowflake
 from .core import APIEndpointData, CoreMixin
 
 __all__ = ("UserEndpointMixin",)
@@ -44,7 +44,7 @@ class UserEndpointMixin(CoreMixin):
         "PATCH",
         "/users/@me",
         param_args=[
-            ("username", MissingOr[str], MISSING),
-            ("avatar", MissingOr[Optional[str]], MISSING),
+            ("username", EllipsisOr[str], ...),
+            ("avatar", EllipsisOr[Optional[str]], ...),
         ],
     )

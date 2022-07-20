@@ -27,7 +27,7 @@ from dataclasses import KW_ONLY, dataclass
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 from ...file import BasicFile
-from ...types import MISSING, MissingOr, MissingType, Snowflake
+from ...types import Snowflake, EllipsisType, EllipsisOr
 from ...utils import _create_fn, _from_import, _indent_text, _indent_all_text
 from ..route import Route
 
@@ -42,7 +42,7 @@ class APIEndpointData:
     method: Literal["GET", "HEAD", "POST", "PUT", "DELETE", "PATCH"]
     path: str
     _: KW_ONLY
-    format_args: Optional[Dict[str, MissingOr[Any]]] = None
+    format_args: Optional[Dict[str, EllipsisOr[Any]]] = None
     param_args: Optional[
         List[
             Union[
@@ -84,7 +84,7 @@ def _generate_args(data: APIEndpointData):
     if data.format_args is not None:
         for name, annotation in data.format_args.items():
             arg = f"{name}"
-            if not isinstance(annotation, MissingType):
+            if not isinstance(annotation, EllipsisType):
                 arg += f": {_convert_type_to_str(annotation)}"
 
             func_args.append(arg)
@@ -118,7 +118,7 @@ def _generate_body(data: APIEndpointData):
         params_dict_name = params_dict_name.format("query" if data.method == "GET" else "json")
         body.append("payload: Dict[str, Any] = {}")
 
-        template_if_statment = ["if {0} is not MISSING:", _indent_text('payload["{0}"] = {0}', num_spaces=16)]
+        template_if_statment = ["if {0} is not ...:", _indent_text('payload["{0}"] = {0}', num_spaces=16)]
 
         for arg in data.param_args:
             arg_name = str(arg[0])
@@ -151,9 +151,8 @@ def _generate_body(data: APIEndpointData):
 
 func_locals = {
     "Snowflake": Snowflake,
-    "MISSING": MISSING,
-    "_Missing": MissingType,
-    "MissingOr": MissingOr,
+    "ellipsis": EllipsisType,
+    "EllipsisOr": EllipsisOr,
     "BasicFile": BasicFile,
     "Optional": Union,
     "Route": Route,
@@ -203,7 +202,7 @@ class CoreMixinMeta(type):
                 if v.supports_files:
                     if v.param_args is None:
                         v.param_args = []
-                    v.param_args.append(("files", MissingOr[List[BasicFile]], MISSING))
+                    v.param_args.append(("files", EllipsisOr[List[BasicFile]], ...))
 
                 func_args = _generate_args(v)
                 func_body = _generate_body(v)

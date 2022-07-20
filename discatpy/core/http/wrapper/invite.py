@@ -22,7 +22,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from ...types import MISSING, MissingOr, Snowflake
+from ...types import EllipsisOr, Snowflake
 from .core import APIEndpointData, CoreMixin
 
 __all__ = ("InviteEndpointMixin",)
@@ -34,9 +34,9 @@ class InviteEndpointMixin(CoreMixin):
         "/invites/{invite_code}",
         format_args={"invite_code": str},
         param_args=[
-            ("with_counts", MissingOr[bool], MISSING),
-            ("with_expiration", MissingOr[bool], MISSING),
-            ("guild_scheduled_event_id", MissingOr[Snowflake], MISSING),
+            ("with_counts", EllipsisOr[bool], ...),
+            ("with_expiration", EllipsisOr[bool], ...),
+            ("guild_scheduled_event_id", EllipsisOr[Snowflake], ...),
         ],
     )
     delete_invite = APIEndpointData(

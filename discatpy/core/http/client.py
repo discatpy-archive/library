@@ -28,7 +28,7 @@ import logging
 import sys
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Mapping, Optional, cast
+from typing import Any, Dict, List, Mapping, Optional, Type, Union, cast
 from urllib.parse import quote as _urlquote
 
 import aiohttp
@@ -37,7 +37,7 @@ from discord_typings import GetGatewayBotData
 from ... import __version__
 from ..errors import DisCatPyException, HTTPException
 from ..file import BasicFile
-from ..types import MISSING, MissingOr
+from ..types import EllipsisOr
 from .ratelimiter import Ratelimiter
 from .route import Route
 from .wrapper import *
@@ -53,8 +53,8 @@ _log = logging.getLogger(__name__)
 
 @dataclass
 class _PreparedData:
-    json: MissingOr[Any] = MISSING
-    multipart_content: MissingOr[aiohttp.FormData] = MISSING
+    json: EllipsisOr[Any] = ...
+    multipart_content: EllipsisOr[aiohttp.FormData] = ...
 
 
 def _calculate_reset_after(headers: Mapping[str, Any]) -> float:
@@ -149,13 +149,13 @@ class HTTPClient(
             await self._session.close()
 
     @staticmethod
-    def _prepare_data(json: MissingOr[Dict[str, Any]], files: MissingOr[List[BasicFile]]):
+    def _prepare_data(json: EllipsisOr[Dict[str, Any]], files: EllipsisOr[List[BasicFile]]):
         pd = _PreparedData()
 
-        if json is not MISSING and files is MISSING:
+        if json is not ... and files is ...:
             pd.json = json
 
-        if json is not MISSING and files is not MISSING:
+        if json is not ... and files is not ...:
             form_dat = aiohttp.FormData()
             form_dat.add_field("payload_json", json, content_type="application/json")
 
@@ -185,9 +185,9 @@ class HTTPClient(
         route: Route,
         *,
         query_params: Optional[Dict[str, Any]] = None,
-        json_params: MissingOr[Dict[str, Any]] = MISSING,
+        json_params: EllipsisOr[Dict[str, Any]] = ...,
         reason: Optional[str] = None,
-        files: MissingOr[List[BasicFile]] = MISSING,
+        files: EllipsisOr[List[BasicFile]] = ...,
     ):
         self.request_id += 1
         rid = self.request_id
@@ -204,10 +204,10 @@ class HTTPClient(
         data = self._prepare_data(json_params, files)
         kwargs: Dict[str, Any] = {}
 
-        if data.json is not MISSING:
+        if data.json is not ...:
             kwargs["json"] = data.json
 
-        if data.multipart_content is not MISSING:
+        if data.multipart_content is not ...:
             kwargs["data"] = data.multipart_content
 
         for tries in range(max_tries):

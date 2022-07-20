@@ -26,7 +26,7 @@ from typing import List
 
 from discord_typings import AutoModerationActionData, AutoModerationTriggerMetadataData
 
-from ...types import MISSING, MissingOr, Snowflake
+from ...types import EllipsisOr, Snowflake
 
 class AutoModerationEndpointMixin:
     async def get_auto_moderation_rule(
@@ -40,24 +40,24 @@ class AutoModerationEndpointMixin:
         name: str,
         event_type: int,
         trigger_type: int,
-        trigger_metadata: MissingOr[AutoModerationTriggerMetadataData] = MISSING,
+        trigger_metadata: EllipsisOr[AutoModerationTriggerMetadataData] = ...,
         actions: List[AutoModerationActionData],
-        enabled: MissingOr[bool] = MISSING,
-        exempt_roles: MissingOr[List[Snowflake]] = MISSING,
-        exempt_channels: MissingOr[List[Snowflake]] = MISSING,
+        enabled: EllipsisOr[bool] = ...,
+        exempt_roles: EllipsisOr[List[Snowflake]] = ...,
+        exempt_channels: EllipsisOr[List[Snowflake]] = ...,
     ): ...
     async def modify_auto_moderation_rule(
         self,
         guild_id: Snowflake,
         *,
-        name: MissingOr[str] = MISSING,
-        event_type: MissingOr[int] = MISSING,
-        trigger_type: MissingOr[int] = MISSING,
-        trigger_metadata: MissingOr[AutoModerationTriggerMetadataData] = MISSING,
-        actions: MissingOr[List[AutoModerationActionData]] = MISSING,
-        enabled: MissingOr[bool] = MISSING,
-        exempt_roles: MissingOr[List[Snowflake]] = MISSING,
-        exempt_channels: MissingOr[List[Snowflake]] = MISSING,
+        name: EllipsisOr[str] = ...,
+        event_type: EllipsisOr[int] = ...,
+        trigger_type: EllipsisOr[int] = ...,
+        trigger_metadata: EllipsisOr[AutoModerationTriggerMetadataData] = ...,
+        actions: EllipsisOr[List[AutoModerationActionData]] = ...,
+        enabled: EllipsisOr[bool] = ...,
+        exempt_roles: EllipsisOr[List[Snowflake]] = ...,
+        exempt_channels: EllipsisOr[List[Snowflake]] = ...,
     ): ...
     async def delete_auto_moderation_rule(
         self, guild_id: Snowflake, auto_moderation_rule_id: Snowflake

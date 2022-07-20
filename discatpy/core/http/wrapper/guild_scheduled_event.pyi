@@ -27,7 +27,7 @@ from typing import Optional
 
 from discord_typings import GuildScheduledEventEntityMetadata
 
-from ...types import MISSING, MissingOr, Snowflake
+from ...types import EllipsisOr, Snowflake
 
 class GuildScheduledEventEndpointMixin:
     async def get_guild_scheduled_event(
@@ -35,7 +35,7 @@ class GuildScheduledEventEndpointMixin:
         guild_id: Snowflake,
         guild_scheduled_event_id: Snowflake,
         *,
-        with_user_count: MissingOr[bool] = MISSING,
+        with_user_count: EllipsisOr[bool] = ...,
     ): ...
     async def get_guild_scheduled_event_users(
         self,
@@ -44,25 +44,25 @@ class GuildScheduledEventEndpointMixin:
         *,
         limit: int = 100,
         with_member: bool = False,
-        before: MissingOr[Snowflake] = MISSING,
-        after: MissingOr[Snowflake] = MISSING,
+        before: EllipsisOr[Snowflake] = ...,
+        after: EllipsisOr[Snowflake] = ...,
     ): ...
     async def list_scheduled_events_for_guild(
-        self, guild_id: Snowflake, *, with_user_count: MissingOr[bool] = MISSING
+        self, guild_id: Snowflake, *, with_user_count: EllipsisOr[bool] = ...
     ): ...
     async def create_guild_scheduled_event(
         self,
         guild_id: Snowflake,
         *,
-        channel_id: MissingOr[Snowflake] = MISSING,
-        entity_metadata: MissingOr[GuildScheduledEventEntityMetadata] = MISSING,
+        channel_id: EllipsisOr[Snowflake] = ...,
+        entity_metadata: EllipsisOr[GuildScheduledEventEntityMetadata] = ...,
         name: str,
         privacy_level: int,
         scheduled_start_time: datetime,
-        scheduled_end_time: MissingOr[datetime] = MISSING,
-        description: MissingOr[str] = MISSING,
+        scheduled_end_time: EllipsisOr[datetime] = ...,
+        description: EllipsisOr[str] = ...,
         entity_type: int,
-        image: MissingOr[str] = MISSING,
+        image: EllipsisOr[str] = ...,
         reason: Optional[str] = None,
     ): ...
     async def modify_guild_scheduled_event(
@@ -70,15 +70,15 @@ class GuildScheduledEventEndpointMixin:
         guild_id: Snowflake,
         guild_scheduled_event_id: Snowflake,
         *,
-        channel_id: MissingOr[Snowflake] = MISSING,
-        entity_metadata: MissingOr[GuildScheduledEventEntityMetadata] = MISSING,
-        name: MissingOr[str] = MISSING,
-        privacy_level: MissingOr[int] = MISSING,
-        scheduled_start_time: MissingOr[datetime] = MISSING,
-        scheduled_end_time: MissingOr[datetime] = MISSING,
-        description: MissingOr[str] = MISSING,
-        entity_type: MissingOr[int] = MISSING,
-        image: MissingOr[str] = MISSING,
+        channel_id: EllipsisOr[Snowflake] = ...,
+        entity_metadata: EllipsisOr[GuildScheduledEventEntityMetadata] = ...,
+        name: EllipsisOr[str] = ...,
+        privacy_level: EllipsisOr[int] = ...,
+        scheduled_start_time: EllipsisOr[datetime] = ...,
+        scheduled_end_time: EllipsisOr[datetime] = ...,
+        description: EllipsisOr[str] = ...,
+        entity_type: EllipsisOr[int] = ...,
+        image: EllipsisOr[str] = ...,
         reason: Optional[str] = None,
     ): ...
     async def delete_guild_scheduled_event(

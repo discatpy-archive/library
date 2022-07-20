@@ -22,7 +22,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from ...types import MISSING, MissingOr, Snowflake
+from ...types import EllipsisOr, Snowflake
 from .core import APIEndpointData, CoreMixin
 
 __all__ = ("StageInstanceEndpointMixin",)
@@ -39,8 +39,8 @@ class StageInstanceEndpointMixin(CoreMixin):
         param_args=[
             ("channel_id", Snowflake),
             ("topic", str),
-            ("privacy_level", MissingOr[int], MISSING),
-            ("send_start_notification", MissingOr[bool], MISSING),
+            ("privacy_level", EllipsisOr[int], ...),
+            ("send_start_notification", EllipsisOr[bool], ...),
         ],
     )
     modify_stage_instance = APIEndpointData(
@@ -49,8 +49,8 @@ class StageInstanceEndpointMixin(CoreMixin):
         format_args={"channel_id": Snowflake},
         supports_reason=True,
         param_args=[
-            ("topic", MissingOr[str], MISSING),
-            ("privacy_level", MissingOr[int], MISSING),
+            ("topic", EllipsisOr[str], ...),
+            ("privacy_level", EllipsisOr[int], ...),
         ],
     )
     delete_stage_instance = APIEndpointData(

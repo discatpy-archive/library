@@ -24,7 +24,7 @@ DEALINGS IN THE SOFTWARE.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 from discord_typings import (
     ApplicationCommandPermissionsUpdateData,
@@ -62,7 +62,7 @@ from discord_typings import (
     VoiceStateUpdateData,
 )
 
-from ...types import MissingOr, Snowflake
+from ...types import Snowflake, EllipsisOr
 
 if TYPE_CHECKING:
     from ..client import Client
@@ -141,16 +141,16 @@ class GatewayEventProtos:
         id: Snowflake,
         guild_id: Snowflake,
         member_count: int,
-        added_members: MissingOr[List[ThreadMemberData]],
-        removed_member_ids: MissingOr[List[Snowflake]],
+        added_members: EllipsisOr[List[ThreadMemberData]],
+        removed_member_ids: EllipsisOr[List[Snowflake]],
     ):
         pass
 
     async def channel_pins_update(
         self,
-        guild_id: MissingOr[Snowflake],
+        guild_id: EllipsisOr[Snowflake],
         channel_id: Snowflake,
-        last_pin_timestamp: MissingOr[Optional[datetime]],
+        last_pin_timestamp: EllipsisOr[Optional[datetime]],
     ):
         pass
 
@@ -195,9 +195,9 @@ class GatewayEventProtos:
         members: List[GuildMemberData],
         chunk_index: int,
         chunk_count: int,
-        not_found: MissingOr[List[Snowflake]],
-        presences: MissingOr[List[UpdatePresenceData]],
-        nonce: MissingOr[str],
+        not_found: EllipsisOr[List[Snowflake]],
+        presences: EllipsisOr[List[UpdatePresenceData]],
+        nonce: str,
     ):
         pass
 
@@ -246,7 +246,7 @@ class GatewayEventProtos:
     async def invite_create(self, invite: InviteCreateData):
         pass
 
-    async def invite_delete(self, channel_id: Snowflake, guild_id: MissingOr[Snowflake], code: str):
+    async def invite_delete(self, channel_id: Snowflake, guild_id: EllipsisOr[Snowflake], code: str):
         pass
 
     # Message events
@@ -258,12 +258,12 @@ class GatewayEventProtos:
         pass
 
     async def message_delete(
-        self, id: Snowflake, channel_id: Snowflake, guild_id: MissingOr[Snowflake]
+        self, id: Snowflake, channel_id: Snowflake, guild_id: EllipsisOr[Snowflake]
     ):
         pass
 
     async def message_delete_bulk(
-        self, ids: List[Snowflake], channel_id: Snowflake, guild_id: MissingOr[Snowflake]
+        self, ids: List[Snowflake], channel_id: Snowflake, guild_id: EllipsisOr[Snowflake]
     ):
         pass
 
@@ -272,8 +272,8 @@ class GatewayEventProtos:
         user_id: Snowflake,
         channel_id: Snowflake,
         message_id: Snowflake,
-        guild_id: MissingOr[Snowflake],
-        member: MissingOr[GuildMemberData],
+        guild_id: EllipsisOr[Snowflake],
+        member: EllipsisOr[GuildMemberData],
         emoji: EmojiData,
     ):
         pass
@@ -283,20 +283,20 @@ class GatewayEventProtos:
         user_id: Snowflake,
         channel_id: Snowflake,
         message_id: Snowflake,
-        guild_id: MissingOr[Snowflake],
+        guild_id: EllipsisOr[Snowflake],
         emoji: EmojiData,
     ):
         pass
 
     async def message_reaction_remove_all(
-        self, channel_id: Snowflake, message_id: Snowflake, guild_id: MissingOr[Snowflake]
+        self, channel_id: Snowflake, message_id: Snowflake, guild_id: EllipsisOr[Snowflake]
     ):
         pass
 
     async def message_reaction_remove_emoji(
         self,
         channel_id: Snowflake,
-        guild_id: MissingOr[Snowflake],
+        guild_id: EllipsisOr[Snowflake],
         message_id: Snowflake,
         emoji: EmojiData,
     ):
@@ -310,10 +310,10 @@ class GatewayEventProtos:
     async def typing_start(
         self,
         channel_id: Snowflake,
-        guild_id: MissingOr[Snowflake],
+        guild_id: EllipsisOr[Snowflake],
         user_id: Snowflake,
         timestamp: int,
-        member: MissingOr[GuildMemberData],
+        member: EllipsisOr[GuildMemberData],
     ):
         pass
 

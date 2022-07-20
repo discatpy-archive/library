@@ -25,9 +25,9 @@ DEALINGS IN THE SOFTWARE.
 import inspect
 from collections import OrderedDict
 from datetime import datetime
-from typing import Callable, List, TypeVar, get_args, get_origin
+from typing import Callable, List, TypeVar, get_args
 
-from ...types import MISSING, MissingOr, MissingType, Snowflake
+from ...types import Snowflake, EllipsisOr, EllipsisType
 from ...utils import _create_fn, _from_import, _indent_text
 
 __all__ = ("generate_handlers_from",)
@@ -37,8 +37,8 @@ _custom_type_handlers = OrderedDict(
     {
         (
             lambda t: t is datetime or datetime in get_args(t)
-        ): 'datetime.fromisoformat(raw.get("{0.name}", MISSING)) if raw.get("{0.name}", MISSING) not in (MISSING, None) else raw.get("{0.name}", MISSING)',
-        (lambda _: True): 'cast({0.annotation}, raw.get("{0.name}", MISSING))',
+        ): 'datetime.fromisoformat(raw.get("{0.name}", ...)) if raw.get("{0.name}", ...) not in (..., None) else raw.get("{0.name}", ...)',
+        (lambda _: True): 'cast({0.annotation}, raw.get("{0.name}", ...))',
     }
 )
 
@@ -65,9 +65,8 @@ def _generate_body(args: List[inspect.Parameter]):
 
 func_locals = {
     "Snowflake": Snowflake,
-    "MISSING": MISSING,
-    "_Missing": MissingType,
-    "MissingOr": MissingOr,
+    "ellipsis": EllipsisType,
+    "EllipsisOr": EllipsisOr,
 }
 _from_import(
     "typing",
