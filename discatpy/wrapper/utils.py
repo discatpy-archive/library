@@ -22,19 +22,24 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from types import EllipsisType
-from typing import TypeVar, Union
+from typing import Any, Callable, Dict, Mapping, Optional, Tuple, TypeVar, Union
 
-from discord_typings import CategoryChannelData, NewsChannelData, Snowflake, TextChannelData, VoiceChannelData
-
-__all__ = (
-    "Snowflake",
-    "EllipsisType",
-    "EllipsisOr",
-    "GuildChannelData",
-)
+__all__ = ("parse_data",)
 
 T = TypeVar("T")
-EllipsisOr = Union[EllipsisType, T]
+D = TypeVar("D")
 
-GuildChannelData = Union[TextChannelData, NewsChannelData, VoiceChannelData, CategoryChannelData]
+def parse_data(
+    dict: Mapping[str, Any],
+    key: str,
+    convert_func: Optional[Callable[..., T]] = None,
+    args: Tuple[Any, ...] = (), # this has to be provided in a raw tuple because *args isn't possible in this function
+    kwargs: Dict[str, Any] = {}, # same here
+    *,
+    default: D = ...,
+    _skip_none_check: bool = False
+) -> Union[T, D, None]:
+    val = dict.get(key, default)
+    if val not in ((default, None) if not _skip_none_check else (default,)):
+        return convert_func(*args, **kwargs) if convert_func else val
+    return val

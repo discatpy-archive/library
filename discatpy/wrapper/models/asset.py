@@ -25,85 +25,78 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional
 
-from .types.snowflake import *
+from ...core.types import Snowflake
 
 if TYPE_CHECKING:
-    from .client import Client
+    from ..bot import Bot
 
 __all__ = ("Asset",)
 
 BASE_CDN_PATH = "https://cdn.discordapp.com/"
+VALID_IMAGE_FORMATS = [
+    "jpg",
+    "jpeg",
+    "png",
+    "webp",
+    "gif",
+]
 
 
 class Asset:
-    """
-    Represents a CDN asset from Discord.
+    """Represents a CDN asset from Discord.
 
     Attributes
     ----------
-    client: :type:`Any`
-        A reference to the client.
+    bot: :class:`Bot`
+        A reference to the bot.
     format: :type:`str`
         The image format of this Asset.
     key: :type:`str`
         The filename of this Asset.
     path: :type:`str`
-        The path to this Asset. This must contain `{0}{1}` at the end in
-        order for the image format & key to be formatted correctly into the path.
+        The path to this Asset.
     animated: :type:`bool`
         Whether or not this Asset is animated. If it is, then :attr:`format` will
         be set to `gif`.
     """
 
-    def __init__(self, client: Client, path: str, key: str, animated: bool = False):
-        self.client = client
-        self.format = ".png" if not animated else ".gif"
+    def __init__(self, bot: Bot, path: str, key: str, animated: bool = False):
+        self.bot = bot
+        self.format = "png" if not animated else "gif" # by default it's png or gif if animated
         self.key = key
         self.animated = animated
-        self.path = path.format(self.key, self.format)
+        self.path = path
 
     @property
     def url(self) -> str:
-        """
-        Gets the full URL for this Asset.
+        """:class:`str` Gets the full URL for this Asset."""
+        return BASE_CDN_PATH + self.path + self.key + "." + self.format
 
-        Returns
-        -------
-        :type:`str`
-            The full URL for this Asset.
-        """
-        return BASE_CDN_PATH + self.path
+    def replace(self, *, size: Optional[int] = None, format: Optional[str] = None) -> str:
+        if size is None and not format:
+            raise ValueError("Size or format parameters have to be provided!")
 
-    def with_size_as(self, size: int) -> str:
-        """
-        Processes a CDN url with a certain size. This checks the size according to
-        https://discord.com/developers/docs/reference#image-formatting-image-base-url.
+        if format and format in VALID_IMAGE_FORMATS:
+            if format not in VALID_IMAGE_FORMATS:
+                raise ValueError(f"Format parameter has invalid value {format}!")
+            self.format = format
 
-        Parameters
-        ----------
-        size: :type:`int`
-            The desired size. This size must be a power of 2 and in-between 16 and
-            4096.
+        new_url = self.url
 
-        Returns
-        -------
-        :type:`str`
-            The modified CDN url.
-        """
-        if size < 0:
-            raise ValueError("Size parameter cannot be below 0!")
+        if size is not None:
+            if size < 0:
+                raise ValueError("Size parameter cannot be below 0!")
+            elif not (size & (size - 1)) == 0:
+                raise ValueError("Size parameter must be a power of 2!")
+            elif size < 16 or size > 4096:
+                raise ValueError("Size parameter has to be in-between 16 and 4096 (inclusive)!")
 
-        if not (size & (size - 1)) == 0:
-            raise ValueError("Size parameter must be a power of 2!")
+            new_url += "?size={size}"
 
-        if size < 16 or size > 4096:
-            raise ValueError("Size parameter has to be in-between 16 and 4096!")
+        return new_url
 
-        return self.url + f"?size={size}"
-
-    async def read(self, size: Optional[int] = None) -> bytes:
-        """
-        Reads the Asset file directly from the Discord CDN.
+    async def read(self, *, size: Optional[int] = None, format: Optional[str] = None) -> bytes:
+        """Reads the Asset file directly from the Discord CDN.
 
         Parameters
         ----------
@@ -115,46 +108,49 @@ class Asset:
         :type:`bytes`
             The raw bytes of the file.
         """
-        url = self.url if not size else self.with_size_as(size)
-        return await self.client.http.get_from_cdn(url)
+        url = self.url
+        if size or format:
+            url = self.replace(size=size, format=format)
+
+        return await self.bot.http.get_from_cdn(url)
 
     @classmethod
     def from_custom_emoji(cls, client, emoji_id: Snowflake, animated: bool = False):
-        return cls(client, "emojis/{0}{1}", str(emoji_id), animated)
+        return cls(client, "emojis/", str(emoji_id), animated)
 
     @classmethod
     def from_guild_icon(cls, client, guild_id: Snowflake, hash: str):
-        return cls(client, f"icons/{guild_id}/" + "{0}{1}", hash, hash.startswith("a_"))
+        return cls(client, f"icons/{guild_id}/", hash, hash.startswith("a_"))
 
     @classmethod
     def from_guild_splash(cls, client, guild_id: Snowflake, hash: str):
-        return cls(client, f"splashes/{guild_id}/" + "{0}{1}", hash)
+        return cls(client, f"splashes/{guild_id}/", hash)
 
     @classmethod
     def from_guild_discovery_splash(cls, client, guild_id: Snowflake, hash: str):
-        return cls(client, f"discovery-splashes/{guild_id}/" + "{0}{1}", hash)
+        return cls(client, f"discovery-splashes/{guild_id}/", hash)
 
     @classmethod
     def from_guild_banner(cls, client, guild_id: Snowflake, hash: str):
-        return cls(client, f"banners/{guild_id}/" + "{0}{1}", hash, hash.startswith("a_"))
+        return cls(client, f"banners/{guild_id}/", hash, hash.startswith("a_"))
 
     @classmethod
     def from_user_banner(cls, client, user_id: Snowflake, hash: str):
-        return cls(client, f"banners/{user_id}/" + "{0}{1}", hash, hash.startswith("a_"))
+        return cls(client, f"banners/{user_id}/", hash, hash.startswith("a_"))
 
     @classmethod
     def from_default_user_avatar(cls, client, discriminator: int):
-        return cls(client, "embed/avatars/{0}{1}", str(discriminator % 5))
+        return cls(client, "embed/avatars/", str(discriminator % 5))
 
     @classmethod
     def from_user_avatar(cls, client, user_id: Snowflake, hash: str):
-        return cls(client, f"avatars/{user_id}/" + "{0}{1}", hash, hash.startswith("a_"))
+        return cls(client, f"avatars/{user_id}/", hash, hash.startswith("a_"))
 
     @classmethod
     def from_guild_member_avatar(cls, client, guild_id: Snowflake, user_id: Snowflake, hash: str):
         return cls(
             client,
-            f"guilds/{guild_id}/users/{user_id}/avatars/" + "{0}{1}",
+            f"guilds/{guild_id}/users/{user_id}/avatars/",
             hash,
             hash.startswith("a_"),
         )
@@ -163,8 +159,8 @@ class Asset:
 
     @classmethod
     def from_role_icon(cls, client, role_id: Snowflake, hash: str):
-        return cls(client, f"role-icons/{role_id}/" + "{0}{1}", hash)
+        return cls(client, f"role-icons/{role_id}/", hash)
 
     @classmethod
     def from_guild_scheduled_event_cover(cls, client, scheduled_event_id: Snowflake, hash: str):
-        return cls(client, f"guild-events/{scheduled_event_id}/" + "{0}{1}", hash)
+        return cls(client, f"guild-events/{scheduled_event_id}/", hash)

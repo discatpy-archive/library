@@ -28,7 +28,7 @@ from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 from ...file import BasicFile
 from ...types import Snowflake, EllipsisType, EllipsisOr
-from ...utils import _create_fn, _from_import, _indent_text, _indent_all_text
+from ...utils import create_fn, from_import, indent_text, indent_all_text
 from ..route import Route
 
 __all__ = (
@@ -52,6 +52,7 @@ class APIEndpointData:
             ]
         ]
     ] = None
+    return_type: EllipsisOr[object] = ...
     supports_reason: bool = False
     supports_files: bool = False
 
@@ -118,7 +119,7 @@ def _generate_body(data: APIEndpointData):
         params_dict_name = params_dict_name.format("query" if data.method == "GET" else "json")
         body.append("payload: Dict[str, Any] = {}")
 
-        template_if_statment = ["if {0} is not ...:", _indent_text('payload["{0}"] = {0}', num_spaces=16)]
+        template_if_statment = ["if {0} is not ...:", indent_text('payload["{0}"] = {0}', num_spaces=16)]
 
         for arg in data.param_args:
             arg_name = str(arg[0])
@@ -146,7 +147,7 @@ def _generate_body(data: APIEndpointData):
     request_line += ")"
 
     body.append(request_line)
-    return _indent_all_text(body)
+    return indent_all_text(body)
 
 
 func_locals = {
@@ -157,7 +158,7 @@ func_locals = {
     "Optional": Union,
     "Route": Route,
 }
-_from_import(
+from_import(
     "typing",
     func_locals,
     [
@@ -169,15 +170,15 @@ _from_import(
         "Union",
     ],
 )
-_from_import(
+from_import(
     "types",
     func_locals,
     [
         "NoneType",
     ],
 )
-_from_import("discord_typings", func_locals)
-_from_import(
+from_import("discord_typings", func_locals)
+from_import(
     "datetime",
     func_locals,
     [
@@ -207,7 +208,7 @@ class CoreMixinMeta(type):
                 func_args = _generate_args(v)
                 func_body = _generate_body(v)
 
-                func = _create_fn(k, func_args, func_body, locals=func_locals, asynchronous=True)
+                func = create_fn(k, func_args, func_body, locals=func_locals, asynchronous=True)
                 attrs[k] = func
 
         return super(CoreMixinMeta, cls).__new__(cls, name, bases, attrs, **kwargs)

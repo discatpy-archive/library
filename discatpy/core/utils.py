@@ -33,6 +33,10 @@ __all__ = (
     "DISCORD_EPOCH",
     "SnowflakeUtils",
     "MultipleValuesDict",
+    "indent_text",
+    "indent_all_text",
+    "create_fn",
+    "from_import",
 )
 
 
@@ -162,21 +166,21 @@ Func = Callable[..., Any]
 CoroFunc = Callable[..., Coroutine[Any, Any, Any]]
 
 
-def _indent_text(txt: str, *, num_spaces: int = 4) -> str:
+def indent_text(txt: str, *, num_spaces: int = 4) -> str:
     return " " * num_spaces + txt
 
 
-def _indent_all_text(strs: List[str]) -> List[str]:
+def indent_all_text(strs: List[str]) -> List[str]:
     output: List[str] = []
 
     for txt in strs:
-        output.append(_indent_text(txt))
+        output.append(indent_text(txt))
 
     return output
 
 
 # Code taken from the dataclasses module in the Python stdlib
-def _create_fn(
+def create_fn(
     name: str,
     args: List[str],
     body: List[str],
@@ -198,7 +202,7 @@ def _create_fn(
         return_annotation = "-> _return_type"
 
     fargs = ", ".join(args)
-    fbody = "\n".join(_indent_all_text(body))
+    fbody = "\n".join(indent_all_text(body))
 
     # Compute the text of the entire function.
     txt = ""
@@ -207,25 +211,25 @@ def _create_fn(
     txt += f"def {name}({fargs}) {return_annotation}:\n{fbody}"
 
     local_vars = ", ".join(locals.keys())
-    txt = f"def __create_fn__({local_vars}):\n{_indent_text(txt)}\n    return {name}"
+    txt = f"def __create_fn__({local_vars}):\n{indent_text(txt)}\n    return {name}"
     ns = {}
     exec(txt, globals, ns)
     return ns["__create_fn__"](**locals)
 
 
-def get_everything_from_module(mod):
+def _get_everything_from_module(mod):
     everything = {}
     keys = [k for k in dir(mod) if not k.startswith("_")]
 
     for k in keys:
         everything[k] = getattr(mod, k)
         if isinstance(everything[k], types.ModuleType):
-            everything.update(get_everything_from_module(everything[k]))
+            everything.update(_get_everything_from_module(everything[k]))
 
     return everything
 
 
-def _from_import(module: str, locals: Dict[str, Any], objs_to_grab: Optional[List[str]] = None):
+def from_import(module: str, locals: Dict[str, Any], objs_to_grab: Optional[List[str]] = None):
     actual_module = importlib.import_module(module)
 
     if objs_to_grab:
@@ -233,4 +237,4 @@ def _from_import(module: str, locals: Dict[str, Any], objs_to_grab: Optional[Lis
             v = getattr(actual_module, obj)
             locals[obj] = v
     else:
-        locals.update(get_everything_from_module(actual_module))
+        locals.update(_get_everything_from_module(actual_module))

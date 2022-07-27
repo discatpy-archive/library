@@ -22,19 +22,10 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from types import EllipsisType
-from typing import TypeVar, Union
+from ..core.client import Client
 
-from discord_typings import CategoryChannelData, NewsChannelData, Snowflake, TextChannelData, VoiceChannelData
+__all__ = ("Bot",)
 
-__all__ = (
-    "Snowflake",
-    "EllipsisType",
-    "EllipsisOr",
-    "GuildChannelData",
-)
 
-T = TypeVar("T")
-EllipsisOr = Union[EllipsisType, T]
-
-GuildChannelData = Union[TextChannelData, NewsChannelData, VoiceChannelData, CategoryChannelData]
+class Bot(Client):
+    pass

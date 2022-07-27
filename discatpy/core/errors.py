@@ -29,6 +29,7 @@ from aiohttp import ClientResponse
 __all__ = (
     "DisCatPyException",
     "HTTPException",
+    "UnsupportedAPIVersionWarning",
 )
 
 
@@ -102,3 +103,8 @@ class HTTPException(DisCatPyException):
         format += ")"
 
         super().__init__(format.format(response.status, response.reason, self.code, self.text))
+
+
+class UnsupportedAPIVersionWarning(Warning):
+    """Represents a warning for unsupported API versions."""
+    pass

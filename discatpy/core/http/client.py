@@ -26,16 +26,17 @@ import asyncio
 import json
 import logging
 import sys
+import warnings
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Mapping, Optional, Type, Union, cast
+from typing import Any, Dict, List, Mapping, Optional, cast
 from urllib.parse import quote as _urlquote
 
 import aiohttp
 from discord_typings import GetGatewayBotData
 
 from ... import __version__
-from ..errors import DisCatPyException, HTTPException
+from ..errors import DisCatPyException, HTTPException, UnsupportedAPIVersionWarning
 from ..file import BasicFile
 from ..types import EllipsisOr
 from .ratelimiter import Ratelimiter
@@ -104,11 +105,17 @@ class HTTPClient(
     def __init__(self, token: str, *, api_version: Optional[int] = None):
         self.token = token
         self._ratelimiter = Ratelimiter()
-        self._api_version = (
-            api_version
-            if api_version is not None and api_version in VALID_API_VERSIONS
-            else DEFAULT_API_VERSION
-        )
+        self._api_version = DEFAULT_API_VERSION
+
+        if api_version is not None and api_version not in VALID_API_VERSIONS:
+            warnings.warn(
+                f"Discord API v{api_version} is not supported. v{DEFAULT_API_VERSION} will be used instead.", 
+                UnsupportedAPIVersionWarning, 
+                stacklevel=2,
+            )
+        elif api_version is not None:
+            self._api_version = api_version
+            
         self._api_url = BASE_API_URL.format(self._api_version)
 
         self.__session: Optional[aiohttp.ClientSession] = None
@@ -288,3 +295,10 @@ class HTTPClient(
     async def get_gateway_bot(self) -> GetGatewayBotData:
         gb_info = await self.request("GET", Route("/gateway/bot"))
         return cast(GetGatewayBotData, gb_info)
+
+    async def get_from_cdn(self, url: str) -> bytes:
+        async with self._session.get(url) as resp:
+            if resp.status == 200:
+                return await resp.read()
+
+            raise HTTPException(resp, f"failed to get CDN Asset with url {url}")

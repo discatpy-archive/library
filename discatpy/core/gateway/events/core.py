@@ -28,7 +28,7 @@ from datetime import datetime
 from typing import Callable, List, TypeVar, get_args
 
 from ...types import Snowflake, EllipsisOr, EllipsisType
-from ...utils import _create_fn, _from_import, _indent_text
+from ...utils import create_fn, from_import, indent_text
 
 __all__ = ("generate_handlers_from",)
 
@@ -44,7 +44,7 @@ _custom_type_handlers = OrderedDict(
 
 
 def _generate_body(args: List[inspect.Parameter]):
-    ret_tuple = _indent_text("return (")
+    ret_tuple = indent_text("return (")
 
     if len(args) == 1:
         ret_tuple += "cast({0.annotation}, raw), ".format(args[0])
@@ -68,7 +68,7 @@ func_locals = {
     "ellipsis": EllipsisType,
     "EllipsisOr": EllipsisOr,
 }
-_from_import(
+from_import(
     "typing",
     func_locals,
     [
@@ -82,15 +82,15 @@ _from_import(
         "Union",
     ],
 )
-_from_import(
+from_import(
     "types",
     func_locals,
     [
         "NoneType",
     ],
 )
-_from_import("discord_typings", func_locals)
-_from_import(
+from_import("discord_typings", func_locals)
+from_import(
     "datetime",
     func_locals,
     [
@@ -112,7 +112,7 @@ def generate_handlers_from(src_cls: type) -> Callable[[T], T]:
             params.pop(0)  # this should ALWAYS be the self parameter
 
             func_body = _generate_body(params)
-            func = _create_fn(f"handle_{k}", ["self", "raw: Any"], func_body, locals=func_locals)
+            func = create_fn(f"handle_{k}", ["self", "raw: Any"], func_body, locals=func_locals)
             setattr(cls, f"handle_{k}", func)
 
         return cls

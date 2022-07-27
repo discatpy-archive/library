@@ -23,10 +23,11 @@ DEALINGS IN THE SOFTWARE.
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, Mapping
+from typing import TYPE_CHECKING, Any, Mapping
 
-# if TYPE_CHECKING:
-#    from .client import Client
+
+if TYPE_CHECKING:
+    from ..bot import Bot
 
 __all__ = ("DiscordObject",)
 
@@ -35,21 +36,18 @@ class DiscordObject:
     """A raw Discord Object.
     All models here from the Discord API use this as a base.
 
+    This base class uses the :class:`DiscordObjectMeta` metaclass for its subclasses.
+
     Attributes
     ----------
-    bot:
+    bot: :Class:`Bot`
         The bot tied to this Discord Object.
+    as_dict: Mapping[:class:`str`, Any]
+        The dict version of this object.
     """
 
-    __slots__ = ("bot",)
+    __slots__ = ("_bot", "as_dict",)
 
-    def __init__(self, *, data: Mapping[str, Any], bot, **kwargs):
-        self.bot = bot
-        self._update(data)
-
-    def _update(self, data: Mapping[str, Any]):
-        raise NotImplementedError
-
-    def to_dict(self) -> Dict[str, Any]:
-        """:class:`dict[str, Any]`: Converts this Discord Object into a dict. Not guaranteed to be implemented."""
-        raise NotImplementedError
+    def __init__(self, *, data: Mapping[str, Any], bot: Bot) -> None:
+        self._bot = bot
+        self.as_dict = data

@@ -22,14 +22,14 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from typing import Optional, Union
+from typing import Optional
 
 from discord_typings import UserData
 
+from ...core.types import EllipsisOr
+from ..utils import parse_data
 from .asset import Asset
 from .object import DiscordObject
-from .types.snowflake import *
-from .utils import MISSING, MissingType
 
 __all__ = ("User",)
 
@@ -39,25 +39,25 @@ class User(DiscordObject):
 
     Attributes
     ----------
-    id: :type:`Snowflake`
+    id: :class:`int`
         The id of this user
-    name: :type:`str`
+    name: :class:`str`
         The name of this user
-    discriminator: :type:`str`
+    discriminator: :class:`str`
         The 4 digit tag for this user, also called a discriminator
-    avatar: :type:`Optional[Asset]`
+    avatar: Optional[:class:`Asset`]
         The avatar for this user
-    bot: :type:`Union[MISSING, bool]`
+    bot: EllipsisOr[:class:`bool`]
         If this user is a bot or not
-    tfa_enabled: :type:`Union[MISSING, bool]`
+    tfa_enabled: EllipsisOr[:class:`bool`]
         If this user has two-factor authentication or not
-    banner: :type:`Union[MISSING, None, Asset]`
+    banner: EllipsisOr[Optional[:class:`Asset`]]
         The banner for this user
-    flags: :type:`Union[MISSING, int]`
+    flags: EllipsisOr[:class:`int`]
         The flags for this user
-    premium_type: :type:`Union[MISSING, int]`
+    premium_type: EllipsisOr[:class:`int`]
         If the user has Nitro, Nitro Classic, or none
-    public_flags: :type:`Union[MISSING, int]`
+    public_flags: EllipsisOr[:class:`int`]
         The public flags for this user
     """
 
@@ -75,40 +75,34 @@ class User(DiscordObject):
         "public_flags",
     )
 
-    def __init__(self, d: UserData, client):
-        DiscordObject.__init__(self, d, client)
-        self._update(d)
+    def __init__(self, *, data: UserData, bot):
+        DiscordObject.__init__(self, data=data, bot=bot)
 
-    def _update(self, d: UserData):
-        self.id: Snowflake = d.get("id")
-        self.name: str = d.get("username")
-        self.discriminator: str = d.get("discriminator")
-        self.avatar: Optional[Asset] = (
-            Asset.from_user_avatar(self.client, self.id, d.get("avatar"))
-            if d.get("avatar")
-            else Asset.from_default_user_avatar(self.client, int(self.discriminator))
+        self.id: int = int(data["id"])
+        self.name: str = data["username"]
+        self.discriminator: str = data["discriminator"]
+        self.avatar: Optional[Asset] = parse_data(
+            data,
+            "avatar",
+            Asset.from_user_avatar,
+            (self._bot, self.id, data["avatar"]),
+            default=Asset.from_default_user_avatar(self._bot, int(self.discriminator))
         )
-        self.bot: Union[MissingType, bool] = d.get("bot", MISSING)
-        self.tfa_enabled: Union[MissingType, bool] = d.get("mfa_enabled", MISSING)
-        self.accent_color: Union[MissingType, Optional[int]] = MISSING
-        if d.get("accent_color", MISSING) is not MISSING:
-            self.accent_color = (
-                int(d.get("accent_color")) if d.get("accent_color") is not None else None
-            )
-        _banner_hash: Union[MissingType, Optional[str]] = d.get("banner", MISSING)
-        self.banner: Union[MissingType, Optional[Asset]] = MISSING
-        if _banner_hash is not MISSING:
-            self.banner = (
-                Asset.from_user_banner(self.client, self.id, _banner_hash)
-                if _banner_hash is not None
-                else None
-            )
+        self.bot: EllipsisOr[bool] = data.get("bot", ...)
+        self.tfa_enabled: EllipsisOr[bool] = data.get("mfa_enabled", ...)
+        self.accent_color: EllipsisOr[Optional[int]] = parse_data(data, "accent_color")
+        self.banner: EllipsisOr[Optional[Asset]] = parse_data(
+            data,
+            "banner",
+            Asset.from_user_banner,
+            (self._bot, self.id, data.get("banner")),
+        )
         # TODO: Locales
-        self.flags: Union[MissingType, int] = d.get("flags", MISSING)
-        self.premium_type: Union[MissingType, int] = d.get("premium_type", MISSING)
-        self.public_flags: Union[MissingType, int] = d.get("public_flags", MISSING)
+        self.flags: EllipsisOr[int] = data.get("flags", ...)
+        self.premium_type: EllipsisOr[int] = data.get("premium_type", ...)
+        self.public_flags: EllipsisOr[int] = data.get("public_flags", ...)
 
     @property
     def mention(self) -> str:
-        """Returns a string that can mention this user."""
+        """:class:`str` A string that can mention this user."""
         return f"<@{self.id}>"
