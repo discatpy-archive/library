@@ -25,9 +25,9 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any, Callable, Coroutine, Optional
+from typing import Callable, Optional
 
-from .dispatcher import Dispatcher
+from .dispatcher import Dispatcher, Event
 from .flags import Intents
 from .gateway import GatewayClient, GatewayEventHandler, GatewayEventProtos
 from .http import HTTPClient
@@ -124,6 +124,7 @@ class Client:
         "closed",
         "intents",
         "dispatcher",
+        "event",
     )
 
     def __init__(
@@ -131,6 +132,7 @@ class Client:
     ):
         self.gateway: Optional[GatewayClient] = None  # initalized later
         self.dispatcher: Dispatcher = Dispatcher(self)
+        self.event = self.dispatcher.event
         self._event_protos_handler_hooked: bool = False
         self.event_protos_handler: GatewayEventProtos = GatewayEventProtos(
             self
@@ -161,26 +163,16 @@ class Client:
 
     # Events
 
-    def event(self, name: Optional[str] = None):
-        """A decorator that registers a function as an event callback.
-
-        Parameters
-        ----------
-        name: :type:`Optional[str]` = `None`
-            The name of this event. If none, then the function's name is used.
-        """
-
-        def decorator(func: Callable[..., Coroutine[Any, Any, Any]]):
-            event_name = self.dispatcher._get_event_name(func, name)
-
-            if not self.dispatcher.has_event(event_name):
-                self.dispatcher.set_event_proto(func, name=name)
-
-            # TODO: parent
-            self.dispatcher.add_event_callback(func, name=name)
-            return func
-
-        return decorator
+    def event(
+        self, 
+        *, 
+        proto: Optional[bool] = None, 
+        callback: Optional[bool] = None, 
+        name: Optional[str] = None, 
+        parent: bool = False, 
+        one_shot: bool = False
+    ) -> Callable[..., Event]:
+        raise NotImplementedError
 
     # Running logic
 
