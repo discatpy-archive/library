@@ -70,7 +70,7 @@ class Dispatcher:
 
     def get_event(self, name: str) -> Optional[Event]:
         """Returns an event with the name provided.
-        
+
         Parameters
         ----------
         name: :class:`str`
@@ -85,7 +85,7 @@ class Dispatcher:
 
     def add_event(self, name: str) -> Event:
         """Adds a new event. Returns this new event after creation.
-        
+
         Parameters
         ----------
         name: :class:`str`
@@ -102,7 +102,7 @@ class Dispatcher:
 
     def remove_event(self, name: str) -> None:
         """Removes an event.
-        
+
         Parameters
         ----------
         name: :class:`str`
@@ -130,13 +130,13 @@ class Dispatcher:
         return name in self.events
 
     def event(
-        self, 
-        *, 
-        proto: Optional[bool] = None, 
-        callback: Optional[bool] = None, 
-        name: Optional[str] = None, 
-        parent: bool = False, 
-        one_shot: bool = False
+        self,
+        *,
+        proto: Optional[bool] = None,
+        callback: Optional[bool] = None,
+        name: Optional[str] = None,
+        parent: bool = False,
+        one_shot: bool = False,
     ) -> Func[Event]:
         if proto is None and callback is None:
             raise ValueError("Proto and callback parameters cannot both be None!")
@@ -151,6 +151,7 @@ class Dispatcher:
                 new_event.add_callback(func, one_shot=one_shot, parent=parent)
 
             return new_event
+
         return wrapper
 
     # global error handler

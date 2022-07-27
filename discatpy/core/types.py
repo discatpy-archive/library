@@ -25,7 +25,13 @@ DEALINGS IN THE SOFTWARE.
 from types import EllipsisType
 from typing import TypeVar, Union
 
-from discord_typings import CategoryChannelData, NewsChannelData, Snowflake, TextChannelData, VoiceChannelData
+from discord_typings import (
+    CategoryChannelData,
+    NewsChannelData,
+    Snowflake,
+    TextChannelData,
+    VoiceChannelData,
+)
 
 __all__ = (
     "Snowflake",

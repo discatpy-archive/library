@@ -107,4 +107,5 @@ class HTTPException(DisCatPyException):
 
 class UnsupportedAPIVersionWarning(Warning):
     """Represents a warning for unsupported API versions."""
+
     pass

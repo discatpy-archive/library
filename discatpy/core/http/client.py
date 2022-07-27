@@ -109,13 +109,13 @@ class HTTPClient(
 
         if api_version is not None and api_version not in VALID_API_VERSIONS:
             warnings.warn(
-                f"Discord API v{api_version} is not supported. v{DEFAULT_API_VERSION} will be used instead.", 
-                UnsupportedAPIVersionWarning, 
+                f"Discord API v{api_version} is not supported. v{DEFAULT_API_VERSION} will be used instead.",
+                UnsupportedAPIVersionWarning,
                 stacklevel=2,
             )
         elif api_version is not None:
             self._api_version = api_version
-            
+
         self._api_url = BASE_API_URL.format(self._api_version)
 
         self.__session: Optional[aiohttp.ClientSession] = None

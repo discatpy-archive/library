@@ -29,15 +29,18 @@ __all__ = ("parse_data",)
 T = TypeVar("T")
 D = TypeVar("D")
 
+
 def parse_data(
     dict: Mapping[str, Any],
     key: str,
     convert_func: Optional[Callable[..., T]] = None,
-    args: Tuple[Any, ...] = (), # this has to be provided in a raw tuple because *args isn't possible in this function
-    kwargs: Dict[str, Any] = {}, # same here
+    args: Tuple[
+        Any, ...
+    ] = (),  # this has to be provided in a raw tuple because *args isn't possible in this function
+    kwargs: Dict[str, Any] = {},  # same here
     *,
     default: D = ...,
-    _skip_none_check: bool = False
+    _skip_none_check: bool = False,
 ) -> Union[T, D, None]:
     val = dict.get(key, default)
     if val not in ((default, None) if not _skip_none_check else (default,)):

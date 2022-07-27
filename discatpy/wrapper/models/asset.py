@@ -62,7 +62,7 @@ class Asset:
 
     def __init__(self, bot: Bot, path: str, key: str, animated: bool = False):
         self.bot = bot
-        self.format = "png" if not animated else "gif" # by default it's png or gif if animated
+        self.format = "png" if not animated else "gif"  # by default it's png or gif if animated
         self.key = key
         self.animated = animated
         self.path = path

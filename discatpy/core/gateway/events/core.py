@@ -27,7 +27,7 @@ from collections import OrderedDict
 from datetime import datetime
 from typing import Callable, List, TypeVar, get_args
 
-from ...types import Snowflake, EllipsisOr, EllipsisType
+from ...types import EllipsisOr, EllipsisType, Snowflake
 from ...utils import create_fn, from_import, indent_text
 
 __all__ = ("generate_handlers_from",)

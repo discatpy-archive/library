@@ -98,7 +98,11 @@ class Messageable:
         msgs: List[Dict[str, Any]]
         if limit <= 100:
             msgs = await self._bot.http.get_channel_messages(
-                channel_id, limit=limit, around=around if around else ..., before=before if before else ..., after=after if after else ...
+                channel_id,
+                limit=limit,
+                around=around if around else ...,
+                before=before if before else ...,
+                after=after if after else ...,
             )
         else:
             # paginator mode activated
@@ -107,7 +111,11 @@ class Messageable:
             for _ in range(amount_of_loops):
                 msgs.extend(
                     await self._bot.http.get_channel_messages(
-                        channel_id, limit=limit, around=around if around else ..., before=before if before else ..., after=after if after else ...
+                        channel_id,
+                        limit=limit,
+                        around=around if around else ...,
+                        before=before if before else ...,
+                        after=after if after else ...,
                     )
                 )
                 if len(msgs) != 100:
@@ -122,7 +130,9 @@ class Messageable:
             yield Message(m, self._bot)
 
     async def pins(self):
-        msgs: List[Dict[str, Any]] = await self._bot.http.get_pinned_messages(await self._get_channel_id())
+        msgs: List[Dict[str, Any]] = await self._bot.http.get_pinned_messages(
+            await self._get_channel_id()
+        )
 
         for m in msgs:
             yield Message(m, self._bot)

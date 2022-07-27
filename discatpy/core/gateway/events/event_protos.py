@@ -62,7 +62,7 @@ from discord_typings import (
     VoiceStateUpdateData,
 )
 
-from ...types import Snowflake, EllipsisOr
+from ...types import EllipsisOr, Snowflake
 
 if TYPE_CHECKING:
     from ..client import Client
@@ -80,7 +80,7 @@ class GatewayEventProtos:
             for k in dir(self):
                 v = getattr(self, k)
                 if not k.startswith("_") and callable(v):
-                    self.client.dispatcher.set_event_proto(v)  # parent=self)
+                    self.client.dispatcher.add_event(k).set_proto(v)
 
             self.client._event_protos_handler_hooked = True
 
@@ -246,7 +246,9 @@ class GatewayEventProtos:
     async def invite_create(self, invite: InviteCreateData):
         pass
 
-    async def invite_delete(self, channel_id: Snowflake, guild_id: EllipsisOr[Snowflake], code: str):
+    async def invite_delete(
+        self, channel_id: Snowflake, guild_id: EllipsisOr[Snowflake], code: str
+    ):
         pass
 
     # Message events

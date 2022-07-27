@@ -27,8 +27,8 @@ from dataclasses import KW_ONLY, dataclass
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 from ...file import BasicFile
-from ...types import Snowflake, EllipsisType, EllipsisOr
-from ...utils import create_fn, from_import, indent_text, indent_all_text
+from ...types import EllipsisOr, EllipsisType, Snowflake
+from ...utils import create_fn, from_import, indent_all_text, indent_text
 from ..route import Route
 
 __all__ = (
@@ -57,7 +57,10 @@ class APIEndpointData:
     supports_files: bool = False
 
 
-IGNORE_PARAMETERS = ["reason", "files",]
+IGNORE_PARAMETERS = [
+    "reason",
+    "files",
+]
 
 
 def _convert_type_to_str(anno) -> str:
@@ -119,7 +122,10 @@ def _generate_body(data: APIEndpointData):
         params_dict_name = params_dict_name.format("query" if data.method == "GET" else "json")
         body.append("payload: Dict[str, Any] = {}")
 
-        template_if_statment = ["if {0} is not ...:", indent_text('payload["{0}"] = {0}', num_spaces=16)]
+        template_if_statment = [
+            "if {0} is not ...:",
+            indent_text('payload["{0}"] = {0}', num_spaces=16),
+        ]
 
         for arg in data.param_args:
             arg_name = str(arg[0])
@@ -142,7 +148,6 @@ def _generate_body(data: APIEndpointData):
 
     if data.supports_reason:
         request_line += f"reason=reason, "
-
 
     request_line += ")"
 

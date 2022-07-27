@@ -101,6 +101,7 @@ class Event:
         def wrapper(func: CoroFunc):
             self.set_error_handler(func)
             return self
+
         return wrapper
 
     def add_callback(self, func: CoroFunc, *, one_shot: bool = False, parent: bool = False):
@@ -134,7 +135,9 @@ class Event:
         del self.callbacks[index]
         _log.debug("Removed event callback with index %d under event %s", index, self.name)
 
-    def callback(self, func: Optional[CoroFunc] = None, *, one_shot: bool = False, parent: bool = False):
+    def callback(
+        self, func: Optional[CoroFunc] = None, *, one_shot: bool = False, parent: bool = False
+    ):
         def wrapper(func: CoroFunc):
             self.add_callback(func, one_shot=one_shot, parent=parent)
             return self

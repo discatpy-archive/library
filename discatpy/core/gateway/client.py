@@ -63,9 +63,9 @@ def _decompress_msg(inflator: zlib._Decompress, msg: bytes):
 
 class HeartbeatHandler:
     __slots__ = (
-        "parent", 
-        "_task", 
-        "heartbeat_payload", 
+        "parent",
+        "_task",
+        "heartbeat_payload",
         "heartbeat_interval",
         "_first_heartbeat",
     )

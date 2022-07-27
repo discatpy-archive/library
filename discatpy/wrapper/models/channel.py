@@ -51,7 +51,15 @@ __all__ = ("GuildChannel",)
 
 
 class GuildChannel(DiscordObject):
-    __slots__ = ("id", "type", "guild_id", "position", "permission_overwrites", "name", "parent_id",)
+    __slots__ = (
+        "id",
+        "type",
+        "guild_id",
+        "position",
+        "permission_overwrites",
+        "name",
+        "parent_id",
+    )
 
     def __init__(self, *, data: GuildChannelData, bot):
         DiscordObject.__init__(self, data=data, bot=bot)
@@ -60,10 +68,7 @@ class GuildChannel(DiscordObject):
         self.type: ChannelType = ChannelType(data["type"])
         # this has None in its return type which is illegal for guild_id, but guild_id will never be None
         self.guild_id: EllipsisOr[int] = parse_data(  # type: ignore
-            data, 
-            "guild_id", 
-            int, 
-            (data.get("guild_id"),)
+            data, "guild_id", int, (data.get("guild_id"),)
         )
         self.position: int = data["position"]
         self.permission_overwrites: List[PermissionOverwriteData] = data["permission_overwrites"]
@@ -71,10 +76,10 @@ class GuildChannel(DiscordObject):
         self.parent_id: Optional[int] = parse_data(data, "parent_id", int, (data["parent_id"],))
 
     async def edit(
-        self, 
-        *, 
+        self,
+        *,
         reason: Optional[str] = None,
-        name: EllipsisOr[str] = ..., 
+        name: EllipsisOr[str] = ...,
         type: EllipsisOr[ChannelType] = ...,
         position: EllipsisOr[int] = ...,
         permission_overwrites: EllipsisOr[List[PermissionOverwriteData]] = ...,
@@ -94,7 +99,7 @@ class GuildChannel(DiscordObject):
                 raise TypeError(f"You cannot convert a channel to type {type.name}!")  # type: ignore
 
         new_channel_data = await self._bot.http.modify_channel(
-            self.guild_id, # type: ignore  # PYRIGHT USE YOUR PROGRAM BRAIN TO INFER THAT THIS HAS TO BE INT
+            self.guild_id,  # type: ignore  # PYRIGHT USE YOUR PROGRAM BRAIN TO INFER THAT THIS HAS TO BE INT
             reason=reason,
             name=name,
             type=type,
@@ -122,10 +127,7 @@ class DMChannel(DiscordObject):
         self.id: int = int(data["id"])
         self.type: ChannelType = ChannelType(data["type"])
         self.last_message_id: Optional[int] = parse_data(
-            data, 
-            "last_message_id", 
-            int, 
-            (data["last_message_id"],)
+            data, "last_message_id", int, (data["last_message_id"],)
         )
         self.recipients: List[User] = [User(data=u, bot=self._bot) for u in data["recipients"]]
         # Pyright cannot infer that the default parameter for this is set to ...

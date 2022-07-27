@@ -164,13 +164,13 @@ class Client:
     # Events
 
     def event(
-        self, 
-        *, 
-        proto: Optional[bool] = None, 
-        callback: Optional[bool] = None, 
-        name: Optional[str] = None, 
-        parent: bool = False, 
-        one_shot: bool = False
+        self,
+        *,
+        proto: Optional[bool] = None,
+        callback: Optional[bool] = None,
+        name: Optional[str] = None,
+        parent: bool = False,
+        one_shot: bool = False,
     ) -> Callable[..., Event]:
         raise NotImplementedError
 
@@ -219,7 +219,7 @@ class Client:
 
     def run(self):
         """Starts the Gateway client in a blocking, synchronous way.
- 
+
         If you need to run another asynchronous function before the client starts, then use :meth:`~.start`.
         """
         loop = self.loop

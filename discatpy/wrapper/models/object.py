@@ -25,7 +25,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Mapping
 
-
 if TYPE_CHECKING:
     from ..bot import Bot
 
@@ -46,7 +45,10 @@ class DiscordObject:
         The dict version of this object.
     """
 
-    __slots__ = ("_bot", "as_dict",)
+    __slots__ = (
+        "_bot",
+        "as_dict",
+    )
 
     def __init__(self, *, data: Mapping[str, Any], bot: Bot) -> None:
         self._bot = bot

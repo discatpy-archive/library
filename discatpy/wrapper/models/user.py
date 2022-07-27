@@ -86,7 +86,7 @@ class User(DiscordObject):
             "avatar",
             Asset.from_user_avatar,
             (self._bot, self.id, data["avatar"]),
-            default=Asset.from_default_user_avatar(self._bot, int(self.discriminator))
+            default=Asset.from_default_user_avatar(self._bot, int(self.discriminator)),
         )
         self.bot: EllipsisOr[bool] = data.get("bot", ...)
         self.tfa_enabled: EllipsisOr[bool] = data.get("mfa_enabled", ...)
