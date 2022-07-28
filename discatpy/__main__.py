@@ -23,17 +23,15 @@ DEALINGS IN THE SOFTWARE.
 """
 
 import platform
+import re
 import subprocess
 import sys
-import re
-
-import aiohttp
-import discord_typings
 
 import discatpy
 
 # get_installed_package_info taken from here:
 # https://github.com/python/typeshed/blob/master/scripts/create_baseline_stubs.py#L25-L45
+
 
 def search_pip_freeze_output(project: str, output: str):
     # Look for lines such as "typed-ast==1.4.2".  '-' matches '_' and
@@ -52,12 +50,19 @@ def get_installed_package_info(project: str):
     vice versa).
     Return (normalized project name, installed version) if successful.
     """
-    r = subprocess.run([sys.executable, "-m", "pip", "freeze"], capture_output=True, text=True, check=True)
+    r = subprocess.run(
+        [sys.executable, "-m", "pip", "freeze"], capture_output=True, text=True, check=True
+    )
     return search_pip_freeze_output(project, r.stdout)
 
 
 def get_dependencies():
-    r = subprocess.run([sys.executable, "-m", "pip", "show", "discatpy"], capture_output=True, text=True, check=True)
+    r = subprocess.run(
+        [sys.executable, "-m", "pip", "show", "discatpy"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
     m = re.search(r"Requires:\s+(.*)", r.stdout)
     if m:
         dependencies = "".join(m.group(1).split())
@@ -77,7 +82,9 @@ def dump_dependencies():
                 raise RuntimeError(f"Installed package info for package {dependency} not found")
 
         str_template = "  - {0} Version: {1}"
-        str_dependencies = [str_template.format(name, version) for name, version in pkgs_info.items()]
+        str_dependencies = [
+            str_template.format(name, version) for name, version in pkgs_info.items()
+        ]
         return str_dependencies
     else:
         raise RuntimeError("Required dependencies for DisCatPy not found")
