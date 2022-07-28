@@ -23,15 +23,70 @@ DEALINGS IN THE SOFTWARE.
 """
 
 import platform
+import subprocess
 import sys
+import re
 
 import aiohttp
 import discord_typings
 
 import discatpy
 
+# get_installed_package_info taken from here:
+# https://github.com/python/typeshed/blob/master/scripts/create_baseline_stubs.py#L25-L45
+
+def search_pip_freeze_output(project: str, output: str):
+    # Look for lines such as "typed-ast==1.4.2".  '-' matches '_' and
+    # '_' matches '-' in project name, so that "typed_ast" matches
+    # "typed-ast", and vice versa.
+    regex = "^(" + re.sub(r"[-_]", "[-_]", project) + ")==(.*)"
+    m = re.search(regex, output, flags=re.IGNORECASE | re.MULTILINE)
+    if not m:
+        return None
+    return m.group(1), m.group(2)
+
+
+def get_installed_package_info(project: str):
+    """Find package information from pip freeze output.
+    Match project name somewhat fuzzily (case sensitive; '-' matches '_', and
+    vice versa).
+    Return (normalized project name, installed version) if successful.
+    """
+    r = subprocess.run([sys.executable, "-m", "pip", "freeze"], capture_output=True, text=True, check=True)
+    return search_pip_freeze_output(project, r.stdout)
+
+
+def get_dependencies():
+    r = subprocess.run([sys.executable, "-m", "pip", "show", "discatpy"], capture_output=True, text=True, check=True)
+    m = re.search(r"Requires:\s+(.*)", r.stdout)
+    if m:
+        dependencies = "".join(m.group(1).split())
+        return dependencies.split(",")
+
+
+def dump_dependencies():
+    dependencies = get_dependencies()
+    if dependencies:
+        pkgs_info = {}
+
+        for dependency in dependencies:
+            installed_pkg_info = get_installed_package_info(dependency)
+            if installed_pkg_info:
+                pkgs_info[dependency] = installed_pkg_info[1]
+            else:
+                raise RuntimeError(f"Installed package info for package {dependency} not found")
+
+        str_template = "  - {0} Version: {1}"
+        str_dependencies = [str_template.format(name, version) for name, version in pkgs_info.items()]
+        return str_dependencies
+    else:
+        raise RuntimeError("Required dependencies for DisCatPy not found")
+
 
 def neofetch():
+    dependencies = dump_dependencies()
+    dependencies_str = "\n".join(dependencies)
+
     print(
         f"""
 \033[31;40md8888b. d888888b .d8888.  .o88b.  .d8b.  d888888b d8888b. db    db\033[0m
@@ -47,8 +102,7 @@ def neofetch():
 - Python Version: {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}-{sys.version_info.releaselevel}
 - System Information: {platform.uname().system} {platform.uname().release}
 - Dependencies:
-  - aiohttp Version: {aiohttp.__version__}
-  - discord_typings Version: {discord_typings.__version__}
+{dependencies_str}
     """
     )
 

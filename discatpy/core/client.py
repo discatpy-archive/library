@@ -124,7 +124,6 @@ class Client:
         "closed",
         "intents",
         "dispatcher",
-        "event",
     )
 
     def __init__(
@@ -132,7 +131,8 @@ class Client:
     ):
         self.gateway: Optional[GatewayClient] = None  # initalized later
         self.dispatcher: Dispatcher = Dispatcher(self)
-        self.event = self.dispatcher.event
+        # pyright thinks that this is a dynamic instance attribute and not a class attribute (see below)
+        self.event = self.dispatcher.event  # type: ignore
         self._event_protos_handler_hooked: bool = False
         self.event_protos_handler: GatewayEventProtos = GatewayEventProtos(
             self
