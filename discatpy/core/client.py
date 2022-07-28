@@ -131,8 +131,6 @@ class Client:
     ):
         self.gateway: Optional[GatewayClient] = None  # initalized later
         self.dispatcher: Dispatcher = Dispatcher(self)
-        # pyright thinks that this is a dynamic instance attribute and not a class attribute (see below)
-        self.event = self.dispatcher.event  # type: ignore
         self._event_protos_handler_hooked: bool = False
         self.event_protos_handler: GatewayEventProtos = GatewayEventProtos(
             self
@@ -166,13 +164,23 @@ class Client:
     def event(
         self,
         *,
-        proto: Optional[bool] = None,
-        callback: Optional[bool] = None,
+        proto: bool = False,
+        callback: bool = False,
         name: Optional[str] = None,
         parent: bool = False,
         one_shot: bool = False,
     ) -> Callable[..., Event]:
-        raise NotImplementedError
+        return self.dispatcher.event(
+            proto=proto, callback=callback, name=name, parent=parent, one_shot=one_shot
+        )
+
+    def event_callback(
+        self, name: Optional[str] = None, *, parent: bool = False, one_shot: bool = False
+    ) -> Callable[..., Event]:
+        return self.dispatcher.event(callback=True, name=name, parent=parent, one_shot=one_shot)
+
+    def event_proto(self, name: Optional[str] = None, *, parent: bool = False) -> Callable[..., Event]:
+        return self.dispatcher.event(proto=True, name=name, parent=parent)
 
     # Running logic
 

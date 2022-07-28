@@ -132,13 +132,13 @@ class Dispatcher:
     def event(
         self,
         *,
-        proto: Optional[bool] = None,
-        callback: Optional[bool] = None,
+        proto: bool = False,
+        callback: bool = False,
         name: Optional[str] = None,
         parent: bool = False,
         one_shot: bool = False,
     ) -> Func[Event]:
-        if proto is None and callback is None:
+        if not proto and not callback:
             raise ValueError("Proto and callback parameters cannot both be None!")
 
         def wrapper(func: CoroFunc):
