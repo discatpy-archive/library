@@ -179,7 +179,9 @@ class Client:
     ) -> Callable[..., Event]:
         return self.dispatcher.event(callback=True, name=name, parent=parent, one_shot=one_shot)
 
-    def event_proto(self, name: Optional[str] = None, *, parent: bool = False) -> Callable[..., Event]:
+    def event_proto(
+        self, name: Optional[str] = None, *, parent: bool = False
+    ) -> Callable[..., Event]:
         return self.dispatcher.event(proto=True, name=name, parent=parent)
 
     # Running logic
