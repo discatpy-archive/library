@@ -83,9 +83,11 @@ class FlagMeta(type):
         default_value = 0
 
         for k, v in attrs.items():
-            if isinstance(v, flag_value):
-                valid_flags[k] = v.value
-                v.name = k
+            if isinstance(v, int):
+                new_value = flag_value(v)
+                new_value.name = k
+                valid_flags[k] = v
+                attrs[k] = new_value
 
         if inverted:
             max_bits = max(valid_flags.values()).bit_length()
@@ -189,23 +191,23 @@ class BaseFlags(metaclass=FlagMeta):
 
 
 class Intents(BaseFlags):
-    GUILDS = flag_value(1 << 0)
-    GUILD_MEMBERS = flag_value(1 << 1)
-    GUILD_BANS = flag_value(1 << 2)
-    GUILD_EMOJIS_AND_STICKERS = flag_value(1 << 3)
-    GUILD_INTEGRATIONS = flag_value(1 << 4)
-    GUILD_WEBHOOKS = flag_value(1 << 5)
-    GUILD_INVITES = flag_value(1 << 6)
-    GUILD_VOICE_STATES = flag_value(1 << 7)
-    GUILD_PRESENCES = flag_value(1 << 8)
-    GUILD_MESSAGES = flag_value(1 << 9)
-    GUILD_MESSAGE_REACTIONS = flag_value(1 << 10)
-    GUILD_MESSAGE_TYPING = flag_value(1 << 11)
-    DIRECT_MESSAGES = flag_value(1 << 12)
-    DIRECT_MESSAGE_REACTIONS = flag_value(1 << 13)
-    DIRECT_MESSSAGE_TYPING = flag_value(1 << 14)
-    MESSAGE_CONTENT = flag_value(1 << 15)
-    GUILD_SCHEDULED_EVENTS = flag_value(1 << 16)
+    GUILDS = 1 << 0
+    GUILD_MEMBERS = 1 << 1
+    GUILD_BANS = 1 << 2
+    GUILD_EMOJIS_AND_STICKERS = 1 << 3
+    GUILD_INTEGRATIONS = 1 << 4
+    GUILD_WEBHOOKS = 1 << 5
+    GUILD_INVITES = 1 << 6
+    GUILD_VOICE_STATES = 1 << 7
+    GUILD_PRESENCES = 1 << 8
+    GUILD_MESSAGES = 1 << 9
+    GUILD_MESSAGE_REACTIONS = 1 << 10
+    GUILD_MESSAGE_TYPING = 1 << 11
+    DIRECT_MESSAGES = 1 << 12
+    DIRECT_MESSAGE_REACTIONS = 1 << 13
+    DIRECT_MESSSAGE_TYPING = 1 << 14
+    MESSAGE_CONTENT = 1 << 15
+    GUILD_SCHEDULED_EVENTS = 1 << 16
     # TODO: Automod
 
     @classmethod
@@ -230,12 +232,12 @@ class Intents(BaseFlags):
 
 
 class MessageFlags(BaseFlags):
-    CROSSPOSTED = flag_value(1 << 0)
-    IS_CROSSPOST = flag_value(1 << 1)
-    SUPPRESS_EMBEDS = flag_value(1 << 2)
-    SOURCE_MESSAGE_DELETED = flag_value(1 << 3)
-    URGENT = flag_value(1 << 4)
-    HAS_THREAD = flag_value(1 << 5)
-    EPHEMERAL = flag_value(1 << 6)
-    LOADING = flag_value(1 << 7)
-    FAILED_TO_MENTION_SOME_ROLES_IN_THREAD = flag_value(1 << 8)
+    CROSSPOSTED = 1 << 0
+    IS_CROSSPOST = 1 << 1
+    SUPPRESS_EMBEDS = 1 << 2
+    SOURCE_MESSAGE_DELETED = 1 << 3
+    URGENT = 1 << 4
+    HAS_THREAD = 1 << 5
+    EPHEMERAL = 1 << 6
+    LOADING = 1 << 7
+    FAILED_TO_MENTION_SOME_ROLES_IN_THREAD = 1 << 8

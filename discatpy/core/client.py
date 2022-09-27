@@ -84,7 +84,7 @@ def _cleanup_loop():
         loop.close()
 
 
-class Client:
+class Client(Dispatcher):
     """
     The main client that joins the developer's code and the Discord API together.
 
@@ -108,8 +108,6 @@ class Client:
         Whether or not the client is running.
     intents: :type:`Intents`
         The intents for the gateway.
-    dispatcher: :type:`Dispatcher`
-        The event dispatcher for Gateway events.
     """
 
     __slots__ = (
@@ -123,14 +121,12 @@ class Client:
         "running",
         "closed",
         "intents",
-        "dispatcher",
     )
 
     def __init__(
         self, token: str, *, intents: Intents = Intents.DEFAULT(), api_version: Optional[int] = None
     ):
         self.gateway: Optional[GatewayClient] = None  # initalized later
-        self.dispatcher: Dispatcher = Dispatcher(self)
         self._event_protos_handler_hooked: bool = False
         self.event_protos_handler: GatewayEventProtos = GatewayEventProtos(
             self
@@ -158,31 +154,6 @@ class Client:
     def loop(self):
         """:class:`asyncio.AbstractEventLoop` The main event loop. This is either a new loop or the current running loop."""
         return get_loop()
-
-    # Events
-
-    def event(
-        self,
-        *,
-        proto: bool = False,
-        callback: bool = False,
-        name: Optional[str] = None,
-        parent: bool = False,
-        one_shot: bool = False,
-    ) -> Callable[..., Event]:
-        return self.dispatcher.event(
-            proto=proto, callback=callback, name=name, parent=parent, one_shot=one_shot
-        )
-
-    def event_callback(
-        self, name: Optional[str] = None, *, parent: bool = False, one_shot: bool = False
-    ) -> Callable[..., Event]:
-        return self.dispatcher.event(callback=True, name=name, parent=parent, one_shot=one_shot)
-
-    def event_proto(
-        self, name: Optional[str] = None, *, parent: bool = False
-    ) -> Callable[..., Event]:
-        return self.dispatcher.event(proto=True, name=name, parent=parent)
 
     # Running logic
 
@@ -220,7 +191,7 @@ class Client:
                     # we cannot reconnect, so we must stop the program
                     self.running = False
             except Exception as e:
-                await self.dispatcher.error_handler(e)
+                await self.error_handler(e)
 
     async def start(self):
         """An asynchronous function that calls :meth:`~.login` and :meth:`~.connect`."""

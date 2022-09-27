@@ -26,13 +26,9 @@ import asyncio
 import inspect
 import logging
 import traceback
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Callable, Coroutine, Dict, List, Optional, TypeVar, overload
+from typing import Any, Callable, Coroutine, Dict, Optional, TypeVar
 
 from .event import Event
-
-if TYPE_CHECKING:
-    from ..client import Client
 
 _log = logging.getLogger(__name__)
 
@@ -58,14 +54,12 @@ class Dispatcher:
     """
 
     __slots__ = (
-        "client",
         "events",
         "event_protos",
         "valid_events",
     )
 
-    def __init__(self, client: "Client") -> None:
-        self.client = client
+    def __init__(self) -> None:
         self.events: Dict[str, Event] = {}
 
     def get_event(self, name: str) -> Optional[Event]:

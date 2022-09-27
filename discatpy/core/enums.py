@@ -113,19 +113,19 @@ class ExplicitContentFilterLevel(int, Enum):
     ALL_MEMBERS = 2
 
 
-class MFALevel(Enum):
+class MFALevel(int, Enum):
     NONE = 0
     ELEVATED = 1
 
 
-class NSFWLevel(Enum):
+class NSFWLevel(int, Enum):
     DEFAULT = 0
     EXPLICIT = 1
     SAFE = 2
     AGE_RESTRICTED = 3
 
 
-class PremiumTier(Enum):
+class PremiumTier(int, Enum):
     NONE = 0
     TIER_1 = 1
     TIER_2 = 2
