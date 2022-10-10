@@ -63,11 +63,13 @@ class User:
     locale: UnsetOr[dt.Locales] = attr.field(default=Unset, kw_only=True)
     verified: UnsetOr[bool] = attr.field(default=Unset, kw_only=True)
     email: UnsetOr[t.Optional[str]] = attr.field(default=Unset, kw_only=True)
-    flags: UnsetOr[int] = attr.field(default=Unset, kw_only=True, converter=UserFlags)
+    flags: UnsetOr[int] = attr.field(default=Unset, kw_only=True, converter=UserFlags.from_value)
     premium_type: UnsetOr[dt.UserPremiumTypes] = attr.field(
         default=Unset, kw_only=True, converter=UserPremiumTypes
     )
-    public_flags: UnsetOr[int] = attr.field(default=Unset, kw_only=True, converter=UserFlags)
+    public_flags: UnsetOr[int] = attr.field(
+        default=Unset, kw_only=True, converter=UserFlags.from_value
+    )
 
     def __attrs_post_init__(self):
         if isinstance(self.avatar, str):
