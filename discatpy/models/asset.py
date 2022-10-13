@@ -141,14 +141,13 @@ class Asset:
     supported_types: list[str] = attr.field(kw_only=True, validator=_supported_types_validator)
     extension: str = attr.field(init=False, validator=_extension_validator)
     supports_gif: bool = attr.field(init=False)
-    size: int = attr.field(init=False, validator=_size_validator)
+    size: int = attr.field(init=False, validator=_size_validator, default=16)
 
     def __attrs_post_init__(self):
         self.supports_gif = (
             self.url.split("/")[1].startswith("a_") and "gif" in self.supported_types
         )
         self.extension = "gif" if self.supports_gif else "png"
-        self.size = 16
 
     @classmethod
     def from_asset_preset(cls, bot_owner: Bot, preset: tuple[str, tuple[str, ...]]):
