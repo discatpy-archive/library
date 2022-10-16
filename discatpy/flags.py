@@ -44,7 +44,7 @@ class FlagMember:
         self._value_ = value
 
     def __get__(self, instance: Flag, owner: type[Flag]) -> bool:
-        return instance._has_value(self.value)  # pyright: ignore[reportPrivateUsage]
+        return instance.value & self.value == self.value  # pyright: ignore[reportPrivateUsage]
 
     def __set__(self, instance: Flag, value: bool) -> None:
         instance._set_value(self.value, value)  # pyright: ignore[reportPrivateUsage]
@@ -121,9 +121,6 @@ class Flag(metaclass=FlagMeta):
             self.value |= value
         else:
             self.value &= ~value
-
-    def _has_value(self, value: int):
-        return (self.value & value) == value
 
     def __or__(self, other: t.Union[Flag, FlagMember, int, t.Any]):
         if isinstance(other, int):
