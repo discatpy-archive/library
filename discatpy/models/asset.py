@@ -144,6 +144,7 @@ class Asset:
     size: int = attr.field(init=False, validator=_size_validator, default=16)
 
     def __attrs_post_init__(self):
+        self.url = self.url.lstrip("/")
         self.supports_gif = (
             self.url.split("/")[1].startswith("a_") and "gif" in self.supported_types
         )
@@ -155,7 +156,7 @@ class Asset:
 
     @property
     def formatted_url(self):
-        return f"{self.url}.{self.extension}?size={self.size}"
+        return f"https://cdn.discordapp.com/{self.url}.{self.extension}?size={self.size}"
 
     async def read(self):
         return await self.bot_owner.http.get_from_cdn(self.formatted_url)
