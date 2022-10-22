@@ -44,7 +44,7 @@ class FlagMember:
         self._value_ = value
 
     def __get__(self, instance: Flag, owner: type[Flag]) -> bool:
-        return instance.value & self.value == self.value  # pyright: ignore[reportPrivateUsage]
+        return instance.value & self.value == self.value
 
     def __set__(self, instance: Flag, value: bool) -> None:
         instance._set_value(self.value, value)  # pyright: ignore[reportPrivateUsage]
