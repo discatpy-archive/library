@@ -13,7 +13,7 @@ def color_value_validator(instance: Color, attribute: attr.Attribute[int], value
         raise ValueError(f"{attribute.name} must be in-between 0 and 255 (inclusive)!")
 
 
-hex_int = partial(int, base=16)
+hex_int: partial[int] = partial(int, base=16)
 
 
 @attr.define
@@ -33,6 +33,15 @@ class Color:
         blue_value = hex_int(actual_hex_code[4:])
 
         return cls(red=red_value, green=green_value, blue=blue_value)
+
+    def to_hex(self) -> int:
+        def _decimal_to_hex(i: int) -> str:
+            return hex(i).lstrip("0x")
+
+        hex_code = (
+            _decimal_to_hex(self.red) + _decimal_to_hex(self.green) + _decimal_to_hex(self.blue)
+        )
+        return hex_int(hex_code)
 
 
 Colour = Color
