@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import typing as t
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from datetime import datetime
 
 import attr
@@ -84,14 +84,29 @@ def _grab_and_convert(
     return type_to(**t.cast(type_from, d.get(key, {}))) if d.get(key) else None
 
 
+def _make_optional_converter(
+    original: Callable[[t.Any], T]
+) -> Callable[[t.Optional[t.Any]], t.Optional[T]]:
+    def wrapper(val: t.Optional[t.Any]) -> t.Optional[T]:
+        if val is None:
+            return None
+        return original(val)
+
+    return wrapper
+
+
 @attr.define(kw_only=True)
 class Embed:
     title: t.Optional[str] = None
     type: t.Literal["rich", "image", "video", "gifv", "article", "link"] = "rich"
     description: t.Optional[str] = None
     url: t.Optional[str] = None
-    timestamp: t.Optional[datetime] = attr.field(default=None, converter=datetime.fromisoformat)
-    color: t.Optional[Color] = attr.field(default=None, converter=Color.from_hex)
+    timestamp: t.Optional[datetime] = attr.field(
+        default=None, converter=_make_optional_converter(datetime.fromisoformat)
+    )
+    color: t.Optional[Color] = attr.field(
+        default=None, converter=_make_optional_converter(Color.from_hex)
+    )
     footer: t.Optional[EmbedFooter] = None
     image: t.Optional[EmbedImage] = None
     thumbnail: t.Optional[EmbedThumbnail] = None
