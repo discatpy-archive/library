@@ -4,7 +4,6 @@ from __future__ import annotations
 import typing as t
 from collections.abc import Mapping
 from datetime import datetime
-from types import SimpleNamespace
 
 import attr
 import discord_typings as dt
@@ -15,7 +14,6 @@ T = t.TypeVar("T")
 MT = t.TypeVar("MT", bound=Mapping[str, t.Any])
 
 __all__ = (
-    "EmbedProxy",
     "EmbedThumbnail",
     "EmbedImage",
     "EmbedVideo",
@@ -27,47 +25,13 @@ __all__ = (
 )
 
 
-class EmbedProxy(SimpleNamespace, t.Generic[MT]):
-    def __init__(self, **kwargs: t.Any) -> None:
-        if self.__annotations__.keys() != kwargs.keys():
-            raise ValueError("Kwargs do not match up with the annotations of this embed proxy!")
-
-        super().__init__(**kwargs)
-
-    def __setattr__(self, name: str, value: t.Any) -> None:
-        raise AttributeError("You cannot edit values in an embed proxy!")
-
-    def __getattribute__(self, name: str) -> t.Any:
-        if name in self.__annotations__ and not hasattr(self, name):
-            super().__setattr__(name, None)
-
-        return super().__getattribute__(name)
-
+class _EmbedProxyMixin(t.Generic[MT]):
     def to_dict(self) -> MT:
-        return t.cast(MT, vars(self))
+        return t.cast(MT, attr.asdict(self))
 
 
-class EmbedAttribute(EmbedProxy[dt.EmbedThumbnailData]):
-    if t.TYPE_CHECKING:
-
-        @t.overload
-        def __init__(
-            self,
-            *,
-            url: str,
-            proxy_url: t.Optional[str] = None,
-            height: t.Optional[int] = None,
-            width: t.Optional[int] = None,
-        ):
-            ...
-
-        @t.overload
-        def __init__(self, **kwargs: t.Any):
-            ...
-
-        def __init__(self, **kwargs: t.Any):
-            super().__init__(**kwargs)
-
+@attr.frozen(kw_only=True)
+class EmbedAttribute(_EmbedProxyMixin[dt.EmbedThumbnailData]):
     url: str
     proxy_url: t.Optional[str]
     height: t.Optional[int]
@@ -78,117 +42,37 @@ EmbedThumbnail = EmbedAttribute
 EmbedImage = EmbedAttribute
 
 
-class EmbedVideo(EmbedProxy[dt.EmbedVideoData]):
-    if t.TYPE_CHECKING:
-
-        @t.overload
-        def __init__(
-            self,
-            *,
-            url: t.Optional[str] = None,
-            proxy_url: t.Optional[str] = None,
-            height: t.Optional[int] = None,
-            width: t.Optional[int] = None,
-        ):
-            ...
-
-        @t.overload
-        def __init__(self, **kwargs: t.Any):
-            ...
-
-        def __init__(self, **kwargs: t.Any):
-            super().__init__(**kwargs)
-
+@attr.frozen(kw_only=True)
+class EmbedVideo(_EmbedProxyMixin[dt.EmbedVideoData]):
     url: t.Optional[str]
     proxy_url: t.Optional[str]
     height: t.Optional[int]
     width: t.Optional[int]
 
 
-class EmbedProvider(EmbedProxy[dt.EmbedProviderData]):
-    if t.TYPE_CHECKING:
-
-        @t.overload
-        def __init__(self, *, name: t.Optional[str] = None, url: t.Optional[str] = None):
-            ...
-
-        @t.overload
-        def __init__(self, **kwargs: t.Any):
-            ...
-
-        def __init__(self, **kwargs: t.Any):
-            super().__init__(**kwargs)
-
+@attr.frozen(kw_only=True)
+class EmbedProvider(_EmbedProxyMixin[dt.EmbedProviderData]):
     name: t.Optional[str]
     url: t.Optional[str]
 
 
-class EmbedAuthor(EmbedProxy[dt.EmbedAuthorData]):
-    if t.TYPE_CHECKING:
-
-        @t.overload
-        def __init__(
-            self,
-            *,
-            name: str,
-            url: t.Optional[str] = None,
-            icon_url: t.Optional[str] = None,
-            proxy_icon_url: t.Optional[str] = None,
-        ):
-            ...
-
-        @t.overload
-        def __init__(self, **kwargs: t.Any):
-            ...
-
-        def __init__(self, **kwargs: t.Any):
-            super().__init__(**kwargs)
-
+@attr.frozen(kw_only=True)
+class EmbedAuthor(_EmbedProxyMixin[dt.EmbedAuthorData]):
     name: str
     url: t.Optional[str]
     icon_url: t.Optional[str]
     proxy_icon_url: t.Optional[str]
 
 
-class EmbedFooter(EmbedProxy[dt.EmbedFooterData]):
-    if t.TYPE_CHECKING:
-
-        @t.overload
-        def __init__(
-            self,
-            *,
-            text: str,
-            icon_url: t.Optional[str] = None,
-            proxy_icon_url: t.Optional[str] = None,
-        ):
-            ...
-
-        @t.overload
-        def __init__(self, **kwargs: t.Any):
-            ...
-
-        def __init__(self, **kwargs: t.Any):
-            super().__init__(**kwargs)
-
+@attr.frozen(kw_only=True)
+class EmbedFooter(_EmbedProxyMixin[dt.EmbedFooterData]):
     text: str
     icon_url: t.Optional[str]
     proxy_icon_url: t.Optional[str]
 
 
-class EmbedField(EmbedProxy[dt.EmbedFieldData]):
-    if t.TYPE_CHECKING:
-
-        @t.overload
-        def __init__(self, *, name: str, value: str, inline: bool = False):
-            ...
-
-        @t.overload
-        def __init__(self, **kwargs: t.Any):
-            ...
-
-        def __init__(self, **kwargs: t.Any):
-            super().__init__(**kwargs)
-
+@attr.frozen(kw_only=True)
+class EmbedField(_EmbedProxyMixin[dt.EmbedFieldData]):
     name: str
     value: str
     inline: bool
