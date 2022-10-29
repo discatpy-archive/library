@@ -132,13 +132,11 @@ def _size_validator(instance: Asset, attribute: attr.Attribute[int], value: int)
         raise ValueError(f"size must be a power of two!")
 
 
-@attr.define
+@attr.define(kw_only=True)
 class Asset:
-    bot_owner: Bot = attr.field(kw_only=True)
-    url: str = attr.field(kw_only=True)
-    # since pyright thinks this attribute is of type list[str] here (because of dataclass_transform),
-    # we cannot use the decorator version of making a validator
-    supported_types: list[str] = attr.field(kw_only=True, validator=_supported_types_validator)
+    bot: Bot
+    url: str
+    supported_types: list[str] = attr.field(validator=_supported_types_validator)
     extension: str = attr.field(init=False, validator=_extension_validator)
     supports_gif: bool = attr.field(init=False)
     size: int = attr.field(init=False, validator=_size_validator, default=16)
@@ -151,15 +149,15 @@ class Asset:
         self.extension = "gif" if self.supports_gif else "png"
 
     @classmethod
-    def from_asset_preset(cls, bot_owner: Bot, preset: tuple[str, tuple[str, ...]]):
-        return cls(bot_owner=bot_owner, url=preset[0], supported_types=list(preset[1]))
+    def from_asset_preset(cls, bot: Bot, preset: tuple[str, tuple[str, ...]]):
+        return cls(bot=bot, url=preset[0], supported_types=list(preset[1]))
 
     @property
     def formatted_url(self):
         return f"https://cdn.discordapp.com/{self.url}.{self.extension}?size={self.size}"
 
     async def read(self):
-        return await self.bot_owner.http.get_from_cdn(self.formatted_url)
+        return await self.bot.http.get_from_cdn(self.formatted_url)
 
     def replace(self, *, size: t.Optional[int] = None, extension: t.Optional[str] = None):
         if size is not None:

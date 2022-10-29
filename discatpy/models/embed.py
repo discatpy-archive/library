@@ -2,12 +2,13 @@
 from __future__ import annotations
 
 import typing as t
-from collections.abc import Callable, Mapping
+from collections.abc import Mapping
 from datetime import datetime
 
 import attr
 import discord_typings as dt
 
+from ..utils.attr_exts import ToDictMixin, make_sentinel_converter
 from .color import Color
 
 T = t.TypeVar("T")
@@ -25,13 +26,8 @@ __all__ = (
 )
 
 
-class _EmbedProxyMixin(t.Generic[MT]):
-    def to_dict(self) -> MT:
-        return t.cast(MT, attr.asdict(self))
-
-
 @attr.frozen(kw_only=True)
-class EmbedAttribute(_EmbedProxyMixin[dt.EmbedThumbnailData]):
+class EmbedAttribute(ToDictMixin[dt.EmbedThumbnailData]):
     url: str
     proxy_url: t.Optional[str]
     height: t.Optional[int]
@@ -43,7 +39,7 @@ EmbedImage = EmbedAttribute
 
 
 @attr.frozen(kw_only=True)
-class EmbedVideo(_EmbedProxyMixin[dt.EmbedVideoData]):
+class EmbedVideo(ToDictMixin[dt.EmbedVideoData]):
     url: t.Optional[str]
     proxy_url: t.Optional[str]
     height: t.Optional[int]
@@ -51,13 +47,13 @@ class EmbedVideo(_EmbedProxyMixin[dt.EmbedVideoData]):
 
 
 @attr.frozen(kw_only=True)
-class EmbedProvider(_EmbedProxyMixin[dt.EmbedProviderData]):
+class EmbedProvider(ToDictMixin[dt.EmbedProviderData]):
     name: t.Optional[str]
     url: t.Optional[str]
 
 
 @attr.frozen(kw_only=True)
-class EmbedAuthor(_EmbedProxyMixin[dt.EmbedAuthorData]):
+class EmbedAuthor(ToDictMixin[dt.EmbedAuthorData]):
     name: str
     url: t.Optional[str]
     icon_url: t.Optional[str]
@@ -65,14 +61,14 @@ class EmbedAuthor(_EmbedProxyMixin[dt.EmbedAuthorData]):
 
 
 @attr.frozen(kw_only=True)
-class EmbedFooter(_EmbedProxyMixin[dt.EmbedFooterData]):
+class EmbedFooter(ToDictMixin[dt.EmbedFooterData]):
     text: str
     icon_url: t.Optional[str]
     proxy_icon_url: t.Optional[str]
 
 
 @attr.frozen(kw_only=True)
-class EmbedField(_EmbedProxyMixin[dt.EmbedFieldData]):
+class EmbedField(ToDictMixin[dt.EmbedFieldData]):
     name: str
     value: str
     inline: bool
@@ -84,28 +80,17 @@ def _grab_and_convert(
     return type_to(**t.cast(type_from, d.get(key, {}))) if d.get(key) else None
 
 
-def _make_optional_converter(
-    original: Callable[[t.Any], T]
-) -> Callable[[t.Optional[t.Any]], t.Optional[T]]:
-    def wrapper(val: t.Optional[t.Any]) -> t.Optional[T]:
-        if val is None:
-            return None
-        return original(val)
-
-    return wrapper
-
-
 @attr.define(kw_only=True)
-class Embed:
+class Embed(ToDictMixin[dt.EmbedData]):
     title: t.Optional[str] = None
     type: t.Literal["rich", "image", "video", "gifv", "article", "link"] = "rich"
     description: t.Optional[str] = None
     url: t.Optional[str] = None
     timestamp: t.Optional[datetime] = attr.field(
-        default=None, converter=_make_optional_converter(datetime.fromisoformat)
+        default=None, converter=make_sentinel_converter(datetime.fromisoformat, None)
     )
     color: t.Optional[Color] = attr.field(
-        default=None, converter=_make_optional_converter(Color.from_hex)
+        default=None, converter=make_sentinel_converter(Color.from_hex, None)
     )
     footer: t.Optional[EmbedFooter] = None
     image: t.Optional[EmbedImage] = None
@@ -146,47 +131,6 @@ class Embed:
             author=author,
             fields=fields,
         )
-
-    def to_dict(self) -> dt.EmbedData:
-        data: dt.EmbedData = {"type": self.type}
-
-        if self.title:
-            data["title"] = self.title
-
-        if self.description:
-            data["description"] = self.description
-
-        if self.url:
-            data["url"] = self.url
-
-        if self.timestamp:
-            data["timestamp"] = self.timestamp.isoformat()
-
-        if self.color:
-            data["color"] = self.color.to_hex()
-
-        if self.footer:
-            data["footer"] = self.footer.to_dict()
-
-        if self.image:
-            data["image"] = self.image.to_dict()
-
-        if self.thumbnail:
-            data["thumbnail"] = self.thumbnail.to_dict()
-
-        if self.video:
-            data["video"] = self.video.to_dict()
-
-        if self.provider:
-            data["provider"] = self.provider.to_dict()
-
-        if self.author:
-            data["author"] = self.author.to_dict()
-
-        if self.fields:
-            data["fields"] = [field.to_dict() for field in self.fields]
-
-        return data
 
     def set_footer(
         self, *, text: str, icon_url: t.Optional[str] = None, proxy_icon_url: t.Optional[str] = None
@@ -244,5 +188,5 @@ class Embed:
     def insert_field_at(self, index: int, *, name: str, value: str, inline: bool = False) -> None:
         self.fields.insert(index, EmbedField(name=name, value=value, inline=inline))
 
-    def remove_field_at(self, index: int) -> None:
+    def remove_field(self, index: int) -> None:
         del self.fields[index]

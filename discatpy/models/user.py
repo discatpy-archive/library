@@ -9,6 +9,7 @@ import discord_typings as dt
 from discatcore.types import Unset, UnsetOr
 
 from ..flags import Flag
+from ..utils.attr_exts import frozen_for_public
 from .asset import Asset, AssetPresets
 from .color import Color
 
@@ -45,48 +46,76 @@ class UserFlags(Flag):
     BOT_HTTP_INTERACTIONS = 1 << 19
 
 
-@attr.define(frozen=True)
+@frozen_for_public
+@attr.define(kw_only=True)
 class User:
-    bot_owner: Bot = attr.field(kw_only=True)
-    id: dt.Snowflake = attr.field(kw_only=True)
-    username: str = attr.field(kw_only=True)
-    discriminator: str = attr.field(kw_only=True)
-    avatar: t.Optional[t.Union[str, Asset]] = attr.field(kw_only=True)
-    bot: UnsetOr[bool] = attr.field(default=Unset, kw_only=True)
-    system: UnsetOr[bool] = attr.field(default=Unset, kw_only=True)
-    mfa_enabled: UnsetOr[bool] = attr.field(default=Unset, kw_only=True)
-    banner: UnsetOr[t.Optional[t.Union[str, Asset]]] = attr.field(default=Unset, kw_only=True)
-    accent_color: UnsetOr[t.Optional[int]] = attr.field(
-        default=Unset, kw_only=True, converter=Color.from_hex
-    )
+    bot: Bot
+    data: dt.UserData
+    id: dt.Snowflake = attr.field(init=False)
+    username: str = attr.field(init=False)
+    discriminator: str = attr.field(init=False)
+    avatar: t.Optional[Asset] = attr.field(init=False)
+    is_bot: bool = attr.field(init=False)
+    is_system: bool = attr.field(init=False)
+    mfa_enabled: UnsetOr[bool] = attr.field(init=False)
+    banner: UnsetOr[t.Optional[Asset]] = attr.field(init=False)
+    accent_color: UnsetOr[t.Optional[Color]] = attr.field(init=False)
     # TODO: type to Locales enum
-    locale: UnsetOr[dt.Locales] = attr.field(default=Unset, kw_only=True)
-    verified: UnsetOr[bool] = attr.field(default=Unset, kw_only=True)
-    email: UnsetOr[t.Optional[str]] = attr.field(default=Unset, kw_only=True)
-    flags: UnsetOr[int] = attr.field(default=Unset, kw_only=True, converter=UserFlags.from_value)
-    premium_type: UnsetOr[dt.UserPremiumTypes] = attr.field(
-        default=Unset, kw_only=True, converter=UserPremiumTypes
-    )
-    public_flags: UnsetOr[int] = attr.field(
-        default=Unset, kw_only=True, converter=UserFlags.from_value
-    )
+    locale: UnsetOr[dt.Locales] = attr.field(init=False)
+    is_verified: UnsetOr[bool] = attr.field(init=False)
+    email: UnsetOr[t.Optional[str]] = attr.field(init=False)
+    flags: UnsetOr[UserFlags] = attr.field(init=False)
+    premium_type: UnsetOr[UserPremiumTypes] = attr.field(init=False)
+    public_flags: UnsetOr[UserFlags] = attr.field(init=False)
 
     def __attrs_post_init__(self):
-        if isinstance(self.avatar, str):
-            object.__setattr__(
-                self,
-                "avatar",
-                Asset.from_asset_preset(
-                    self.bot_owner, AssetPresets.user_avatar(self.id, self.avatar)
-                ),
-            )
-        if isinstance(self.banner, str):
-            object.__setattr__(
-                self,
-                "banner",
-                Asset.from_asset_preset(self.bot_owner, AssetPresets.banner(self.id, self.banner)),
-            )
+        self.id = self.data["id"]
+        self.username = self.data["username"]
+        self.discriminator = self.data["discriminator"]
 
-    @classmethod
-    def from_dict(cls, data: dt.UserData, bot: Bot):
-        return cls(bot_owner=bot, **data)
+        raw_avatar = self.data.get("avatar")
+        if isinstance(raw_avatar, str):
+            self.avatar = Asset.from_asset_preset(
+                self.bot, AssetPresets.user_avatar(self.id, raw_avatar)
+            )
+        else:
+            self.avatar = raw_avatar
+
+        self.is_bot = self.data.get("bot", False)
+        self.is_system = self.data.get("system", False)
+        self.mfa_enabled = self.data.get("mfa_enabled", Unset)
+
+        raw_banner = self.data.get("banner", Unset)
+        if isinstance(raw_banner, str):
+            self.banner = Asset.from_asset_preset(
+                self.bot, AssetPresets.banner(self.id, raw_banner)
+            )
+        else:
+            self.banner = raw_banner
+
+        raw_accent_color = self.data.get("accent_color", Unset)
+        if isinstance(raw_accent_color, int):
+            self.accent_color = Color.from_hex(raw_accent_color)
+        else:
+            self.accent_color = raw_accent_color
+
+        self.locale = self.data.get("locale", Unset)
+        self.is_verified = self.data.get("verified", Unset)
+
+        raw_flags = self.data.get("flags", Unset)
+        if isinstance(raw_flags, int):
+            self.flags = UserFlags.from_value(raw_flags)
+        else:
+            self.flags = raw_flags
+
+        raw_premium_type = self.data.get("premium_type", Unset)
+        if isinstance(raw_premium_type, int):
+            self.premium_type = UserPremiumTypes(raw_premium_type)
+        else:
+            self.premium_type = raw_premium_type
+
+        raw_public_flags = self.data.get("public_flags", Unset)
+        if isinstance(raw_public_flags, int):
+            self.public_flags = UserFlags.from_value(raw_public_flags)
+        else:
+            self.public_flags = raw_public_flags

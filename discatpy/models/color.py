@@ -16,11 +16,11 @@ def color_value_validator(instance: Color, attribute: attr.Attribute[int], value
 hex_int: partial[int] = partial(int, base=16)
 
 
-@attr.define
+@attr.define(kw_only=True)
 class Color:
-    red: int = attr.field(kw_only=True, validator=color_value_validator)
-    green: int = attr.field(kw_only=True, validator=color_value_validator)
-    blue: int = attr.field(kw_only=True, validator=color_value_validator)
+    red: int = attr.field(validator=color_value_validator)
+    green: int = attr.field(validator=color_value_validator)
+    blue: int = attr.field(validator=color_value_validator)
 
     @classmethod
     def from_hex(cls, hex_code: int):
