@@ -8,7 +8,13 @@ import discord_typings as dt
 from discatcore import BasicFile
 from discatcore.types import Unset, UnsetOr
 
+from .embed import Embed
 from .iterators import channel_history
+from .message import (  # pyright: ignore[reportPrivateUsage]
+    AllowedMentions,
+    MessageFlags,
+    _send_message,
+)
 
 if t.TYPE_CHECKING:
     from ..bot import Bot
@@ -17,25 +23,38 @@ __all__ = ("Messageable",)
 
 
 class Messageable:
-    bot_owner: Bot
+    bot: Bot
 
     async def _get_channel_id(self) -> dt.Snowflake:
         return NotImplemented
 
-    async def send_message(
+    async def send(
         self,
         content: UnsetOr[str] = Unset,
         *,
         nonce: UnsetOr[t.Union[int, str]] = Unset,
         tts: bool = False,
-        # TODO: add embeds, allowed_mentions, components, stickers
+        embeds: UnsetOr[list[Embed]] = Unset,
+        allowed_mentions: UnsetOr[AllowedMentions] = Unset,
+        # TODO: components
+        stickers: UnsetOr[list[dt.Snowflake]] = Unset,
         files: UnsetOr[list[BasicFile]] = Unset,
-        flags: UnsetOr[int] = Unset,
-    ) -> t.Optional[t.Any]:  # TODO: set type hint to message object
-        # TODO: automatically generate attachments based on files provided
+        flags: UnsetOr[t.Union[MessageFlags, int]] = Unset,
+    ):
         channel_id = await self._get_channel_id()
-        return await self.bot_owner.http.create_message(
-            channel_id, content=content, nonce=nonce, tts=tts, files=files, flags=flags
+        return await self.bot.http.create_message(
+            channel_id,
+            **_send_message(
+                content,
+                nonce,
+                tts,
+                embeds,
+                allowed_mentions,
+                Unset,
+                stickers,
+                files,
+                flags,
+            ),
         )
 
     async def history(

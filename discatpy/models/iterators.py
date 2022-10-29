@@ -48,7 +48,7 @@ async def channel_history(
     while should_retrieve():
         data = t.cast(
             list[dt.MessageData],
-            await channel.bot_owner.http.get_channel_messages(
+            await channel.bot.http.get_channel_messages(
                 channel_id,
                 before=converted_before,
                 after=converted_after,
