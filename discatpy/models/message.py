@@ -10,7 +10,7 @@ import discord_typings as dt
 from discatcore import BasicFile
 from discatcore.types import Unset, UnsetOr
 
-from ..flags import Flag
+from ..flags import Flag, flag
 from ..utils.attr_exts import ToDictMixin, frozen_for_public
 from .embed import Embed
 from .user import User
@@ -109,15 +109,41 @@ class MessageTypes(int, Enum):
 
 
 class MessageFlags(Flag):
-    CROSSPOSTED = 1 << 0
-    IS_CROSSPOST = 1 << 1
-    SUPPRESS_EMBEDS = 1 << 2
-    SOURCE_MESSAGE_DELETED = 1 << 3
-    URGENT = 1 << 4
-    HAS_THREAD = 1 << 5
-    EPHEMERAL = 1 << 6
-    LOADING = 1 << 7
-    FAILED_TO_MENTION_SOME_ROLES_IN_THREAD = 1 << 8
+    @flag
+    def CROSSPOSTED():
+        return 1 << 0
+
+    @flag
+    def IS_CROSSPOST():
+        return 1 << 1
+
+    @flag
+    def SUPPRESS_EMBEDS():
+        return 1 << 2
+
+    @flag
+    def SOURCE_MESSAGE_DELETED():
+        return 1 << 3
+
+    @flag
+    def URGENT():
+        return 1 << 4
+
+    @flag
+    def HAS_THREAD():
+        return 1 << 5
+
+    @flag
+    def EPHEMERAL():
+        return 1 << 6
+
+    @flag
+    def LOADING():
+        return 1 << 7
+
+    @flag
+    def FAILED_TO_MENTION_SOME_ROLES_IN_THREAD():
+        return 1 << 8
 
 
 def _parse_files_to_attachments(files: list[BasicFile]):

@@ -8,7 +8,7 @@ import attr
 import discord_typings as dt
 from discatcore.types import Unset, UnsetOr
 
-from ..flags import Flag
+from ..flags import Flag, flag
 from ..utils.attr_exts import frozen_for_public
 from .asset import Asset, AssetPresets
 from .color import Color
@@ -30,20 +30,61 @@ class UserPremiumTypes(int, Enum):
 
 
 class UserFlags(Flag):
-    STAFF = 1 << 0
-    PARTNER = 1 << 1
-    HYPESQUAD = 1 << 2
-    BUG_HUNTER_LEVEL_1 = 1 << 3
-    HYPESQUAD_ONLINE_HOUSE_1 = 1 << 6
-    HYPESQUAD_ONLINE_HOUSE_2 = 1 << 7
-    HYPESQUAD_ONLINE_HOUSE_3 = 1 << 8
-    PREMIUM_EARLY_SUPPORTER = 1 << 9
-    TEAM_PSEUDO_USER = 1 << 10
-    BUG_HUNTER_LEVEL_2 = 1 << 14
-    VERIFIED_BOT = 1 << 16
-    VERIFIED_DEVELOPER = 1 << 17
-    CERTIFIED_MODERATOR = 1 << 18
-    BOT_HTTP_INTERACTIONS = 1 << 19
+    @flag
+    def STAFF():
+        return 1 << 0
+
+    @flag
+    def PARTNER():
+        return 1 << 1
+
+    @flag
+    def HYPESQUAD():
+        return 1 << 2
+
+    @flag
+    def BUG_HUNTER_LEVEL_1():
+        return 1 << 3
+
+    @flag
+    def HYPESQUAD_ONLINE_HOUSE_1():
+        return 1 << 6
+
+    @flag
+    def HYPESQUAD_ONLINE_HOUSE_2():
+        return 1 << 7
+
+    @flag
+    def HYPESQUAD_ONLINE_HOUSE_3():
+        return 1 << 8
+
+    @flag
+    def PREMIUM_EARLY_SUPPORTER():
+        return 1 << 9
+
+    @flag
+    def TEAM_PSEUDO_USER():
+        return 1 << 10
+
+    @flag
+    def BUG_HUNTER_LEVEL_2():
+        return 1 << 14
+
+    @flag
+    def VERIFIED_BOT():
+        return 1 << 16
+
+    @flag
+    def VERIFIED_DEVELOPER():
+        return 1 << 17
+
+    @flag
+    def CERTIFIED_MODERATOR():
+        return 1 << 18
+
+    @flag
+    def BOT_HTTP_INTERACTIONS():
+        return 1 << 19
 
 
 @frozen_for_public

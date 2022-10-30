@@ -2,40 +2,18 @@
 from __future__ import annotations
 
 import typing as t
+from collections.abc import Callable
 from functools import reduce
 from operator import or_
 
 from typing_extensions import Self
 
 __all__ = (
+    "FlagMember",
+    "flag",
     "FlagMeta",
     "Flag",
 )
-
-
-def _is_descriptor(obj: object) -> bool:
-    return hasattr(obj, "__set__") or hasattr(obj, "__get__") or hasattr(obj, "__delete__")
-
-
-class _FlagDict(dict[str, t.Any]):
-    def __init__(self):
-        super().__init__()
-        self.member_map: dict[str, int] = {}
-
-    def __setitem__(self, name: str, value: t.Any) -> None:
-        if name in ("mro", ""):
-            raise ValueError(f"Invalid flag member name {name}!")
-
-        if name.startswith("_") or _is_descriptor(value):
-            return super().__setitem__(name, value)
-
-        if not isinstance(value, int):
-            raise TypeError(f"flag member must be of type int, not {type(value).__name__}!")
-
-        if name in self.member_map:
-            raise ValueError(f"flag member {name} already exists!")
-
-        self.member_map[name] = value
 
 
 class FlagMember:
@@ -43,11 +21,14 @@ class FlagMember:
         self._name_ = name
         self._value_ = value
 
-    def __get__(self, instance: Flag, owner: type[Flag]) -> bool:
-        return instance.value & self.value == self.value
+    def __get__(self, instance: t.Optional[Flag], _: type[Flag]) -> t.Union[int, bool]:
+        if instance:
+            return instance.value & self.value == self.value
+        return self.value
 
-    def __set__(self, instance: Flag, value: bool) -> None:
-        instance._set_value(self.value, value)  # pyright: ignore[reportPrivateUsage]
+    def __set__(self, instance: t.Optional[Flag], value: bool) -> None:
+        if instance:
+            instance._set_value(self.value, value)  # pyright: ignore[reportPrivateUsage]
 
     @property
     def name(self) -> str:
@@ -58,13 +39,17 @@ class FlagMember:
         return self._value_
 
 
+def flag(func: Callable[..., int]) -> FlagMember:
+    return FlagMember(func.__name__, func())
+
+
 class FlagMeta(type):
     """An EnumMeta-like metaclass that implements custom flags.
 
     Custom flags have some differences from stdlib flags. The most noticeable ones are:
 
     - the type of each member is a separate class and not an instance of the new class itself
-    - every member has to be an int
+    - every member has to be a FlagMember (defined via the flag decorator or defined explicitly)
     - you can set members to a bool value to turn them off or on
     - you can get members to get a bool value corresponding to whether or not it's on
     """
@@ -72,26 +57,29 @@ class FlagMeta(type):
     _default_value: int
     __members__: dict[str, FlagMember]
 
-    @classmethod
-    def __prepare__(cls, name: str, bases: tuple[type, ...], **kwds: t.Any) -> _FlagDict:
-        return _FlagDict()
-
     def __new__(
-        cls: type[Self], name: str, bases: tuple[type, ...], classdict: _FlagDict, **kwds: t.Any
+        cls: type[Self],
+        name: str,
+        bases: tuple[type, ...],
+        classdict: dict[str, t.Any],
+        **kwds: t.Any,
     ) -> Self:
+        member_map: dict[str, FlagMember] = {}
+
+        for name, value in classdict.items():
+            if isinstance(value, FlagMember):
+                member_map[name] = value
+
         default_value: int = 0
         if kwds.pop("inverted", False):
-            max_bits = max(classdict.member_map.values()).bit_length()
+            max_bits = max([fm.value for fm in member_map.values()]).bit_length()
             default_value = (2**max_bits) - 1
 
         ns: dict[str, t.Any] = {
-            "__members__": (member_map := {}),
+            "__members__": member_map,
             "_default_value": default_value,
             **classdict,
         }
-
-        for name, value in classdict.member_map.items():
-            member_map[name] = FlagMember(name, value)
 
         return super().__new__(cls, name, bases, ns, **kwds)
 
@@ -101,7 +89,7 @@ class FlagMeta(type):
 
 
 class Flag(metaclass=FlagMeta):
-    """A custom flag implementation. Uses FlagMeta as its metaclass."""
+    """A custom flag implementation. Uses ``FlagMeta`` as its metaclass."""
 
     value: int
 
