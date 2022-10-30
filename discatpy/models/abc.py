@@ -10,11 +10,8 @@ from discatcore.types import Unset, UnsetOr
 
 from .embed import Embed
 from .iterators import channel_history
-from .message import (  # pyright: ignore[reportPrivateUsage]
-    AllowedMentions,
-    MessageFlags,
-    _send_message,
-)
+from .message import _send_message  # pyright: ignore[reportPrivateUsage]
+from .message import AllowedMentions, MessageFlags
 
 if t.TYPE_CHECKING:
     from ..bot import Bot
