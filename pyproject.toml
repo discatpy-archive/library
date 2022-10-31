@@ -58,12 +58,12 @@ attrs = "^22.1"
 
 [tool.black]
 line-length = 100
-target-version = ["py38", "py39", "py310"]
+target-version = ["py39", "py310"]
 
 
 [tool.isort]
 profile = "black"
-py_version = 38
+py_version = 39
 line_length = 100
 combine_as_imports = true
 filter_files = true
