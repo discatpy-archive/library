@@ -6,10 +6,98 @@ from typing import Optional
 from discatcore import Dispatcher, GatewayReconnect
 from discatcore.gateway import GatewayClient
 from discatcore.http import HTTPClient
+from typing_extensions import Self
 
 from .event.protos import RawGatewayEvents, apply_events
+from .flags import Flag, flag
 
-__all__ = ("Bot",)
+__all__ = ("Intents", "Bot")
+
+
+class Intents(Flag):
+    @flag
+    def GUILDS():
+        return 1 << 0
+
+    @flag
+    def GUILD_MEMBERS():
+        return 1 << 1
+
+    @flag
+    def GUILD_BANS():
+        return 1 << 2
+
+    @flag
+    def GUILD_EMOJIS_AND_STICKERS():
+        return 1 << 3
+
+    @flag
+    def GUILD_INTEGRATIONS():
+        return 1 << 4
+
+    @flag
+    def GUILD_WEBHOOKS():
+        return 1 << 5
+
+    @flag
+    def GUILD_INVITES():
+        return 1 << 6
+
+    @flag
+    def GUILD_VOICE_STATES():
+        return 1 << 7
+
+    @flag
+    def GUILD_PRESENCES():
+        return 1 << 8
+
+    @flag
+    def GUILD_MESSAGES():
+        return 1 << 9
+
+    @flag
+    def GUILD_MESSAGE_REACTIONS():
+        return 1 << 10
+
+    @flag
+    def GUILD_MESSAGE_TYPING():
+        return 1 << 11
+
+    @flag
+    def DIRECT_MESSAGES():
+        return 1 << 12
+
+    @flag
+    def DIRECT_MESSAGE_REACTIONS():
+        return 1 << 13
+
+    @flag
+    def DIRECT_MESSAGE_TYPING():
+        return 1 << 14
+
+    @flag
+    def MESSAGE_CONTENT():
+        return 1 << 15
+
+    @flag
+    def GUILD_SCHEDULED_EVENTS():
+        return 1 << 16
+
+    @flag
+    def AUTO_MODERATION_CONFIGURATION():
+        return 1 << 20
+
+    @flag
+    def AUTO_MODERATION_EXECUTION():
+        return 1 << 21
+
+    @classmethod
+    def default(cls: type[Self]) -> Self:
+        self = cls.all()
+        self.GUILD_MEMBERS = False
+        self.GUILD_PRESENCES = False
+        self.MESSAGE_CONTENT = False
+        return self
 
 
 class Bot(Dispatcher):
@@ -21,12 +109,12 @@ class Bot(Dispatcher):
         "loop",
     )
 
-    def __init__(self, *, token: str, api_version: Optional[int] = None, intents: int) -> None:
+    def __init__(self, *, token: str, api_version: Optional[int] = None, intents: Intents) -> None:
         self._raw_dispatcher: Dispatcher = Dispatcher()
         apply_events(source=RawGatewayEvents, dest=self._raw_dispatcher)
         self.http: HTTPClient = HTTPClient(token, api_version=api_version)
         self.gateway: GatewayClient = GatewayClient(
-            self.http, self._raw_dispatcher, intents=intents
+            self.http, self._raw_dispatcher, intents=intents.value
         )
         self.running: bool = False
         self.loop = asyncio.new_event_loop()
@@ -36,8 +124,8 @@ class Bot(Dispatcher):
         return self.http.api_version
 
     @property
-    def intents(self) -> int:
-        return self.gateway.intents
+    def intents(self) -> Intents:
+        return Intents.from_value(self.gateway.intents)
 
     @property
     def token(self) -> str:
