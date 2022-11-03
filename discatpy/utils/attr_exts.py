@@ -128,19 +128,14 @@ def frozen_for_public(cls: type[T]) -> type[T]:
             getattr(cls.__mro__[1], "__setattr__", object.__setattr__),
         ).__get__(self, cls)
 
-        if (
-            (current_frame := inspect.currentframe())
-            and (previous_frame := current_frame.f_back)
-            and previous_frame.f_locals
-        ):
-            self_param = previous_frame.f_locals.get("self")
-            if isinstance(self_param, cls) and self_param is self:
-                __original_setattr__(name, value)
-            else:
-                raise attr.exceptions.FrozenAttributeError
-        else:
-            # if we somehow get here, just set the attribute anyways
+        stack = inspect.stack()
+        assert len(stack) > 1
+
+        self_param = stack[1].frame.f_locals.get("self")
+        if isinstance(self_param, cls) and self_param is self:
             __original_setattr__(name, value)
+        else:
+            raise attr.exceptions.FrozenAttributeError
 
     setattr(cls, "__setattr__", __frozen_setattr__)
     return cls
