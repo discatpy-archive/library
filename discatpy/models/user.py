@@ -95,7 +95,7 @@ class User:
     id: dt.Snowflake = attr.field(init=False)
     username: str = attr.field(init=False)
     discriminator: str = attr.field(init=False)
-    avatar: t.Optional[Asset] = attr.field(init=False)
+    avatar: Asset = attr.field(init=False)
     is_bot: bool = attr.field(init=False)
     is_system: bool = attr.field(init=False)
     mfa_enabled: UnsetOr[bool] = attr.field(init=False)
@@ -120,7 +120,9 @@ class User:
                 self.bot, AssetPresets.user_avatar(self.id, raw_avatar)
             )
         else:
-            self.avatar = raw_avatar
+            self.avatar = Asset.from_asset_preset(
+                self.bot, AssetPresets.default_user_avatar(int(self.discriminator))
+            )
 
         self.is_bot = self.data.get("bot", False)
         self.is_system = self.data.get("system", False)
