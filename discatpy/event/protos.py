@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: MIT
 
-from types import FunctionType
+import typing as t
 
 import discord_typings as dt
-from discatcore import Dispatcher
+from discatcore import Dispatcher, Event
 
 __all__ = (
     "apply_events",
@@ -17,189 +17,264 @@ def apply_events(*, source: type, dest: Dispatcher):
 
     for name in dir(source):
         value = getattr(source, name)
-        if not name.startswith("_") and isinstance(value, FunctionType):
-            dest.new_event(name).set_proto(value)
+        if not name.startswith("_") and isinstance(value, staticmethod):
+            event: Event
+            if dest.has_event(name):
+                event = t.cast(Event, dest.get_event(name))
+            else:
+                event = dest.new_event(name)
+
+            event.set_proto(t.cast(staticmethod[None], value))
 
 
-class RawGatewayEvents:
+class _BaseProtoEvents:
     def __new__(cls):
-        raise TypeError("You cannot create a RawGatewayEvents object")
+        raise TypeError(f"You cannot create a {cls.__name__} object!")
 
-    def ready(self, data: dt.ReadyData):
+
+class RawGatewayEvents(_BaseProtoEvents):
+    @staticmethod
+    def ready(data: dt.ReadyData):
         pass
 
-    # TODO: resumed, reconnect, invalid_session
-
-    def application_command_permissions_update(
-        self, data: dt.ApplicationCommandPermissionsUpdateData
-    ):
+    @staticmethod
+    def resumed():
         pass
 
-    def auto_moderation_rule_create(self, data: dt.AutoModerationRuleData):
+    @staticmethod
+    def reconnect():
         pass
 
-    def auto_moderation_rule_update(self, data: dt.AutoModerationRuleData):
+    @staticmethod
+    def invalid_session(resumable: bool):
         pass
 
-    def auto_moderation_rule_delete(self, data: dt.AutoModerationRuleData):
+    @staticmethod
+    def application_command_permissions_update(data: dt.ApplicationCommandPermissionsUpdateData):
+        pass
+
+    @staticmethod
+    def auto_moderation_rule_create(data: dt.AutoModerationRuleData):
+        pass
+
+    @staticmethod
+    def auto_moderation_rule_update(data: dt.AutoModerationRuleData):
+        pass
+
+    @staticmethod
+    def auto_moderation_rule_delete(data: dt.AutoModerationRuleData):
         pass
 
     # TODO: auto_moderation_action_execution
 
-    def channel_create(self, data: dt.ChannelCreateData):
+    @staticmethod
+    def channel_create(data: dt.ChannelCreateData):
         pass
 
-    def channel_update(self, data: dt.ChannelUpdateData):
+    @staticmethod
+    def channel_update(data: dt.ChannelUpdateData):
         pass
 
-    def channel_delete(self, data: dt.ChannelDeleteData):
+    @staticmethod
+    def channel_delete(data: dt.ChannelDeleteData):
         pass
 
-    def channel_pins_update(self, data: dt.ChannelPinsUpdateData):
+    @staticmethod
+    def channel_pins_update(data: dt.ChannelPinsUpdateData):
         pass
 
-    def thread_create(self, data: dt.ThreadCreateData):
+    @staticmethod
+    def thread_create(data: dt.ThreadCreateData):
         pass
 
-    def thread_update(self, data: dt.ThreadUpdateData):
+    @staticmethod
+    def thread_update(data: dt.ThreadUpdateData):
         pass
 
-    def thread_delete(self, data: dt.ThreadDeleteData):
+    @staticmethod
+    def thread_delete(data: dt.ThreadDeleteData):
         pass
 
-    def thread_list_sync(self, data: dt.ThreadListSyncData):
+    @staticmethod
+    def thread_list_sync(data: dt.ThreadListSyncData):
         pass
 
-    def thread_member_update(self, data: dt.ThreadMemberUpdateData):
+    @staticmethod
+    def thread_member_update(data: dt.ThreadMemberUpdateData):
         pass
 
-    def thread_members_update(self, data: dt.ThreadMembersUpdateData):
+    @staticmethod
+    def thread_members_update(data: dt.ThreadMembersUpdateData):
         pass
 
-    def guild_create(self, data: dt.GuildCreateData):
+    @staticmethod
+    def guild_create(data: dt.GuildCreateData):
         pass
 
-    def guild_update(self, data: dt.GuildUpdateData):
+    @staticmethod
+    def guild_update(data: dt.GuildUpdateData):
         pass
 
-    def guild_delete(self, data: dt.GuildDeleteData):
+    @staticmethod
+    def guild_delete(data: dt.GuildDeleteData):
         pass
 
-    def guild_ban_add(self, data: dt.GuildBanAddData):
+    @staticmethod
+    def guild_ban_add(data: dt.GuildBanAddData):
         pass
 
-    def guild_ban_remove(self, data: dt.GuildBanRemoveData):
+    @staticmethod
+    def guild_ban_remove(data: dt.GuildBanRemoveData):
         pass
 
-    def guild_emojis_update(self, data: dt.GuildEmojisUpdateData):
+    @staticmethod
+    def guild_emojis_update(data: dt.GuildEmojisUpdateData):
         pass
 
-    def guild_stickers_update(self, data: dt.GuildStickersUpdateData):
+    @staticmethod
+    def guild_stickers_update(data: dt.GuildStickersUpdateData):
         pass
 
-    def guild_integrations_update(self, data: dt.GuildIntergrationsUpdateData):
+    @staticmethod
+    def guild_integrations_update(data: dt.GuildIntergrationsUpdateData):
         pass
 
-    def guild_member_add(self, data: dt.GuildMemberAddData):
+    @staticmethod
+    def guild_member_add(data: dt.GuildMemberAddData):
         pass
 
-    def guild_member_remove(self, data: dt.GuildMemberRemoveData):
+    @staticmethod
+    def guild_member_remove(data: dt.GuildMemberRemoveData):
         pass
 
-    def guild_member_update(self, data: dt.GuildMemberUpdateData):
+    @staticmethod
+    def guild_member_update(data: dt.GuildMemberUpdateData):
         pass
 
-    # TODO: guild_members_chunk
-
-    def guild_role_create(self, data: dt.GuildRoleCreateData):
+    @staticmethod
+    def guild_members_chunk(data: dt.GuildMembersChunkData):
         pass
 
-    def guild_role_update(self, data: dt.GuildRoleUpdateData):
+    @staticmethod
+    def guild_role_create(data: dt.GuildRoleCreateData):
         pass
 
-    def guild_role_delete(self, data: dt.GuildRoleDeleteData):
+    @staticmethod
+    def guild_role_update(data: dt.GuildRoleUpdateData):
         pass
 
-    def guild_scheduled_event_create(self, data: dt.GuildScheduledEventCreateData):
+    @staticmethod
+    def guild_role_delete(data: dt.GuildRoleDeleteData):
         pass
 
-    def guild_scheduled_event_update(self, data: dt.GuildScheduledEventUpdateData):
+    @staticmethod
+    def guild_scheduled_event_create(data: dt.GuildScheduledEventCreateData):
         pass
 
-    def guild_scheduled_event_delete(self, data: dt.GuildScheduledEventDeleteData):
+    @staticmethod
+    def guild_scheduled_event_update(data: dt.GuildScheduledEventUpdateData):
         pass
 
-    def guild_scheduled_event_user_add(self, data: dt.GuildScheduledEventUserAddData):
+    @staticmethod
+    def guild_scheduled_event_delete(data: dt.GuildScheduledEventDeleteData):
         pass
 
-    def guild_scheduled_event_user_remove(self, data: dt.GuildScheduledEventUserRemoveData):
+    @staticmethod
+    def guild_scheduled_event_user_add(data: dt.GuildScheduledEventUserAddData):
         pass
 
-    def integration_create(self, data: dt.IntegrationCreateData):
+    @staticmethod
+    def guild_scheduled_event_user_remove(data: dt.GuildScheduledEventUserRemoveData):
         pass
 
-    def integration_update(self, data: dt.IntegrationUpdateData):
+    @staticmethod
+    def integration_create(data: dt.IntegrationCreateData):
         pass
 
-    def integration_delete(self, data: dt.IntegrationDeleteData):
+    @staticmethod
+    def integration_update(data: dt.IntegrationUpdateData):
         pass
 
-    def interaction_create(self, data: dt.InteractionCreateData):
+    @staticmethod
+    def integration_delete(data: dt.IntegrationDeleteData):
         pass
 
-    def invite_create(self, data: dt.InviteCreateData):
+    @staticmethod
+    def interaction_create(data: dt.InteractionCreateData):
         pass
 
-    def invite_delete(self, data: dt.InviteDeleteData):
+    @staticmethod
+    def invite_create(data: dt.InviteCreateData):
         pass
 
-    def message_create(self, data: dt.MessageCreateData):
+    @staticmethod
+    def invite_delete(data: dt.InviteDeleteData):
         pass
 
-    def message_update(self, data: dt.MessageUpdateData):
+    @staticmethod
+    def message_create(data: dt.MessageCreateData):
         pass
 
-    def message_delete(self, data: dt.MessageDeleteData):
+    @staticmethod
+    def message_update(data: dt.MessageUpdateData):
         pass
 
-    def message_delete_bulk(self, data: dt.MessageDeleteBulkData):
+    @staticmethod
+    def message_delete(data: dt.MessageDeleteData):
         pass
 
-    def message_reaction_add(self, data: dt.MessageReactionAddData):
+    @staticmethod
+    def message_delete_bulk(data: dt.MessageDeleteBulkData):
         pass
 
-    def message_reaction_remove(self, data: dt.MessageReactionRemoveData):
+    @staticmethod
+    def message_reaction_add(data: dt.MessageReactionAddData):
         pass
 
-    def message_reaction_remove_all(self, data: dt.MessageReactionRemoveAllData):
+    @staticmethod
+    def message_reaction_remove(data: dt.MessageReactionRemoveData):
         pass
 
-    def message_reaction_remove_emoji(self, data: dt.MessageReactionRemoveEmojiData):
+    @staticmethod
+    def message_reaction_remove_all(data: dt.MessageReactionRemoveAllData):
         pass
 
-    def presence_update(self, data: dt.PresenceUpdateData):
+    @staticmethod
+    def message_reaction_remove_emoji(data: dt.MessageReactionRemoveEmojiData):
         pass
 
-    def stage_instance_create(self, data: dt.StageInstanceCreateData):
+    @staticmethod
+    def presence_update(data: dt.PresenceUpdateData):
         pass
 
-    def stage_instance_update(self, data: dt.StageInstanceUpdateData):
+    @staticmethod
+    def stage_instance_create(data: dt.StageInstanceCreateData):
         pass
 
-    def stage_instance_delete(self, data: dt.StageInstanceDeleteData):
+    @staticmethod
+    def stage_instance_update(data: dt.StageInstanceUpdateData):
         pass
 
-    def typing_start(self, data: dt.TypingStartData):
+    @staticmethod
+    def stage_instance_delete(data: dt.StageInstanceDeleteData):
         pass
 
-    def user_update(self, data: dt.UserUpdateData):
+    @staticmethod
+    def typing_start(data: dt.TypingStartData):
         pass
 
-    def voice_state_update(self, data: dt.VoiceStateData):
+    @staticmethod
+    def user_update(data: dt.UserUpdateData):
         pass
 
-    def voice_server_update(self, data: dt.VoiceServerUpdateData):
+    @staticmethod
+    def voice_state_update(data: dt.VoiceStateData):
         pass
 
-    def webhooks_update(self, data: dt.WebhooksUpdateData):
+    @staticmethod
+    def voice_server_update(data: dt.VoiceServerUpdateData):
+        pass
+
+    @staticmethod
+    def webhooks_update(data: dt.WebhooksUpdateData):
         pass
