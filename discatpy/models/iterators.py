@@ -35,7 +35,6 @@ async def channel_history(
     converted_around = _datetime_to_snowflake(around) if isinstance(around, datetime) else around
     retrieve = 0
 
-    reverse = bool(after)
     channel_id = await channel._get_channel_id()  # pyright: ignore[reportPrivateUsage]
 
     def should_retrieve():
@@ -70,7 +69,7 @@ async def channel_history(
             if around is not Unset:
                 converted_around = Unset
 
-        if reverse:
+        if after is not Unset:
             data = reversed(data)
 
         for msg in data:
