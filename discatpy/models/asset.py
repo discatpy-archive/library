@@ -6,6 +6,8 @@ import typing as t
 import attr
 from discord_typings import Snowflake
 
+from ..utils.attr_exts import frozen_for_public
+
 if t.TYPE_CHECKING:
     from ..bot import Bot
 
@@ -109,7 +111,7 @@ class AssetPresets:
 
 
 def _supported_types_validator(
-    instance: Asset, attribute: attr.Attribute[list[str]], value: list[str]
+    instance: Asset, attribute: attr.Attribute[tuple[str, ...]], value: tuple[str, ...]
 ):
     for v in value:
         if v not in ALL_SUPPORTED_EXTENSIONS:
@@ -132,11 +134,12 @@ def _size_validator(instance: Asset, attribute: attr.Attribute[int], value: int)
         raise ValueError(f"size must be a power of two!")
 
 
+@frozen_for_public
 @attr.define(kw_only=True)
 class Asset:
     bot: Bot
     url: str
-    supported_types: list[str] = attr.field(validator=_supported_types_validator)
+    supported_types: tuple[str, ...] = attr.field(validator=_supported_types_validator)
     extension: str = attr.field(init=False, validator=_extension_validator)
     supports_gif: bool = attr.field(init=False)
     size: int = attr.field(init=False, validator=_size_validator, default=16)
@@ -150,7 +153,7 @@ class Asset:
 
     @classmethod
     def from_asset_preset(cls, bot: Bot, preset: tuple[str, tuple[str, ...]]):
-        return cls(bot=bot, url=preset[0], supported_types=list(preset[1]))
+        return cls(bot=bot, url=preset[0], supported_types=preset[1])
 
     @property
     def formatted_url(self):
