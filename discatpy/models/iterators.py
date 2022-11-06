@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import typing as t
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncIterator
 from datetime import datetime
 
 import discord_typings as dt
@@ -29,7 +29,7 @@ async def channel_history(
     after: UnsetOr[t.Union[datetime, dt.Snowflake]] = Unset,
     around: UnsetOr[t.Union[datetime, dt.Snowflake]] = Unset,
     limit: t.Optional[int] = None,
-) -> AsyncGenerator[dt.MessageData, None]:
+) -> AsyncIterator[dt.MessageData]:
     converted_before = _datetime_to_snowflake(before) if isinstance(before, datetime) else before
     converted_after = _datetime_to_snowflake(after) if isinstance(after, datetime) else after
     converted_around = _datetime_to_snowflake(around) if isinstance(around, datetime) else around
