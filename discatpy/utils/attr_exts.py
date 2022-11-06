@@ -4,7 +4,6 @@ from __future__ import annotations
 import inspect
 import typing as t
 from collections.abc import Callable, Mapping
-from types import FunctionType
 
 import attr
 from discatcore.types import Unset
@@ -103,6 +102,16 @@ def make_sentinel_converter(
     return wrapper
 
 
+def _get_unique_setattr(cls: type) -> Callable[[object, str, t.Any], None]:
+    for base in cls.__mro__:
+        if (
+            base_setattr := getattr(base, "__setattr__", object.__setattr__)
+        ) is not object.__setattr__:
+            return base_setattr
+
+    return object.__setattr__
+
+
 def frozen_for_public(cls: type[T]) -> type[T]:
     """Decorator to take any attrs-generated class and make it frozen when an attribute
     is set outside of a frame inside a class method.
@@ -123,10 +132,7 @@ def frozen_for_public(cls: type[T]) -> type[T]:
         raise attr.exceptions.NotAnAttrsClassError
 
     def __frozen_setattr__(self: T, name: str, value: t.Any):
-        __original_setattr__ = t.cast(
-            FunctionType,
-            getattr(cls.__mro__[1], "__setattr__", object.__setattr__),
-        ).__get__(self, cls)
+        __original_setattr__ = _get_unique_setattr(cls).__get__(self, cls)
 
         stack = inspect.stack()
         assert len(stack) > 1
