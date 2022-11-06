@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import typing as t
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from functools import reduce
 from operator import or_
 
@@ -23,12 +23,12 @@ class FlagMember:
 
     def __get__(self, instance: t.Optional[Flag], _: type[Flag]) -> t.Union[int, bool]:
         if instance:
-            return instance.value & self.value == self.value
+            return instance.has(self.value)
         return self.value
 
-    def __set__(self, instance: t.Optional[Flag], value: bool) -> None:
+    def __set__(self, instance: t.Optional[Flag], toggle: bool) -> None:
         if instance:
-            instance._set_value(self.value, value)  # pyright: ignore[reportPrivateUsage]
+            instance.set(self.value, toggle)
 
     @property
     def name(self) -> str:
@@ -64,11 +64,9 @@ class FlagMeta(type):
         classdict: dict[str, t.Any],
         **kwds: t.Any,
     ) -> Self:
-        member_map: dict[str, FlagMember] = {}
-
-        for name, value in classdict.items():
-            if isinstance(value, FlagMember):
-                member_map[name] = value
+        member_map: dict[str, FlagMember] = {
+            n: v for n, v in classdict.items() if isinstance(v, FlagMember)
+        }
 
         default_value: int = 0
         if kwds.pop("inverted", False):
@@ -92,25 +90,28 @@ class Flag(metaclass=FlagMeta):
     """A custom flag implementation. Uses ``FlagMeta`` as its metaclass."""
 
     value: int
+    _default_value: t.ClassVar[int]
+    __members__: t.ClassVar[dict[str, FlagMember]]
 
     def __init__(self, **kwds: bool):
         self.value = type(self).default_value
 
         for flag_name, enabled in kwds.items():
-            if hasattr(self, flag_name) and isinstance(
-                (flag_val := getattr(self, flag_name)), FlagMember
-            ):
-                self._set_value(flag_val.value, enabled)
+            if hasattr(self, flag_name) and flag_name in self.__members__:
+                self.set(self.__members__[flag_name].value, enabled)
             else:
-                raise ValueError(f"Invalid flag member with name {flag_name}!")
+                raise ValueError(f"Invalid flag member {flag_name}!")
 
-    def _set_value(self, value: int, enable: bool):
-        if enable:
+    def set(self, value: int, toggle: bool):
+        if toggle:
             self.value |= value
         else:
             self.value &= ~value
 
-    def __or__(self, other: t.Union[Flag, FlagMember, int, t.Any]):
+    def has(self, value: int):
+        return self.value & value == value
+
+    def __or__(self, other: t.Any):
         if isinstance(other, int):
             return self.from_value(self.value | other)
         elif isinstance(other, (Flag, FlagMember)):
@@ -118,7 +119,7 @@ class Flag(metaclass=FlagMeta):
 
         return NotImplemented
 
-    def __and__(self, other: t.Union[Flag, FlagMember, int, t.Any]):
+    def __and__(self, other: t.Any):
         if isinstance(other, int):
             return self.from_value(self.value & other)
         elif isinstance(other, (Flag, FlagMember)):
@@ -126,10 +127,10 @@ class Flag(metaclass=FlagMeta):
 
         return NotImplemented
 
-    def __add__(self, other: t.Union[Flag, FlagMember, int, t.Any]):
+    def __add__(self, other: t.Any):
         return self | other
 
-    def __sub__(self, other: t.Union[Flag, FlagMember, int, t.Any]):
+    def __sub__(self, other: t.Any):
         if isinstance(other, int):
             return self.from_value(self.value & ~other)
         elif isinstance(other, (Flag, FlagMember)):
@@ -139,6 +140,21 @@ class Flag(metaclass=FlagMeta):
 
     def __invert__(self):
         return self.from_value(~self.value)
+
+    def __contains__(self, item: t.Any):
+        if isinstance(item, int):
+            return self.has(item)
+
+        return NotImplemented
+
+    __ror__ = __or__
+    __rand__ = __and__
+    __radd__ = __add__
+    __rsub__ = __sub__
+
+    def __iter__(self) -> Iterator[tuple[str, bool]]:
+        for name in self.__members__:
+            yield name, getattr(self, name)
 
     @classmethod
     def from_value(cls: type[Self], value: int) -> Self:
