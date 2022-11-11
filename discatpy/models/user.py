@@ -87,7 +87,7 @@ class UserFlags(Flag):
         return 1 << 19
 
     @flag
-    def ACTIVE_DEVELOPERS():
+    def ACTIVE_DEVELOPER():
         return 1 << 22
 
 
