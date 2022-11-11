@@ -86,6 +86,10 @@ class UserFlags(Flag):
     def BOT_HTTP_INTERACTIONS():
         return 1 << 19
 
+    @flag
+    def ACTIVE_DEVELOPER():
+        return 1 << 22
+
 
 @frozen_for_public
 @attr.define(kw_only=True)
