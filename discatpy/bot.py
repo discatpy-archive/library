@@ -15,6 +15,31 @@ __all__ = ("Intents", "Bot")
 
 
 class Intents(Flag):
+    if t.TYPE_CHECKING:
+        def __init__(
+            self,
+            guilds: bool = ...,
+            guild_members: bool = ...,
+            guild_bans: bool = ...,
+            guild_emojis_and_stickers: bool = ...,
+            guild_integrations: bool = ...,
+            guild_webhooks: bool = ...,
+            guild_invites: bool = ...,
+            guild_voice_states: bool = ...,
+            guild_presences: bool = ...,
+            guild_messages: bool = ...,
+            guild_message_reactions: bool = ...,
+            guild_message_typing: bool = ...,
+            direct_messages: bool = ...,
+            direct_message_reactions: bool = ...,
+            direct_message_typing: bool = ...,
+            message_content: bool = ...,
+            guild_scheduled_events: bool = ...,
+            auto_moderation_configuration: bool = ...,
+            automod_execution: bool = ...,
+        ) -> None:
+            ...
+
     @flag
     def GUILDS():
         return 1 << 0
