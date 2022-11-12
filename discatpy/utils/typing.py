@@ -13,7 +13,7 @@ if sys.version_info >= (3, 10):
 else:
     union_types = (t.Union,)
 
-__all__ = ("type_checking", "get_globals", "evaluate_annotation", "is_union")
+__all__ = ("type_checking", "get_globals", "is_union")
 
 
 @contextmanager
@@ -47,17 +47,6 @@ def get_globals(x: object) -> dict[str, t.Any]:
             reload(module)
 
     return module.__dict__
-
-
-def evaluate_annotation(x: str, globals: dict[str, t.Any], locals: dict[str, t.Any]) -> object:
-    """Evaluates x into an object.
-
-    Args:
-        x: The string annotation you need to evalulate.
-        globals: The globals to evalulate with.
-        locals: The locals to evalulate with.
-    """
-    return eval(x, globals, locals)
 
 
 def is_union(x: object) -> bool:

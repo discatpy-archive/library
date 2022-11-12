@@ -8,7 +8,7 @@ from collections.abc import Callable, Mapping
 import attr
 from discatcore.types import Unset
 
-from .typing import evaluate_annotation, get_globals, is_union
+from .typing import get_globals, is_union
 
 T = t.TypeVar("T")
 TT = t.TypeVar("TT", bound=type)
@@ -24,9 +24,7 @@ def _sentinel_to_be_filtered(cls: type) -> object:
 
     for field in attr.fields(cls):
         field_type = (
-            evaluate_annotation(field.type, get_globals(cls), {})
-            if isinstance(field.type, str)
-            else field.type
+            eval(field.type, get_globals(cls), {}) if isinstance(field.type, str) else field.type
         )
         if is_union(field_type):
             # if we detect Unset, then we should filter that and not None
