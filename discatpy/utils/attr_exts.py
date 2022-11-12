@@ -11,16 +11,13 @@ from discatcore.types import Unset
 from .typing import get_globals, is_union
 
 T = t.TypeVar("T")
-TT = t.TypeVar("TT", bound=type)
 MT = t.TypeVar("MT", bound=Mapping[str, t.Any])
 
 __all__ = ("ToDictMixin", "make_sentinel_converter", "frozen_for_public")
 
-_no_sentinel_found = object()
 
-
-def _sentinel_to_be_filtered(cls: type) -> object:
-    res: object = _no_sentinel_found
+def _sentinel_to_be_filtered(cls: type) -> t.Optional[tuple[object, ...]]:
+    res: t.Optional[tuple[object, ...]] = None
 
     for field in attr.fields(cls):
         field_type = (
@@ -30,53 +27,43 @@ def _sentinel_to_be_filtered(cls: type) -> object:
             # if we detect Unset, then we should filter that and not None
             union_args = t.get_args(field_type)
             if type(Unset) in union_args:
-                res = Unset
+                res = (Unset,)
             # otherwise, filter out None
             elif type(None) in union_args:
-                res = None
+                res = (None,)
 
     return res
-
-
-# this is defined outside of ToDictMixin because I don't want to pollute
-# the subclasses with internal stuff
-def _generate_to_dict(cls: type[ToDictMixin[MT]]) -> Callable[[t.Any], MT]:
-    function_template = """
-def to_dict(self):
-    data = {{{0}}}
-    return dict(filter(_should_be_filtered, data.items()))
-""".lstrip()
-
-    dict_define = ",".join(f'"{field.name}":self.{field.name}' for field in attr.fields(cls))
-    sentinel = _sentinel_to_be_filtered(cls)
-
-    def _should_be_filtered(item: tuple[str, t.Any]) -> bool:
-        if sentinel is not _no_sentinel_found:
-            return item[1] is not sentinel
-        return True
-
-    function_code = compile(
-        function_template.format(dict_define), "<ToDictMixin.to_dict method>", "exec"
-    )
-    _globals = {"_should_be_filtered": _should_be_filtered}
-    _locals = {}
-    exec(function_code, _globals, _locals)
-    return t.cast(Callable[[t.Any], MT], _locals["to_dict"])
 
 
 class ToDictMixin(t.Generic[MT]):
     """A mixin that adds an auto-generated to_dict method based on all of the
     fields.
 
-    Unlike ``attr.asdict``, this filters out attributes that are ``None`` or ``Unset``.
+    Unlike ``attr.asdict``, this filters out any sentinels you give it.
     """
 
-    _actual_to_dict_: t.Optional[Callable[[t.Any], MT]] = None
+    __sentinels_to_filter__: t.Optional[tuple[object, ...]] = None
+
+    def __init_subclass__(cls, **kwargs: t.Any) -> None:
+        super().__init_subclass__(**kwargs)
+
+        sentinels: t.Optional[tuple[object, ...]] = kwargs.get("sentinels", None)
+        cls.__sentinels_to_filter__ = sentinels
 
     def to_dict(self) -> MT:
-        if not self._actual_to_dict_:
-            self._actual_to_dict_ = _generate_to_dict(type(self))
-        return self._actual_to_dict_(self)
+        data = {field.name: getattr(self, field.name) for field in attr.fields(type(self))}
+
+        if self.__sentinels_to_filter__ is None:
+            sentinels = _sentinel_to_be_filtered(type(self))
+        else:
+            sentinels = self.__sentinels_to_filter__
+
+        def _should_be_filtered(item: tuple[str, t.Any]) -> bool:
+            if sentinels is not None:
+                return item[1] not in sentinels
+            return True
+
+        return t.cast(MT, dict(filter(_should_be_filtered, data.items())))
 
 
 def make_sentinel_converter(
