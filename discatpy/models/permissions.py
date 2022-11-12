@@ -202,3 +202,6 @@ class PermissionOverwrite:
                 permissions_kwargs[name] = False
 
         return cls(**permissions_kwargs)
+
+    def set(self, **kwargs: bool):
+        self._permission = Permissions(**kwargs)
