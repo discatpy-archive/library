@@ -112,6 +112,7 @@ class MessageFlags(Flag):
     if t.TYPE_CHECKING:
         def __init__(
             self,
+            *,
             crossposted: bool = ...,
             is_crosspost: bool = ...,
             suppress_embeds: bool = ...,

@@ -18,6 +18,7 @@ class Intents(Flag):
     if t.TYPE_CHECKING:
         def __init__(
             self,
+            *,
             guilds: bool = ...,
             guild_members: bool = ...,
             guild_bans: bool = ...,

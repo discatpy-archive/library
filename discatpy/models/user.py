@@ -33,6 +33,7 @@ class UserFlags(Flag):
     if t.TYPE_CHECKING:
         def __init__(
             self,
+            *,
             staff: bool = ...,
             partner: bool = ...,
             hypesquad: bool = ...,
