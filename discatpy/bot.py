@@ -16,6 +16,7 @@ __all__ = ("Intents", "Bot")
 
 class Intents(Flag):
     if t.TYPE_CHECKING:
+
         def __init__(
             self,
             *,

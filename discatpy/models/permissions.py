@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: MIT
 import typing as t
+
 from typing_extensions import Self
 
 from ..flags import Flag, flag
@@ -9,6 +10,7 @@ __all__ = ("Permissions", "PermissionOverwrite")
 
 class Permissions(Flag):
     if t.TYPE_CHECKING:
+
         def __init__(
             self,
             *,
@@ -51,9 +53,10 @@ class Permissions(Flag):
             use_external_stickers: bool = ...,
             send_messages_in_threads: bool = ...,
             use_embed_activities: bool = ...,
-            moderate_members: bool = ...
+            moderate_members: bool = ...,
         ) -> None:
             ...
+
     @flag
     def create_instant_invite() -> int:
         return 1 << 0

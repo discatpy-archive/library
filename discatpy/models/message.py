@@ -110,6 +110,7 @@ class MessageTypes(int, Enum):
 
 class MessageFlags(Flag):
     if t.TYPE_CHECKING:
+
         def __init__(
             self,
             *,
@@ -124,6 +125,7 @@ class MessageFlags(Flag):
             failed_to_mention_some_roles_in_thread: bool = ...,
         ):
             ...
+
     @flag
     def CROSSPOSTED():
         return 1 << 0

@@ -31,6 +31,7 @@ class UserPremiumTypes(int, Enum):
 
 class UserFlags(Flag):
     if t.TYPE_CHECKING:
+
         def __init__(
             self,
             *,
@@ -51,6 +52,7 @@ class UserFlags(Flag):
             active_developer: bool = ...,
         ) -> None:
             ...
+
     @flag
     def STAFF():
         return 1 << 0
