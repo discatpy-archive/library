@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 
 import asyncio
-from typing import Optional
+import typing as t
 
 from discatcore import Dispatcher, GatewayReconnect
 from discatcore.gateway import GatewayClient
@@ -109,12 +109,22 @@ class Bot(Dispatcher):
         "loop",
     )
 
-    def __init__(self, *, token: str, api_version: Optional[int] = None, intents: Intents) -> None:
+    def __init__(
+        self,
+        *,
+        token: str,
+        api_version: t.Optional[int] = None,
+        intents: Intents,
+        heartbeat_timeout: float = 30.0,
+    ) -> None:
         self._raw_dispatcher: Dispatcher = Dispatcher()
         apply_events(source=RawGatewayEvents, dest=self._raw_dispatcher)
         self.http: HTTPClient = HTTPClient(token, api_version=api_version)
         self.gateway: GatewayClient = GatewayClient(
-            self.http, self._raw_dispatcher, intents=intents.value
+            self.http,
+            self._raw_dispatcher,
+            intents=intents.value,
+            heartbeat_timeout=heartbeat_timeout,
         )
         self.running: bool = False
         self.loop = asyncio.new_event_loop()
@@ -132,11 +142,15 @@ class Bot(Dispatcher):
         return self.http.token
 
     @property
+    def heartbeat_timeout(self) -> float:
+        return self.gateway.heartbeat_timeout
+
+    @property
     def raw_dispatcher(self) -> Dispatcher:
         return self._raw_dispatcher
 
     async def start(self) -> None:
-        gateway_url: Optional[str] = None
+        gateway_url: t.Optional[str] = None
         self.running = True
 
         while self.running:
