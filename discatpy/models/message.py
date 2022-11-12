@@ -109,6 +109,23 @@ class MessageTypes(int, Enum):
 
 
 class MessageFlags(Flag):
+    if t.TYPE_CHECKING:
+
+        def __init__(
+            self,
+            *,
+            crossposted: bool = ...,
+            is_crosspost: bool = ...,
+            suppress_embeds: bool = ...,
+            source_message_deleted: bool = ...,
+            urgent: bool = ...,
+            has_thread: bool = ...,
+            ephemeral: bool = ...,
+            loading: bool = ...,
+            failed_to_mention_some_roles_in_thread: bool = ...,
+        ):
+            ...
+
     @flag
     def CROSSPOSTED():
         return 1 << 0
