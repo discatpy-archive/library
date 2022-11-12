@@ -30,6 +30,29 @@ class UserPremiumTypes(int, Enum):
 
 
 class UserFlags(Flag):
+    if t.TYPE_CHECKING:
+
+        def __init__(
+            self,
+            *,
+            staff: bool = ...,
+            partner: bool = ...,
+            hypesquad: bool = ...,
+            bug_hunter_level_1: bool = ...,
+            hypesquad_online_house_1: bool = ...,
+            hypesquad_online_house_2: bool = ...,
+            hypesquad_online_house_3: bool = ...,
+            premium_early_supporter: bool = ...,
+            team_pseudo_user: bool = ...,
+            bug_hunter_level_2: bool = ...,
+            verified_bot: bool = ...,
+            early_verified_bot_developer: bool = ...,
+            certified_moderator: bool = ...,
+            bot_http_interactions: bool = ...,
+            active_developer: bool = ...,
+        ) -> None:
+            ...
+
     @flag
     def STAFF():
         return 1 << 0
