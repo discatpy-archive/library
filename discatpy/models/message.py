@@ -268,14 +268,10 @@ class Message:
         else:
             self.flags = raw_flags
 
-        raw_referenced_message = self.data.get("references_message", Unset)
-        if isinstance(
-            raw_referenced_message, t.get_args(dt.MessageData)
-        ):  # 3.9 does not support unions as the second arg in isinstance
+        raw_referenced_message = self.data.get("referenced_message", Unset)
+        if isinstance(raw_referenced_message, (dt.ChannelMessageData, dt.GuildMessageData)):
             # TODO: attempt to get message object from cache
-            self.referenced_message = Message(
-                bot=self.bot, data=t.cast(dt.MessageData, raw_referenced_message)
-            )
+            self.referenced_message = Message(bot=self.bot, data=raw_referenced_message)
         else:
             self.referenced_message = raw_referenced_message
 
