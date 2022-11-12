@@ -81,7 +81,7 @@ def _grab_and_convert(
 
 
 @attr.define(kw_only=True)
-class Embed(ToDictMixin[dt.EmbedData]):
+class Embed:
     title: t.Optional[str] = None
     type: t.Literal["rich", "image", "video", "gifv", "article", "link"] = "rich"
     description: t.Optional[str] = None
@@ -131,6 +131,47 @@ class Embed(ToDictMixin[dt.EmbedData]):
             author=author,
             fields=fields,
         )
+
+    def to_dict(self) -> dt.EmbedData:
+        data: dt.EmbedData = {"type": self.type}
+
+        if self.title is not None:
+            data["title"] = self.title
+
+        if self.description is not None:
+            data["description"] = self.description
+
+        if self.url is not None:
+            data["url"] = self.url
+
+        if self.timestamp is not None:
+            data["timestamp"] = self.timestamp.isoformat()
+
+        if self.color is not None:
+            data["color"] = self.color.to_hex()
+
+        if self.footer is not None:
+            data["footer"] = self.footer.to_dict()
+
+        if self.image is not None:
+            data["image"] = self.image.to_dict()
+
+        if self.thumbnail is not None:
+            data["thumbnail"] = self.thumbnail.to_dict()
+
+        if self.video is not None:
+            data["video"] = self.video.to_dict()
+
+        if self.provider is not None:
+            data["provider"] = self.provider.to_dict()
+
+        if self.author is not None:
+            data["author"] = self.author.to_dict()
+
+        if self.fields:
+            data["fields"] = [f.to_dict() for f in self.fields]
+
+        return data
 
     def set_footer(
         self, *, text: str, icon_url: t.Optional[str] = None, proxy_icon_url: t.Optional[str] = None
