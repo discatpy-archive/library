@@ -7,10 +7,12 @@ from collections.abc import Callable, Mapping
 
 import attr
 from discatcore.types import Unset
+from typing_extensions import TypeVarTuple, Unpack
 
 from .typing import get_globals, is_union
 
 T = t.TypeVar("T")
+Ts = TypeVarTuple("Ts")
 MT = t.TypeVar("MT", bound=Mapping[str, t.Any])
 
 __all__ = ("ToDictMixin", "make_sentinel_converter", "frozen_for_public")
@@ -67,8 +69,8 @@ class ToDictMixin(t.Generic[MT]):
 
 
 def make_sentinel_converter(
-    original: Callable[[t.Any], T], *sentinels: t.Any
-) -> Callable[[t.Any], T]:
+    original: Callable[[t.Any], T], *sentinels: Unpack[Ts]
+) -> Callable[[t.Any], t.Union[Unpack[Ts], T]]:
     """Creates a converter function that ignores sentinels.
 
     Args:
