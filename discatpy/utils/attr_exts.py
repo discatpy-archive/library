@@ -7,18 +7,33 @@ from collections.abc import Callable, Mapping
 
 import attr
 from discatcore.types import Unset
-from typing_extensions import TypeVarTuple, Unpack
+from typing_extensions import TypeGuard, TypeVarTuple, Unpack
 
 from .typing import get_globals, is_union
+
+if t.TYPE_CHECKING:
+    from attr import AttrsInstance
 
 T = t.TypeVar("T")
 Ts = TypeVarTuple("Ts")
 MT = t.TypeVar("MT", bound=Mapping[str, t.Any])
 
-__all__ = ("ToDictMixin", "make_sentinel_converter", "frozen_for_public")
+__all__ = ("is_attr_class", "ToDictMixin", "make_sentinel_converter", "frozen_for_public")
 
 
-def _sentinel_to_be_filtered(cls: type) -> t.Optional[tuple[object, ...]]:
+def is_attr_class(cls: type) -> TypeGuard[type[AttrsInstance]]:
+    """Whether or not the provided class is an attrs class.
+
+    Unlike ``attr.has``, this is a type guard for the provided class being
+    an attrs instance.
+
+    Args:
+        cls: The class to check for.
+    """
+    return attr.has(cls)
+
+
+def _sentinel_to_be_filtered(cls: type[AttrsInstance]) -> t.Optional[tuple[object, ...]]:
     res: t.Optional[tuple[object, ...]] = None
 
     for field in attr.fields(cls):
@@ -49,14 +64,21 @@ class ToDictMixin(t.Generic[MT]):
     def __init_subclass__(cls, **kwargs: t.Any) -> None:
         super().__init_subclass__(**kwargs)
 
+        if not attr.has(cls):
+            raise attr.exceptions.NotAnAttrsClassError
+
         sentinels: t.Optional[tuple[object, ...]] = kwargs.get("sentinels", None)
         cls.__sentinels_to_filter__ = sentinels
 
     def to_dict(self) -> MT:
-        data = {field.name: getattr(self, field.name) for field in attr.fields(type(self))}
+        cls = type(self)
+        if not is_attr_class(cls):
+            raise attr.exceptions.NotAnAttrsClassError
+
+        data = {field.name: getattr(self, field.name) for field in attr.fields(cls)}
 
         if self.__sentinels_to_filter__ is None:
-            sentinels = _sentinel_to_be_filtered(type(self))
+            sentinels = _sentinel_to_be_filtered(cls)
         else:
             sentinels = self.__sentinels_to_filter__
 
