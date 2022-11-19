@@ -64,9 +64,6 @@ class ToDictMixin(t.Generic[MT]):
     def __init_subclass__(cls, **kwargs: t.Any) -> None:
         super().__init_subclass__(**kwargs)
 
-        if not attr.has(cls):
-            raise attr.exceptions.NotAnAttrsClassError
-
         sentinels: t.Optional[tuple[object, ...]] = kwargs.get("sentinels", None)
         cls.__sentinels_to_filter__ = sentinels
 
@@ -112,7 +109,7 @@ def make_sentinel_converter(
 
 
 def _get_unique_setattr(cls: type) -> Callable[[object, str, t.Any], None]:
-    for base in cls.__mro__:
+    for base in cls.__mro__[1:]:
         if (
             base_setattr := getattr(base, "__setattr__", object.__setattr__)
         ) is not object.__setattr__:
@@ -122,23 +119,18 @@ def _get_unique_setattr(cls: type) -> Callable[[object, str, t.Any], None]:
 
 
 def frozen_for_public(cls: type[T]) -> type[T]:
-    """Decorator to take any attrs-generated class and make it frozen when an attribute
+    """Decorator to take any class and make it frozen when an attribute
     is set outside of a frame inside a class method.
 
     This works by taking the previous frame and checking if that frame is inside of a
     class method. If not, then ``attr.exceptions.FrozenAttributeError`` is raised.
 
     Args:
-        cls: The attrs-generated class to modify.
-
-    Raises:
-        ``attrs.exceptions.NotAnAttrsClassError``: The class provided is not attrs-generated.
+        cls: The class to modify.
 
     Returns:
-        The modified attrs-generated class.
+        The modified class.
     """
-    if not attr.has(cls):
-        raise attr.exceptions.NotAnAttrsClassError
 
     def __frozen_setattr__(self: T, name: str, value: t.Any):
         __original_setattr__ = _get_unique_setattr(cls).__get__(self, cls)
@@ -146,7 +138,9 @@ def frozen_for_public(cls: type[T]) -> type[T]:
         stack = inspect.stack()
         assert len(stack) > 1
 
-        self_param = stack[1].frame.f_locals.get("self")
+        last_frame = stack[1]
+        self_param = last_frame.frame.f_locals.get("self")
+
         if isinstance(self_param, cls) and self_param is self:
             __original_setattr__(name, value)
         else:
