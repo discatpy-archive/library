@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import typing as t
 
-import attr
 import discord_typings as dt
 from discatcore.types import Unset, UnsetOr
 
@@ -18,25 +17,17 @@ __all__ = ("Emoji",)
 
 
 @frozen_for_public
-@attr.define(kw_only=True)
 class Emoji:
-    bot: Bot
-    data: dt.EmojiData
-    # TODO: guild_owner
-    id: t.Optional[dt.Snowflake] = attr.field(init=False)
-    name: t.Optional[str] = attr.field(init=False)
-    roles: UnsetOr[list[dt.Snowflake]] = attr.field(init=False)
-    user: UnsetOr[User] = attr.field(init=False)
-    require_colons: UnsetOr[bool] = attr.field(init=False)
-    managed: UnsetOr[bool] = attr.field(init=False)
-    animated: UnsetOr[bool] = attr.field(init=False)
-    available: UnsetOr[bool] = attr.field(init=False)
+    def __init__(self, *, bot: Bot, data: dt.EmojiData):
+        self.bot: Bot = bot
+        self.data: dt.EmojiData = data
+        # TODO: guild_owner
 
-    def __attrs_post_init__(self):
-        self.id = self.data["id"]
-        self.name = self.data["name"]
-        self.roles = self.data.get("roles", Unset)
+        self.id: t.Optional[dt.Snowflake] = self.data["id"]
+        self.name: t.Optional[str] = self.data["name"]
+        self.roles: UnsetOr[list[dt.Snowflake]] = self.data.get("roles", Unset)
 
+        self.user: UnsetOr[User]
         raw_user = self.data.get("user", Unset)
         if isinstance(raw_user, dt.UserData):
             # TODO: attempt to get user object from cache
@@ -44,10 +35,10 @@ class Emoji:
         else:
             self.user = raw_user
 
-        self.require_colons = self.data.get("require_colons", Unset)
-        self.managed = self.data.get("managed", Unset)
-        self.animated = self.data.get("animated", Unset)
-        self.available = self.data.get("available", Unset)
+        self.require_colons: UnsetOr[bool] = self.data.get("require_colons", Unset)
+        self.managed: UnsetOr[bool] = self.data.get("managed", Unset)
+        self.animated: UnsetOr[bool] = self.data.get("animated", Unset)
+        self.available: UnsetOr[bool] = self.data.get("available", Unset)
 
     @property
     def is_custom(self):

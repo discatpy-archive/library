@@ -49,32 +49,21 @@ class MessageReference(ToDictMixin[dt.MessageReferenceData]):
 
 
 @frozen_for_public
-@attr.define(kw_only=True)
 class Attachment:
-    bot: Bot
-    data: dt.AttachmentData
-    id: dt.Snowflake = attr.field(init=False)
-    filename: str = attr.field(init=False)
-    description: UnsetOr[str] = attr.field(init=False)
-    content_type: UnsetOr[str] = attr.field(init=False)
-    size: int = attr.field(init=False)
-    url: str = attr.field(init=False)
-    proxy_url: str = attr.field(init=False)
-    height: UnsetOr[t.Optional[int]] = attr.field(init=False)
-    width: UnsetOr[t.Optional[int]] = attr.field(init=False)
-    ephemeral: bool = attr.field(init=False)
+    def __init__(self, *, bot: Bot, data: dt.AttachmentData):
+        self.bot: Bot = bot
+        self.data: dt.AttachmentData = data
 
-    def __attrs_post_init__(self):
-        self.id = self.data["id"]
-        self.filename = self.data["filename"]
-        self.description = self.data.get("description", Unset)
-        self.content_type = self.data.get("content_type", Unset)
-        self.size = self.data["size"]
-        self.url = self.data["url"]
-        self.proxy_url = self.data["proxy_url"]
-        self.height = self.data.get("height", Unset)
-        self.width = self.data.get("width", Unset)
-        self.ephemeral = self.data.get("ephemeral", False)
+        self.id: dt.Snowflake = self.data["id"]
+        self.filename: str = self.data["filename"]
+        self.description: UnsetOr[str] = self.data.get("description", Unset)
+        self.content_type: UnsetOr[str] = self.data.get("content_type", Unset)
+        self.size: int = self.data["size"]
+        self.url: str = self.data["url"]
+        self.proxy_url: str = self.data["proxy_url"]
+        self.height: UnsetOr[t.Optional[int]] = self.data.get("height", Unset)
+        self.width: UnsetOr[t.Optional[int]] = self.data.get("width", Unset)
+        self.ephemeral: bool = self.data.get("ephemeral", False)
 
     async def read(self, *, proxied: bool = False):
         url = self.proxy_url if proxied else self.url
@@ -221,76 +210,64 @@ def _send_message(
 
 
 @frozen_for_public
-@attr.define(kw_only=True)
 class Message:
-    bot: Bot
-    data: dt.MessageData
-    # TODO: channel, guild
-    id: dt.Snowflake = attr.field(init=False)
-    channel_id: dt.Snowflake = attr.field(init=False)
-    author: User = attr.field(init=False)  # TODO: support members & webhook users
-    content: UnsetOr[str] = attr.field(init=False)
-    timestamp: datetime = attr.field(init=False)
-    edited_timestamp: t.Optional[datetime] = attr.field(init=False)
-    tts: bool = attr.field(init=False)
-    mentions: list[User] = attr.field(init=False)
-    # TODO: mention_roles, mention_channels
-    attachments: UnsetOr[list[Attachment]] = attr.field(init=False)
-    embeds: UnsetOr[list[Embed]] = attr.field(init=False)
-    # TODO: reactions
-    nonce: UnsetOr[t.Union[int, str]] = attr.field(init=False)
-    pinned: bool = attr.field(init=False)
-    webhook_id: UnsetOr[dt.Snowflake] = attr.field(init=False)
-    type: MessageTypes = attr.field(init=False)
-    # TODO: activity, application
-    application_id: UnsetOr[dt.Snowflake] = attr.field(init=False)
-    message_reference: UnsetOr[MessageReference] = attr.field(init=False)
-    flags: UnsetOr[MessageFlags] = attr.field(init=False)
-    referenced_message: UnsetOr[t.Optional[Message]] = attr.field(init=False)
-    # TODO: interaction, thread, components, sticker_items, stickers
+    def __init__(self, *, bot: Bot, data: dt.MessageData):
+        self.bot: Bot = bot
+        self.data: dt.MessageData = data
+        # TODO: channel, guild
 
-    def __attrs_post_init__(self):
-        self.id = self.data["id"]
-        self.channel_id = self.data["channel_id"]
+        self.id: dt.Snowflake = self.data["id"]
+        self.channel_id: dt.Snowflake = self.data["channel_id"]
         # TODO: attempt to get user object from cache
-        self.author = User(bot=self.bot, data=self.data["author"])
-        self.content = self.data.get("content", Unset)
-        self.timestamp = datetime.fromisoformat(self.data["timestamp"])
+        self.author: User = User(bot=self.bot, data=self.data["author"])
+        self.content: UnsetOr[str] = self.data.get("content", Unset)
+        self.timestamp: datetime = datetime.fromisoformat(self.data["timestamp"])
 
+        self.edited_timestamp: t.Optional[datetime]
         raw_edited_timestamp = self.data.get("edited_timestamp")
         if isinstance(raw_edited_timestamp, str):
             self.edited_timestamp = datetime.fromisoformat(raw_edited_timestamp)
         else:
             self.edited_timestamp = raw_edited_timestamp
 
-        self.tts = self.data["tts"]
-        self.mentions = [User(bot=self.bot, data=d) for d in self.data["mentions"]]
-        self.attachments = [Attachment(bot=self.bot, data=a) for a in self.data["attachments"]]
-        self.embeds = [Embed.from_dict(d) for d in self.data["embeds"]] or Unset
-        self.nonce = self.data.get("nonce", Unset)
-        self.pinned = self.data["pinned"]
-        self.webhook_id = self.data.get("webhook_id", Unset)
-        self.type = MessageTypes(self.data["type"])
-        self.application_id = self.data.get("application_id", Unset)
+        self.tts: bool = self.data["tts"]
+        self.mentions: list[User] = [User(bot=self.bot, data=d) for d in self.data["mentions"]]
+        self.attachments: UnsetOr[list[Attachment]] = [
+            Attachment(bot=self.bot, data=a) for a in self.data["attachments"]
+        ]
+        self.embeds: UnsetOr[list[Embed]] = [
+            Embed.from_dict(d) for d in self.data["embeds"]
+        ] or Unset
+        self.nonce: UnsetOr[t.Union[int, str]] = self.data.get("nonce", Unset)
+        self.pinned: bool = self.data["pinned"]
+        self.webhook_id: UnsetOr[dt.Snowflake] = self.data.get("webhook_id", Unset)
+        self.type: MessageTypes = MessageTypes(self.data["type"])
+        # TODO: activity, application
+        self.application_id: UnsetOr[dt.Snowflake] = self.data.get("application_id", Unset)
 
+        self.message_reference: UnsetOr[MessageReference]
         raw_message_reference = self.data.get("message_reference", Unset)
         if isinstance(raw_message_reference, dt.MessageReferenceData):
             self.message_reference = MessageReference.from_dict(raw_message_reference)
         else:
             self.message_reference = raw_message_reference
 
+        self.flags: UnsetOr[MessageFlags]
         raw_flags = self.data.get("flags", Unset)
         if isinstance(raw_flags, int):
             self.flags = MessageFlags.from_value(raw_flags)
         else:
             self.flags = raw_flags
 
+        self.referenced_message: UnsetOr[t.Optional[Message]]
         raw_referenced_message = self.data.get("referenced_message", Unset)
         if isinstance(raw_referenced_message, (dt.ChannelMessageData, dt.GuildMessageData)):
             # TODO: attempt to get message object from cache
             self.referenced_message = Message(bot=self.bot, data=raw_referenced_message)
         else:
             self.referenced_message = raw_referenced_message
+
+        # TODO: interaction, thread, components, sticker_items, stickers
 
     async def edit(
         self,
