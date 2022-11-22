@@ -19,6 +19,7 @@ __all__ = (
     "UserPremiumTypes",
     "UserFlags",
     "User",
+    "BotUser",
 )
 
 
@@ -177,3 +178,25 @@ class User:
             self.public_flags = UserFlags.from_value(raw_public_flags)
         else:
             self.public_flags = raw_public_flags
+
+
+@frozen_for_public
+class BotUser(User):
+    async def edit(
+        self,
+        *,
+        username: UnsetOr[str] = Unset,
+        avatar: UnsetOr[t.Optional[str]] = Unset,
+    ):
+        kwargs: dict[str, t.Any] = {}
+
+        if username is not Unset:
+            kwargs["username"] = username
+
+        if avatar is not Unset:
+            kwargs["avatar"] = avatar
+
+        new_user_data = t.cast(dt.UserData, await self.bot.http.modify_current_user(**kwargs))
+        new_user = BotUser(bot=self.bot, data=new_user_data)
+        self.bot.user = new_user
+        return new_user
