@@ -190,8 +190,8 @@ def frozen_for_public(cls: type[T]) -> type[T]:
             else:
                 raise frozen_exception
 
-        wrapper.__name__ = "__setattr__"
-        wrapper.__qualname__ = f"{cls.__name__}.__setattr__"
+        wrapper.__name__ = f"__{name}__"
+        wrapper.__qualname__ = f"{cls.__name__}.__{name}__"
         wrapper.__module__ = cls.__module__
         wrapper.__doc__ = original_dunder.__doc__
 
