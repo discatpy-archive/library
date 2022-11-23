@@ -129,19 +129,36 @@ def make_sentinel_converter(
     return wrapper
 
 
-def _get_unique_setattr(cls: type) -> Callable[[object, str, t.Any], None]:
+def _callable_eq(a: Callable[..., t.Any], b: Callable[..., t.Any]) -> bool:
+    sig1 = inspect.signature(a)
+    sig2 = inspect.signature(b)
+    param1names = [n for n in sig1.parameters]
+    param2names = [n for n in sig2.parameters]
+
+    return callable(a) and callable(b) and param1names == param2names
+
+
+def _get_unique_dunder(cls: type, name: str) -> t.Optional[Callable[..., t.Any]]:
+    dunder_name = f"__{name}__"
+    orig_meth = getattr(object, dunder_name)
+
+    if not callable(orig_meth):
+        return
+
     for base in cls.__mro__[1:]:
         if (
-            base_setattr := getattr(base, "__setattr__", object.__setattr__)
-        ) is not object.__setattr__:
-            return base_setattr
+            (base_dunder := getattr(base, dunder_name, orig_meth)) is not orig_meth
+            and callable(base_dunder)
+            and _callable_eq(base_dunder, orig_meth)
+        ):
+            return base_dunder
 
-    return object.__setattr__
+    return orig_meth
 
 
 def frozen_for_public(cls: type[T]) -> type[T]:
     """Decorator to take any class and make it frozen when an attribute
-    is set outside of a frame inside a class method.
+    is set or deleted outside of a frame inside a class method.
 
     This works by taking the previous frame and checking if that frame is inside of a
     class method. If not, then ``attr.exceptions.FrozenAttributeError`` is raised.
@@ -153,19 +170,34 @@ def frozen_for_public(cls: type[T]) -> type[T]:
         The modified class.
     """
 
-    def __frozen_setattr__(self: T, name: str, value: t.Any):
-        __original_setattr__ = _get_unique_setattr(cls).__get__(self, cls)
+    def make_frozen_dunder(
+        name: str, frozen_exception: type[Exception] = attr.exceptions.FrozenAttributeError
+    ):
+        original_dunder = _get_unique_dunder(cls, name)
 
-        stack = inspect.stack()
-        assert len(stack) > 1
+        if not original_dunder:
+            return
 
-        last_frame = stack[1]
-        self_param = last_frame.frame.f_locals.get("self")
+        def wrapper(self: T, *args: t.Any, **kwargs: t.Any):
+            stack = inspect.stack()
+            assert len(stack) > 1
 
-        if isinstance(self_param, cls) and self_param is self:
-            __original_setattr__(name, value)
-        else:
-            raise attr.exceptions.FrozenAttributeError
+            last_frame = stack[1]
+            self_param = last_frame.frame.f_locals.get("self")
 
-    setattr(cls, "__setattr__", __frozen_setattr__)
+            if isinstance(self_param, cls) and self_param is self:
+                original_dunder(self, *args, **kwargs)
+            else:
+                raise frozen_exception
+
+        wrapper.__name__ = "__setattr__"
+        wrapper.__qualname__ = f"{cls.__name__}.__setattr__"
+        wrapper.__module__ = cls.__module__
+        wrapper.__doc__ = original_dunder.__doc__
+
+        setattr(cls, f"__{name}__", wrapper)
+
+    make_frozen_dunder("setattr")
+    make_frozen_dunder("delattr")
+
     return cls
