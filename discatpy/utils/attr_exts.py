@@ -18,7 +18,13 @@ T = t.TypeVar("T")
 Ts = TypeVarTuple("Ts")
 MT = t.TypeVar("MT", bound=Mapping[str, t.Any])
 
-__all__ = ("is_attr_class", "ToDictMixin", "make_sentinel_converter", "frozen_for_public")
+__all__ = (
+    "is_attr_class",
+    "fields",
+    "ToDictMixin",
+    "make_sentinel_converter",
+    "frozen_for_public",
+)
 
 
 def is_attr_class(cls: type) -> TypeGuard[type[AttrsInstance]]:
@@ -33,10 +39,25 @@ def is_attr_class(cls: type) -> TypeGuard[type[AttrsInstance]]:
     return attr.has(cls)
 
 
+def fields(cls: type[AttrsInstance]) -> tuple[attr.Attribute[t.Any], ...]:
+    """Returns a tuple of all of the fields for an attrs class.
+
+    Unlike ``attr.fields``, this ensures that every field returned is actually
+    an attrs field.
+
+    Args:
+        cls: The class to check for.
+
+    Raises:
+        attr.exceptions.NotAnAttrsClassError: The class provided is not an attrs class.
+    """
+    return attr.fields(cls)
+
+
 def _sentinel_to_be_filtered(cls: type[AttrsInstance]) -> t.Optional[tuple[object, ...]]:
     res: t.Optional[tuple[object, ...]] = None
 
-    for field in attr.fields(cls):
+    for field in fields(cls):
         field_type = (
             eval(field.type, get_globals(cls), {}) if isinstance(field.type, str) else field.type
         )
@@ -72,7 +93,7 @@ class ToDictMixin(t.Generic[MT]):
         if not is_attr_class(cls):
             raise attr.exceptions.NotAnAttrsClassError
 
-        data = {field.name: getattr(self, field.name) for field in attr.fields(cls)}
+        data = {field.name: getattr(self, field.name) for field in fields(cls)}
 
         if self.__sentinels_to_filter__ is None:
             sentinels = _sentinel_to_be_filtered(cls)
