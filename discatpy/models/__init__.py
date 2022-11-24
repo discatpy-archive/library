@@ -12,6 +12,7 @@ from .embed import *
 from .emoji import *
 from .iterators import *
 from .message import *
+from .permissions import *
 from .user import *
 
 __all__ = ()
@@ -22,4 +23,5 @@ __all__ += embed.__all__
 __all__ += emoji.__all__
 __all__ += iterators.__all__
 __all__ += message.__all__
+__all__ += permissions.__all__
 __all__ += user.__all__
