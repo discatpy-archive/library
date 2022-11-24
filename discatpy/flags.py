@@ -119,6 +119,16 @@ class Flag(metaclass=FlagMeta):
 
         return NotImplemented
 
+    def __ior__(self, other: t.Any):
+        if isinstance(other, int):
+            self.value |= other
+        elif isinstance(other, (Flag, FlagMember)):
+            self.value |= other.value
+
+        return NotImplemented
+
+    __ror__ = __or__
+
     def __and__(self, other: t.Any):
         if isinstance(other, int):
             return self.from_value(self.value & other)
@@ -127,8 +137,23 @@ class Flag(metaclass=FlagMeta):
 
         return NotImplemented
 
+    def __iand__(self, other: t.Any):
+        if isinstance(other, int):
+            self.value &= other
+        elif isinstance(other, (Flag, FlagMember)):
+            self.value &= other.value
+
+        return NotImplemented
+
+    __rand__ = __and__
+
     def __add__(self, other: t.Any):
         return self | other
+
+    def __iadd__(self, other: t.Any):
+        self |= other
+
+    __radd__ = __add__
 
     def __sub__(self, other: t.Any):
         if isinstance(other, int):
@@ -138,6 +163,16 @@ class Flag(metaclass=FlagMeta):
 
         return NotImplemented
 
+    def __isub__(self, other: t.Any):
+        if isinstance(other, int):
+            self.value &= ~other
+        elif isinstance(other, (Flag, FlagMember)):
+            self.value &= ~other.value
+
+        return NotImplemented
+
+    __rsub__ = __sub__
+
     def __invert__(self):
         return self.from_value(~self.value)
 
@@ -146,11 +181,6 @@ class Flag(metaclass=FlagMeta):
             return self.has(item)
 
         return NotImplemented
-
-    __ror__ = __or__
-    __rand__ = __and__
-    __radd__ = __add__
-    __rsub__ = __sub__
 
     def __iter__(self) -> Iterator[tuple[str, bool]]:
         for name in self.__members__:
