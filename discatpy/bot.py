@@ -3,6 +3,7 @@
 import asyncio
 import typing as t
 
+import discord_typings as dt
 from discatcore import Dispatcher, GatewayReconnect
 from discatcore.gateway import GatewayClient
 from discatcore.http import HTTPClient
@@ -10,6 +11,7 @@ from typing_extensions import Self
 
 from .event.protos import RawGatewayEvents, apply_events
 from .flags import Flag, flag
+from .models.user import BotUser
 
 __all__ = ("Intents", "Bot")
 
@@ -134,6 +136,7 @@ class Bot(Dispatcher):
         "gateway",
         "running",
         "loop",
+        "user",
     )
 
     def __init__(
@@ -155,6 +158,7 @@ class Bot(Dispatcher):
         )
         self.running: bool = False
         self.loop = asyncio.new_event_loop()
+        self.user: t.Optional[BotUser] = None
 
     @property
     def api_version(self) -> int:
@@ -177,6 +181,9 @@ class Bot(Dispatcher):
         return self._raw_dispatcher
 
     async def start(self) -> None:
+        self_user_data = t.cast(dt.UserData, await self.http.get_current_user())
+        self.user = BotUser(bot=self, data=self_user_data)
+
         gateway_url: t.Optional[str] = None
         self.running = True
 

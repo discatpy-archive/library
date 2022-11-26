@@ -277,30 +277,24 @@ class PermissionOverwrite:
         ...
 
     def __init__(self, **kwargs: t.Optional[bool]):
-        self._permission: Permissions = Permissions(**kwargs)
+        self._allow: Permissions = Permissions.none()
+        self._deny: Permissions = Permissions.none()
+
+        self.set(**kwargs)
 
     def pair(self) -> tuple[Permissions, Permissions]:
-        allow = Permissions.none()
-        deny = Permissions.none()
-
-        for name in self._permission.__members__.keys():
-            if getattr(self._permission, name):
-                setattr(allow, name, True)
-            else:
-                setattr(deny, name, False)
-
-        return allow, deny
+        return self._allow, self._deny
 
     @classmethod
     def from_pair(cls: type[Self], allow: Permissions, deny: Permissions) -> Self:
         permissions_kwargs: dict[str, bool] = {}
 
         for name, val in allow:
-            if val:
+            if val is True:
                 permissions_kwargs[name] = True
 
         for name, val in deny:
-            if not val:
+            if val is True:
                 permissions_kwargs[name] = False
 
         return cls(**permissions_kwargs)
@@ -359,4 +353,8 @@ class PermissionOverwrite:
         ...
 
     def set(self, **kwargs: t.Optional[bool]):
-        self._permission = Permissions(**kwargs)
+        allow_kwargs: dict[str, bool] = {n: v for n, v in kwargs.items() if v is True}
+        deny_kwargs: dict[str, bool] = {n: v for n, v in kwargs.items() if v is False}
+
+        self._allow = Permissions(**allow_kwargs) if allow_kwargs else Permissions.none()
+        self._deny = Permissions(**deny_kwargs) if deny_kwargs else Permissions.none()
