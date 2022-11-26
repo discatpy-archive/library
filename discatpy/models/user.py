@@ -6,6 +6,7 @@ from enum import Enum
 
 import discord_typings as dt
 from discatcore.types import Unset, UnsetOr
+from discatcore.utils import Snowflake
 
 from ..flags import Flag, flag
 from ..utils.attr_exts import frozen_for_public
@@ -120,7 +121,7 @@ class User:
         self.bot: Bot = bot
         self.data: dt.UserData = data
 
-        self.id: dt.Snowflake = self.data["id"]
+        self.id: Snowflake = Snowflake(self.data["id"])
         self.username: str = self.data["username"]
         self.discriminator: str = self.data["discriminator"]
 

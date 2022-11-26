@@ -7,6 +7,7 @@ from enum import Enum, auto
 import attr
 import discord_typings as dt
 from discatcore.types import Unset, UnsetOr
+from discatcore.utils import Snowflake
 from typing_extensions import NotRequired, TypedDict
 
 from ..utils.attr_exts import frozen_for_public
@@ -90,7 +91,7 @@ class ApplicationCommand:
         self.data: dt.ApplicationCommandData = data
         # TODO: guild
 
-        self.id: dt.Snowflake = self.data["id"]
+        self.id: Snowflake = Snowflake(self.data["id"])
 
         self.type: ApplicationCommandTypes
         raw_type = self.data.get("type")
@@ -100,7 +101,14 @@ class ApplicationCommand:
             self.type = ApplicationCommandTypes.CHAT_INPUT
 
         self.application_id: dt.Snowflake = self.data["application_id"]
-        self.guild_id: UnsetOr[dt.Snowflake] = self.data.get("guild_id", Unset)
+
+        self.guild_id: UnsetOr[Snowflake]
+        raw_guild_id = self.data.get("guild_id", Unset)
+        if isinstance(raw_guild_id, (int, str)):
+            self.guild_id = Snowflake(raw_guild_id)
+        else:
+            self.guild_id = raw_guild_id
+
         self.name: str = self.data["name"]
         self.description: UnsetOr[str] = self.data.get("description", Unset)
 
@@ -137,7 +145,7 @@ class ApplicationCommand:
             self.default_member_permissions = raw_default_member_permissions
 
         self.dm_permission: UnsetOr[bool] = self.data.get("dm_permission", Unset)
-        self.version: dt.Snowflake = self.data["version"]
+        self.version: Snowflake = Snowflake(self.data["version"])
 
     async def edit(
         self,

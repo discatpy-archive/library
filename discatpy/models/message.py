@@ -9,6 +9,7 @@ import attr
 import discord_typings as dt
 from discatcore import BasicFile
 from discatcore.types import Unset, UnsetOr
+from discatcore.utils import Snowflake
 
 from ..flags import Flag, flag
 from ..utils.attr_exts import ToDictMixin, frozen_for_public
@@ -54,7 +55,7 @@ class Attachment:
         self.bot: Bot = bot
         self.data: dt.AttachmentData = data
 
-        self.id: dt.Snowflake = self.data["id"]
+        self.id: Snowflake = Snowflake(self.data["id"])
         self.filename: str = self.data["filename"]
         self.description: UnsetOr[str] = self.data.get("description", Unset)
         self.content_type: UnsetOr[str] = self.data.get("content_type", Unset)
@@ -216,8 +217,8 @@ class Message:
         self.data: dt.MessageData = data
         # TODO: channel, guild
 
-        self.id: dt.Snowflake = self.data["id"]
-        self.channel_id: dt.Snowflake = self.data["channel_id"]
+        self.id: Snowflake = Snowflake(self.data["id"])
+        self.channel_id: Snowflake = Snowflake(self.data["channel_id"])
         # TODO: attempt to get user object from cache
         self.author: User = User(bot=self.bot, data=self.data["author"])
         self.content: UnsetOr[str] = self.data.get("content", Unset)

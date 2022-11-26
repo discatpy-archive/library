@@ -5,6 +5,7 @@ import typing as t
 
 import discord_typings as dt
 from discatcore.types import Unset, UnsetOr
+from discatcore.utils import Snowflake
 
 from ..utils.attr_exts import frozen_for_public
 from .asset import Asset, AssetPresets
@@ -23,9 +24,15 @@ class Emoji:
         self.data: dt.EmojiData = data
         # TODO: guild_owner
 
-        self.id: t.Optional[dt.Snowflake] = self.data["id"]
+        self.id: t.Optional[Snowflake] = Snowflake(self.data["id"]) if self.data["id"] else None
         self.name: t.Optional[str] = self.data["name"]
-        self.roles: UnsetOr[list[dt.Snowflake]] = self.data.get("roles", Unset)
+
+        self.roles: UnsetOr[list[Snowflake]]
+        raw_roles = self.data.get("roles", Unset)
+        if isinstance(raw_roles, list):
+            self.roles = [Snowflake(id) for id in raw_roles]
+        else:
+            self.roles = raw_roles
 
         self.user: UnsetOr[User]
         raw_user = self.data.get("user", Unset)
