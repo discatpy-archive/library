@@ -3,7 +3,7 @@
 import typing as t
 
 import discord_typings as dt
-from discatcore import Dispatcher, Event
+from discatcore.utils import Dispatcher, Event
 
 __all__ = (
     "apply_events",
