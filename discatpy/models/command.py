@@ -10,7 +10,6 @@ from discatcore.types import Unset, UnsetOr
 from discatcore.utils import Snowflake
 from typing_extensions import NotRequired, TypedDict
 
-from ..utils.attr_exts import frozen_for_public
 from .permissions import Permissions
 
 if t.TYPE_CHECKING:
@@ -84,7 +83,6 @@ class ApplicationCommandOptionTypes(int, Enum):
     ATTACHMENT = 11
 
 
-@frozen_for_public
 class ApplicationCommand:
     def __init__(self, *, bot: Bot, data: dt.ApplicationCommandData):
         self.bot: Bot = bot

@@ -9,7 +9,6 @@ from discatcore.types import Unset, UnsetOr
 from discatcore.utils import Snowflake
 
 from ..flags import Flag, flag
-from ..utils.attr_exts import frozen_for_public
 from .asset import Asset, AssetPresets
 from .color import Color
 
@@ -115,7 +114,6 @@ class UserFlags(Flag):
         return 1 << 22
 
 
-@frozen_for_public
 class User:
     def __init__(self, *, bot: Bot, data: dt.UserData):
         self.bot: Bot = bot
@@ -181,7 +179,6 @@ class User:
             self.public_flags = raw_public_flags
 
 
-@frozen_for_public
 class BotUser(User):
     async def edit(
         self,

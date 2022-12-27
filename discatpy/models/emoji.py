@@ -7,7 +7,6 @@ import discord_typings as dt
 from discatcore.types import Unset, UnsetOr
 from discatcore.utils import Snowflake
 
-from ..utils.attr_exts import frozen_for_public
 from .asset import Asset, AssetPresets
 from .user import User
 
@@ -17,7 +16,6 @@ if t.TYPE_CHECKING:
 __all__ = ("Emoji",)
 
 
-@frozen_for_public
 class Emoji:
     def __init__(self, *, bot: Bot, data: dt.EmojiData):
         self.bot: Bot = bot
