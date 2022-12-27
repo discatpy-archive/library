@@ -12,7 +12,7 @@ from discatcore.types import Unset, UnsetOr
 from discatcore.utils import Snowflake
 
 from ..flags import Flag, flag
-from ..utils.attr_exts import ToDictMixin, frozen_for_public
+from ..utils.attr_exts import ToDictMixin
 from .embed import Embed
 from .user import User
 
@@ -49,7 +49,6 @@ class MessageReference(ToDictMixin[dt.MessageReferenceData]):
         return cls(**data)
 
 
-@frozen_for_public
 class Attachment:
     def __init__(self, *, bot: Bot, data: dt.AttachmentData):
         self.bot: Bot = bot
@@ -210,7 +209,6 @@ def _send_message(
     }
 
 
-@frozen_for_public
 class Message:
     def __init__(self, *, bot: Bot, data: dt.MessageData):
         self.bot: Bot = bot

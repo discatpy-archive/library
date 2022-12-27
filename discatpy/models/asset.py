@@ -6,8 +6,6 @@ import typing as t
 import attr
 from discord_typings import Snowflake
 
-from ..utils.attr_exts import frozen_for_public
-
 if t.TYPE_CHECKING:
     from ..bot import Bot
 
@@ -134,7 +132,6 @@ def _size_validator(instance: Asset, attribute: attr.Attribute[int], value: int)
         raise ValueError(f"size must be a power of two!")
 
 
-@frozen_for_public
 @attr.define(kw_only=True)
 class Asset:
     bot: Bot
