@@ -30,13 +30,19 @@ class WebhookEndpoints(EndpointMixin):
         )
 
     def get_channel_webhooks(self, channel_id: dt.Snowflake):
-        return self.request(Route("GET", "/channels/{channel_id}/webhooks", channel_id=channel_id))
+        return self.request(
+            Route("GET", "/channels/{channel_id}/webhooks", channel_id=channel_id)
+        )
 
     def get_guild_webhooks(self, guild_id: dt.Snowflake):
-        return self.request(Route("GET", "/guilds/{guild_id}/webhooks", guild_id=guild_id))
+        return self.request(
+            Route("GET", "/guilds/{guild_id}/webhooks", guild_id=guild_id)
+        )
 
     def get_webhook(self, webhook_id: dt.Snowflake):
-        return self.request(Route("GET", "/webhooks/{webhook_id}", webhook_id=webhook_id))
+        return self.request(
+            Route("GET", "/webhooks/{webhook_id}", webhook_id=webhook_id)
+        )
 
     def get_webhook_with_token(self, webhook_id: dt.Snowflake, webhook_token: str):
         return self.request(
@@ -85,11 +91,15 @@ class WebhookEndpoints(EndpointMixin):
 
     def delete_webhook(self, webhook_id: dt.Snowflake, reason: t.Optional[str] = None):
         return self.request(
-            Route("DELETE", "/webhooks/{webhook_id}", webhook_id=webhook_id), reason=reason
+            Route("DELETE", "/webhooks/{webhook_id}", webhook_id=webhook_id),
+            reason=reason,
         )
 
     def delete_webhook_with_token(
-        self, webhook_id: dt.Snowflake, webhook_token: str, reason: t.Optional[str] = None
+        self,
+        webhook_id: dt.Snowflake,
+        webhook_token: str,
+        reason: t.Optional[str] = None,
     ):
         return self.request(
             Route(

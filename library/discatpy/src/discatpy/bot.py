@@ -4,11 +4,12 @@ import asyncio
 import typing as t
 
 import discord_typings as dt
+from typing_extensions import Self
+
 from discatcore import GatewayReconnect
 from discatcore.gateway import GatewayClient
 from discatcore.http import HTTPClient
 from discatcore.utils import Dispatcher
-from typing_extensions import Self
 
 from .event.protos import RawGatewayEvents, apply_events
 from .flags import Flag, flag

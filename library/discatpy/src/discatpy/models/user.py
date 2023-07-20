@@ -5,6 +5,7 @@ import typing as t
 from enum import Enum
 
 import discord_typings as dt
+
 from discatcore.types import Unset, UnsetOr
 from discatcore.utils import Snowflake
 
@@ -194,7 +195,9 @@ class BotUser(User):
         if avatar is not Unset:
             kwargs["avatar"] = avatar
 
-        new_user_data = t.cast(dt.UserData, await self.bot.http.modify_current_user(**kwargs))
+        new_user_data = t.cast(
+            dt.UserData, await self.bot.http.modify_current_user(**kwargs)
+        )
         new_user = BotUser(bot=self.bot, data=new_user_data)
         self.bot.user = new_user
         return new_user

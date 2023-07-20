@@ -3,6 +3,7 @@
 import typing as t
 
 import discord_typings as dt
+
 from discatcore.utils import Dispatcher, Event
 
 __all__ = (
@@ -50,7 +51,9 @@ class RawGatewayEvents(_BaseProtoEvents):
         pass
 
     @staticmethod
-    def application_command_permissions_update(data: dt.ApplicationCommandPermissionsUpdateData):
+    def application_command_permissions_update(
+        data: dt.ApplicationCommandPermissionsUpdateData,
+    ):
         pass
 
     @staticmethod

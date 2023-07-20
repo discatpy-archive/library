@@ -5,6 +5,7 @@ import typing as t
 from datetime import datetime
 
 import discord_typings as dt
+
 from discatcore import BasicFile
 from discatcore.types import Unset, UnsetOr
 
@@ -62,4 +63,6 @@ class Messageable:
         around: UnsetOr[t.Union[datetime, dt.Snowflake]] = Unset,
         limit: t.Optional[int] = None,
     ):
-        return channel_history(self, before=before, after=after, around=around, limit=limit)
+        return channel_history(
+            self, before=before, after=after, around=around, limit=limit
+        )

@@ -16,22 +16,32 @@ __all__ = ("GuildTemplateEndpoints",)
 class GuildTemplateEndpoints(EndpointMixin):
     def get_guild_template(self, template_code: dt.Snowflake):
         return self.request(
-            Route("GET", "/guilds/templates/{template_code}", template_code=template_code)
+            Route(
+                "GET", "/guilds/templates/{template_code}", template_code=template_code
+            )
         )
 
     def create_guild_from_guild_template(
         self, template_code: dt.Snowflake, *, name: str, icon: UnsetOr[str] = Unset
     ):
         return self.request(
-            Route("POST", "/guilds/templates/{template_code}", template_code=template_code),
+            Route(
+                "POST", "/guilds/templates/{template_code}", template_code=template_code
+            ),
             json_params={"name": name, "icon": icon},
         )
 
     def get_guild_templates(self, guild_id: dt.Snowflake):
-        return self.request(Route("GET", "/guilds/{guild_id}/templates", guild_id=guild_id))
+        return self.request(
+            Route("GET", "/guilds/{guild_id}/templates", guild_id=guild_id)
+        )
 
     def create_guild_template(
-        self, guild_id: dt.Snowflake, *, name: str, description: UnsetOr[t.Optional[str]] = Unset
+        self,
+        guild_id: dt.Snowflake,
+        *,
+        name: str,
+        description: UnsetOr[t.Optional[str]] = Unset,
     ):
         return self.request(
             Route("POST", "/guilds/{guild_id}/templates", guild_id=guild_id),
@@ -66,7 +76,9 @@ class GuildTemplateEndpoints(EndpointMixin):
             json_params={"name": name, "description": description},
         )
 
-    def delete_guild_template(self, guild_id: dt.Snowflake, template_code: dt.Snowflake):
+    def delete_guild_template(
+        self, guild_id: dt.Snowflake, template_code: dt.Snowflake
+    ):
         return self.request(
             Route(
                 "DELETE",

@@ -18,7 +18,11 @@ class ApplicationCommandEndpoints(EndpointMixin):
         self, application_id: dt.Snowflake, *, with_localizations: UnsetOr[bool] = Unset
     ):
         return self.request(
-            Route("GET", "/applications/{application_id}/commands", application_id=application_id),
+            Route(
+                "GET",
+                "/applications/{application_id}/commands",
+                application_id=application_id,
+            ),
             query_params={"with_localizations": with_localizations},
         )
 
@@ -36,7 +40,11 @@ class ApplicationCommandEndpoints(EndpointMixin):
         type: dt.ApplicationCommandTypes = 1,
     ):
         return self.request(
-            Route("POST", "/applications/{application_id}/commands", application_id=application_id),
+            Route(
+                "POST",
+                "/applications/{application_id}/commands",
+                application_id=application_id,
+            ),
             json_params={
                 "name": name,
                 "name_localizations": name_localizations,
@@ -108,7 +116,11 @@ class ApplicationCommandEndpoints(EndpointMixin):
         self, application_id: dt.Snowflake, *, commands: list[dt.ApplicationCommandData]
     ):
         return self.request(
-            Route("PUT", "/applications/{application_id}/commands", application_id=application_id),
+            Route(
+                "PUT",
+                "/applications/{application_id}/commands",
+                application_id=application_id,
+            ),
             json_params=commands,
         )
 
@@ -163,7 +175,10 @@ class ApplicationCommandEndpoints(EndpointMixin):
         )
 
     def get_guild_application_command(
-        self, application_id: dt.Snowflake, guild_id: dt.Snowflake, command_id: dt.Snowflake
+        self,
+        application_id: dt.Snowflake,
+        guild_id: dt.Snowflake,
+        command_id: dt.Snowflake,
     ):
         return self.request(
             Route(
@@ -209,7 +224,10 @@ class ApplicationCommandEndpoints(EndpointMixin):
         )
 
     def delete_guild_application_command(
-        self, application_id: dt.Snowflake, guild_id: dt.Snowflake, command_id: dt.Snowflake
+        self,
+        application_id: dt.Snowflake,
+        guild_id: dt.Snowflake,
+        command_id: dt.Snowflake,
     ):
         return self.request(
             Route(
@@ -251,7 +269,10 @@ class ApplicationCommandEndpoints(EndpointMixin):
         )
 
     def get_application_command_permissions(
-        self, application_id: dt.Snowflake, guild_id: dt.Snowflake, command_id: dt.Snowflake
+        self,
+        application_id: dt.Snowflake,
+        guild_id: dt.Snowflake,
+        command_id: dt.Snowflake,
     ):
         return self.request(
             Route(

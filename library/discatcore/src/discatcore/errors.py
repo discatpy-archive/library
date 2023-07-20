@@ -21,7 +21,9 @@ class DisCatCoreException(Exception):
     pass
 
 
-def _shorten_error_dict(d: dt.NestedHTTPErrorsData, parent_key: str = "") -> dict[str, str]:
+def _shorten_error_dict(
+    d: dt.NestedHTTPErrorsData, parent_key: str = ""
+) -> dict[str, str]:
     ret_items: dict[str, str] = {}
 
     _errors = d.get("_errors")
@@ -52,7 +54,9 @@ class HTTPException(DisCatCoreException):
     __slots__ = ("text", "code")
 
     def __init__(
-        self, response: ClientResponse, data: t.Optional[t.Union[dt.HTTPErrorResponseData, str]]
+        self,
+        response: ClientResponse,
+        data: t.Optional[t.Union[dt.HTTPErrorResponseData, str]],
     ) -> None:
         self.code: int
         self.text: str

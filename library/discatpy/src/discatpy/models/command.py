@@ -6,9 +6,10 @@ from enum import Enum, auto
 
 import attr
 import discord_typings as dt
+from typing_extensions import NotRequired, TypedDict
+
 from discatcore.types import Unset, UnsetOr
 from discatcore.utils import Snowflake
-from typing_extensions import NotRequired, TypedDict
 
 from .permissions import Permissions
 
@@ -28,7 +29,9 @@ __all__ = (
 
 class Locales(str, Enum):
     @staticmethod
-    def _generate_next_value_(name: str, start: int, count: int, last_values: list[t.Any]) -> t.Any:
+    def _generate_next_value_(
+        name: str, start: int, count: int, last_values: list[t.Any]
+    ) -> t.Any:
         return name.replace("_", "-")
 
     da = auto()
@@ -113,12 +116,16 @@ class ApplicationCommand:
         self.name_localizations: UnsetOr[t.Optional[dict[Locales, str]]]
         raw_name_localizations = self.data.get("name_localizations", Unset)
         if isinstance(raw_name_localizations, dict):
-            self.name_localizations = {Locales(n): v for n, v in raw_name_localizations.items()}
+            self.name_localizations = {
+                Locales(n): v for n, v in raw_name_localizations.items()
+            }
         else:
             self.name_localizations = raw_name_localizations
 
         self.description_localizations: UnsetOr[t.Optional[dict[Locales, str]]]
-        raw_description_localizations = self.data.get("description_localizations", Unset)
+        raw_description_localizations = self.data.get(
+            "description_localizations", Unset
+        )
         if isinstance(raw_description_localizations, dict):
             self.description_localizations = {
                 Locales(n): v for n, v in raw_description_localizations.items()
@@ -175,7 +182,9 @@ class ApplicationCommand:
 
         if default_member_permissions is not Unset:
             if isinstance(default_member_permissions, Permissions):
-                kwargs["default_member_permissions"] = str(default_member_permissions.value)
+                kwargs["default_member_permissions"] = str(
+                    default_member_permissions.value
+                )
             else:
                 kwargs["default_member_permissions"] = default_member_permissions
 
@@ -221,10 +230,17 @@ class ApplicationCommandOptionChoice:
         if isinstance(name_localizations, dict):
             name_localizations = {Locales(n): v for n, v in name_localizations.items()}
 
-        return cls(name=data["name"], name_localizations=name_localizations, value=data["value"])
+        return cls(
+            name=data["name"],
+            name_localizations=name_localizations,
+            value=data["value"],
+        )
 
     def to_dict(self) -> ApplicationCommandOptionChoiceData:
-        data: ApplicationCommandOptionChoiceData = {"name": self.name, "value": self.value}
+        data: ApplicationCommandOptionChoiceData = {
+            "name": self.name,
+            "value": self.value,
+        }
 
         if self.name_localizations is not Unset:
             if isinstance(self.name_localizations, dict):

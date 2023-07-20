@@ -145,13 +145,15 @@ class HTTPClient(
         """
         # this function is partially unknown
         # not our fault, aiohttp's fault
-        return await self._session.ws_connect(  # pyright: ignore[reportUnknownMemberType]
-            url,
-            max_msg_size=0,
-            timeout=30.0,
-            autoclose=False,
-            headers={"User-Agent": self.user_agent},
-            compress=0,
+        return (
+            await self._session.ws_connect(  # pyright: ignore[reportUnknownMemberType]
+                url,
+                max_msg_size=0,
+                timeout=30.0,
+                autoclose=False,
+                headers={"User-Agent": self.user_agent},
+                compress=0,
+            )
         )
 
     async def close(self) -> None:
@@ -163,7 +165,8 @@ class HTTPClient(
 
     @staticmethod
     def _prepare_data(
-        json: UnsetOr[t.Union[dict[str, t.Any], list[t.Any]]], files: UnsetOr[list[BasicFile]]
+        json: UnsetOr[t.Union[dict[str, t.Any], list[t.Any]]],
+        files: UnsetOr[list[BasicFile]],
     ) -> _PreparedData:
         pd = _PreparedData()
 
@@ -183,7 +186,10 @@ class HTTPClient(
 
             for i, f in enumerate(files):
                 form_dat.add_field(
-                    f"files[{i}]", f.fp, content_type=f.content_type, filename=f.filename
+                    f"files[{i}]",
+                    f.fp,
+                    content_type=f.content_type,
+                    filename=f.filename,
                 )
 
             pd.multipart_content = form_dat
@@ -258,9 +264,13 @@ class HTTPClient(
             bucket = self._ratelimiter.get_bucket((route.bucket, bucket_hash))
 
             async with self._ratelimiter.global_bucket:
-                _log.debug("REQUEST:%d The global ratelimit bucket has been acquired!", rid)
+                _log.debug(
+                    "REQUEST:%d The global ratelimit bucket has been acquired!", rid
+                )
                 async with bucket:
-                    _log.debug("REQUEST:%d The route ratelimit bucket has been acquired!", rid)
+                    _log.debug(
+                        "REQUEST:%d The route ratelimit bucket has been acquired!", rid
+                    )
 
                     response = await self._session.request(
                         route.method,
@@ -287,7 +297,9 @@ class HTTPClient(
                             route.bucket,
                             bucket_hash,
                         )
-                        bucket = self._ratelimiter.get_bucket((route.bucket, bucket_hash))
+                        bucket = self._ratelimiter.get_bucket(
+                            (route.bucket, bucket_hash)
+                        )
 
                     # Everything is ok
                     if 200 <= response.status < 300:
@@ -299,7 +311,9 @@ class HTTPClient(
                         if "Via" not in response.headers:
                             # something about Cloudflare and Google responding and adding something to the headers
                             # it means we're Cloudflare banned
-                            raise HTTPException(response, await self._text_or_json(response))
+                            raise HTTPException(
+                                response, await self._text_or_json(response)
+                            )
 
                         retry_after = float(response.headers["Retry-After"])
                         is_global = response.headers["X-RateLimit-Scope"] == "global"
@@ -323,19 +337,28 @@ class HTTPClient(
                             bucket.lock_for(retry_after)
                             await bucket.acquire()
 
-                        _log.info("REQUEST:%d Ratelimit is over. Continuing with the request.", rid)
+                        _log.info(
+                            "REQUEST:%d Ratelimit is over. Continuing with the request.",
+                            rid,
+                        )
                         continue
 
                     # Specific Server Errors, retry after some time
                     if response.status in {500, 502, 504}:
                         wait_time = 1 + try_ * 2
-                        _log.info("REQUEST:%d Got a server error! Retrying in %d.", rid, wait_time)
+                        _log.info(
+                            "REQUEST:%d Got a server error! Retrying in %d.",
+                            rid,
+                            wait_time,
+                        )
                         await asyncio.sleep(wait_time)
                         continue
 
                     # Client/Server errors
                     if response.status >= 400:
-                        raise HTTPException(response, await self._text_or_json(response))
+                        raise HTTPException(
+                            response, await self._text_or_json(response)
+                        )
 
         _log.error(
             'REQUEST:%d Tried sending request to "%s" with method %s %d times.',

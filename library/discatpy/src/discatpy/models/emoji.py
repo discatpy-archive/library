@@ -4,6 +4,7 @@ from __future__ import annotations
 import typing as t
 
 import discord_typings as dt
+
 from discatcore.types import Unset, UnsetOr
 from discatcore.utils import Snowflake
 
@@ -22,7 +23,9 @@ class Emoji:
         self.data: dt.EmojiData = data
         # TODO: guild_owner
 
-        self.id: t.Optional[Snowflake] = Snowflake(self.data["id"]) if self.data["id"] else None
+        self.id: t.Optional[Snowflake] = (
+            Snowflake(self.data["id"]) if self.data["id"] else None
+        )
         self.name: t.Optional[str] = self.data["name"]
 
         self.roles: UnsetOr[list[Snowflake]]

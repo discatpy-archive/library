@@ -63,4 +63,6 @@ class Route:
         }
         other_params = {k: None for k in self.params.keys()}
 
-        return f"{self.method}:{self.url.format_map({**top_level_params, **other_params})}"
+        return (
+            f"{self.method}:{self.url.format_map({**top_level_params, **other_params})}"
+        )

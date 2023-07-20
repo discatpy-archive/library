@@ -28,7 +28,9 @@ class Ratelimiter(BaseRatelimiter):
         "reset_after",
     )
 
-    def __init__(self, parent: GatewayClient, limit: int = 120, reset_after: float = 60.0) -> None:
+    def __init__(
+        self, parent: GatewayClient, limit: int = 120, reset_after: float = 60.0
+    ) -> None:
         super().__init__()
 
         self.commands_used: int = 0

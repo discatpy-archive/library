@@ -21,10 +21,14 @@ class UserEndpoints(EndpointMixin):
         return self.request(Route("GET", "/users/{user_id}", user_id=user_id))
 
     def modify_current_user(
-        self, *, username: UnsetOr[str] = Unset, avatar: UnsetOr[t.Optional[str]] = Unset
+        self,
+        *,
+        username: UnsetOr[str] = Unset,
+        avatar: UnsetOr[t.Optional[str]] = Unset,
     ):
         return self.request(
-            Route("PATCH", "/users/@me"), json_params={"username": username, "avatar": avatar}
+            Route("PATCH", "/users/@me"),
+            json_params={"username": username, "avatar": avatar},
         )
 
     def get_current_user_guilds(
@@ -40,14 +44,19 @@ class UserEndpoints(EndpointMixin):
         )
 
     def get_current_user_guild_member(self, guild_id: dt.Snowflake):
-        return self.request(Route("GET", "/users/@me/guilds/{guild_id}/member", guild_id=guild_id))
+        return self.request(
+            Route("GET", "/users/@me/guilds/{guild_id}/member", guild_id=guild_id)
+        )
 
     def leave_guild(self, guild_id: dt.Snowflake):
-        return self.request(Route("DELETE", "/users/@me/guilds/{guild_id}", guild_id=guild_id))
+        return self.request(
+            Route("DELETE", "/users/@me/guilds/{guild_id}", guild_id=guild_id)
+        )
 
     def create_dm(self, *, recipient_id: dt.Snowflake):
         return self.request(
-            Route("POST", "/users/@me/channels"), json_params={"recipient_id": recipient_id}
+            Route("POST", "/users/@me/channels"),
+            json_params={"recipient_id": recipient_id},
         )
 
     def get_user_connections(self):

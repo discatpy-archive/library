@@ -20,7 +20,9 @@ class GuildEndpoints(EndpointMixin):
         name: str,
         icon: UnsetOr[str] = Unset,
         verification_level: UnsetOr[dt.VerificationLevels] = Unset,
-        default_message_notifications: UnsetOr[dt.DefaultMessageNotificationLevels] = Unset,
+        default_message_notifications: UnsetOr[
+            dt.DefaultMessageNotificationLevels
+        ] = Unset,
         explicit_content_filter: UnsetOr[dt.ExplicitContentFilterLevels] = Unset,
         roles: UnsetOr[list[dt.RoleData]] = Unset,
         channels: UnsetOr[list[dt.PartialChannelData]] = Unset,
@@ -53,7 +55,9 @@ class GuildEndpoints(EndpointMixin):
         )
 
     def get_guild_preview(self, guild_id: dt.Snowflake):
-        return self.request(Route("GET", "/guilds/{guild_id}/preview", guild_id=guild_id))
+        return self.request(
+            Route("GET", "/guilds/{guild_id}/preview", guild_id=guild_id)
+        )
 
     def modify_guild(
         self,
@@ -65,7 +69,9 @@ class GuildEndpoints(EndpointMixin):
         default_message_notifications: UnsetOr[
             t.Optional[dt.DefaultMessageNotificationLevels]
         ] = Unset,
-        explicit_content_filter: UnsetOr[t.Optional[dt.ExplicitContentFilterLevels]] = Unset,
+        explicit_content_filter: UnsetOr[
+            t.Optional[dt.ExplicitContentFilterLevels]
+        ] = Unset,
         afk_channel_id: UnsetOr[t.Optional[dt.Snowflake]] = Unset,
         afk_timeout: UnsetOr[int] = Unset,
         system_channel_id: UnsetOr[t.Optional[dt.Snowflake]] = Unset,
@@ -112,7 +118,9 @@ class GuildEndpoints(EndpointMixin):
         return self.request(Route("DELETE", "/guilds/{guild_id}", guild_id=guild_id))
 
     def get_guild_channels(self, guild_id: dt.Snowflake):
-        return self.request(Route("GET", "/guilds/{guild_id}/channels", guild_id=guild_id))
+        return self.request(
+            Route("GET", "/guilds/{guild_id}/channels", guild_id=guild_id)
+        )
 
     def create_guild_channel(
         self,
@@ -125,7 +133,9 @@ class GuildEndpoints(EndpointMixin):
         user_limit: UnsetOr[t.Optional[int]] = Unset,
         rate_limit_per_user: UnsetOr[t.Optional[int]] = Unset,
         position: UnsetOr[t.Optional[int]] = Unset,
-        permission_overwrites: UnsetOr[t.Optional[list[dt.PermissionOverwriteData]]] = Unset,
+        permission_overwrites: UnsetOr[
+            t.Optional[list[dt.PermissionOverwriteData]]
+        ] = Unset,
         parent_id: UnsetOr[t.Optional[dt.Snowflake]] = Unset,
         nsfw: UnsetOr[t.Optional[bool]] = Unset,
         rtc_region: UnsetOr[t.Optional[str]] = Unset,
@@ -179,22 +189,35 @@ class GuildEndpoints(EndpointMixin):
         )
 
     def list_active_guild_threads(self, guild_id: dt.Snowflake):
-        return self.request(Route("GET", "/guilds/{guild_id}/threads/active", guild_id=guild_id))
+        return self.request(
+            Route("GET", "/guilds/{guild_id}/threads/active", guild_id=guild_id)
+        )
 
     def get_guild_member(self, guild_id: dt.Snowflake, user_id: dt.Snowflake):
         return self.request(
-            Route("GET", "/guilds/{guild_id}/members/{user_id}", guild_id=guild_id, user_id=user_id)
+            Route(
+                "GET",
+                "/guilds/{guild_id}/members/{user_id}",
+                guild_id=guild_id,
+                user_id=user_id,
+            )
         )
 
     def list_guild_members(
-        self, guild_id: dt.Snowflake, *, limit: int = 1, after: UnsetOr[dt.Snowflake] = Unset
+        self,
+        guild_id: dt.Snowflake,
+        *,
+        limit: int = 1,
+        after: UnsetOr[dt.Snowflake] = Unset,
     ):
         return self.request(
             Route("GET", "/guilds/{guild_id}/members", guild_id=guild_id),
             query_params={"limit": limit, "after": after},
         )
 
-    def search_guild_members(self, guild_id: dt.Snowflake, *, query: str, limit: int = 1):
+    def search_guild_members(
+        self, guild_id: dt.Snowflake, *, query: str, limit: int = 1
+    ):
         return self.request(
             Route("GET", "/guilds/{guild_id}/members/search", guild_id=guild_id),
             query_params={"query": query, "limit": limit},
@@ -213,7 +236,10 @@ class GuildEndpoints(EndpointMixin):
     ):
         return self.request(
             Route(
-                "PUT", "/guilds/{guild_id}/members/{user_id}", guild_id=guild_id, user_id=user_id
+                "PUT",
+                "/guilds/{guild_id}/members/{user_id}",
+                guild_id=guild_id,
+                user_id=user_id,
             ),
             json_params={
                 "access_token": access_token,
@@ -239,7 +265,10 @@ class GuildEndpoints(EndpointMixin):
     ):
         return self.request(
             Route(
-                "PATCH", "/guilds/{guild_id}/members/{user_id}", guild_id=guild_id, user_id=user_id
+                "PATCH",
+                "/guilds/{guild_id}/members/{user_id}",
+                guild_id=guild_id,
+                user_id=user_id,
             ),
             json_params={
                 "nick": nick,
@@ -302,11 +331,17 @@ class GuildEndpoints(EndpointMixin):
         )
 
     def remove_guild_member(
-        self, guild_id: dt.Snowflake, user_id: dt.Snowflake, reason: t.Optional[str] = None
+        self,
+        guild_id: dt.Snowflake,
+        user_id: dt.Snowflake,
+        reason: t.Optional[str] = None,
     ):
         return self.request(
             Route(
-                "DELETE", "/guilds/{guild_id}/members/{user_id}", guild_id=guild_id, user_id=user_id
+                "DELETE",
+                "/guilds/{guild_id}/members/{user_id}",
+                guild_id=guild_id,
+                user_id=user_id,
             ),
             reason=reason,
         )
@@ -326,7 +361,12 @@ class GuildEndpoints(EndpointMixin):
 
     def get_guild_ban(self, guild_id: dt.Snowflake, user_id: dt.Snowflake):
         return self.request(
-            Route("GET", "/guilds/{guild_id}/bans/{user_id}", guild_id=guild_id, user_id=user_id)
+            Route(
+                "GET",
+                "/guilds/{guild_id}/bans/{user_id}",
+                guild_id=guild_id,
+                user_id=user_id,
+            )
         )
 
     def create_guild_ban(
@@ -338,17 +378,28 @@ class GuildEndpoints(EndpointMixin):
         reason: t.Optional[str] = None,
     ):
         return self.request(
-            Route("PUT", "/guilds/{guild_id}/bans/{user_id}", guild_id=guild_id, user_id=user_id),
+            Route(
+                "PUT",
+                "/guilds/{guild_id}/bans/{user_id}",
+                guild_id=guild_id,
+                user_id=user_id,
+            ),
             json_params={"delete_message_seconds": delete_message_seconds},
             reason=reason,
         )
 
     def remove_guild_ban(
-        self, guild_id: dt.Snowflake, user_id: dt.Snowflake, reason: t.Optional[str] = None
+        self,
+        guild_id: dt.Snowflake,
+        user_id: dt.Snowflake,
+        reason: t.Optional[str] = None,
     ):
         return self.request(
             Route(
-                "DELETE", "/guilds/{guild_id}/bans/{user_id}", guild_id=guild_id, user_id=user_id
+                "DELETE",
+                "/guilds/{guild_id}/bans/{user_id}",
+                guild_id=guild_id,
+                user_id=user_id,
             ),
             reason=reason,
         )
@@ -413,7 +464,10 @@ class GuildEndpoints(EndpointMixin):
     ):
         return self.request(
             Route(
-                "PATCH", "/guilds/{guild_id}/roles/{role_id}", guild_id=guild_id, role_id=role_id
+                "PATCH",
+                "/guilds/{guild_id}/roles/{role_id}",
+                guild_id=guild_id,
+                role_id=role_id,
             ),
             json_params={
                 "name": name,
@@ -428,7 +482,11 @@ class GuildEndpoints(EndpointMixin):
         )
 
     def modify_guild_mfa_level(
-        self, guild_id: dt.Snowflake, *, level: dt.MFALevels, reason: t.Optional[str] = None
+        self,
+        guild_id: dt.Snowflake,
+        *,
+        level: dt.MFALevels,
+        reason: t.Optional[str] = None,
     ):
         return self.request(
             Route("POST", "/guilds/{guild_id}/mfa", guild_id=guild_id),
@@ -437,17 +495,27 @@ class GuildEndpoints(EndpointMixin):
         )
 
     def delete_guild_role(
-        self, guild_id: dt.Snowflake, role_id: dt.Snowflake, reason: t.Optional[str] = None
+        self,
+        guild_id: dt.Snowflake,
+        role_id: dt.Snowflake,
+        reason: t.Optional[str] = None,
     ):
         return self.request(
             Route(
-                "DELETE", "/guilds/{guild_id}/roles/{role_id}", guild_id=guild_id, role_id=role_id
+                "DELETE",
+                "/guilds/{guild_id}/roles/{role_id}",
+                guild_id=guild_id,
+                role_id=role_id,
             ),
             reason=reason,
         )
 
     def get_guild_prune_count(
-        self, guild_id: dt.Snowflake, *, days: int = 7, include_roles: UnsetOr[str] = Unset
+        self,
+        guild_id: dt.Snowflake,
+        *,
+        days: int = 7,
+        include_roles: UnsetOr[str] = Unset,
     ):
         return self.request(
             Route("GET", "/guilds/{guild_id}/prune", guild_id=guild_id),
@@ -474,16 +542,25 @@ class GuildEndpoints(EndpointMixin):
         )
 
     def get_guild_voice_regions(self, guild_id: dt.Snowflake):
-        return self.request(Route("GET", "/guilds/{guild_id}/regions", guild_id=guild_id))
+        return self.request(
+            Route("GET", "/guilds/{guild_id}/regions", guild_id=guild_id)
+        )
 
     def get_guild_invites(self, guild_id: dt.Snowflake):
-        return self.request(Route("GET", "/guilds/{guild_id}/invites", guild_id=guild_id))
+        return self.request(
+            Route("GET", "/guilds/{guild_id}/invites", guild_id=guild_id)
+        )
 
     def get_guild_integrations(self, guild_id: dt.Snowflake):
-        return self.request(Route("GET", "/guilds/{guild_id}/integrations", guild_id=guild_id))
+        return self.request(
+            Route("GET", "/guilds/{guild_id}/integrations", guild_id=guild_id)
+        )
 
     def delete_guild_integration(
-        self, guild_id: dt.Snowflake, integration_id: dt.Snowflake, reason: t.Optional[str] = None
+        self,
+        guild_id: dt.Snowflake,
+        integration_id: dt.Snowflake,
+        reason: t.Optional[str] = None,
     ):
         return self.request(
             Route(
@@ -496,7 +573,9 @@ class GuildEndpoints(EndpointMixin):
         )
 
     def get_guild_widget_settings(self, guild_id: dt.Snowflake):
-        return self.request(Route("GET", "/guilds/{guild_id}/widget", guild_id=guild_id))
+        return self.request(
+            Route("GET", "/guilds/{guild_id}/widget", guild_id=guild_id)
+        )
 
     def modify_guild_widget(
         self,
@@ -513,19 +592,27 @@ class GuildEndpoints(EndpointMixin):
         )
 
     def get_guild_widget(self, guild_id: dt.Snowflake):
-        return self.request(Route("GET", "/guilds/{guild_id}/widget.json", guild_id=guild_id))
+        return self.request(
+            Route("GET", "/guilds/{guild_id}/widget.json", guild_id=guild_id)
+        )
 
     def get_guild_vanity_url(self, guild_id: dt.Snowflake):
-        return self.request(Route("GET", "/guilds/{guild_id}/vanity-url", guild_id=guild_id))
+        return self.request(
+            Route("GET", "/guilds/{guild_id}/vanity-url", guild_id=guild_id)
+        )
 
-    def get_guild_widget_image(self, guild_id: dt.Snowflake, *, style: UnsetOr[str] = Unset):
+    def get_guild_widget_image(
+        self, guild_id: dt.Snowflake, *, style: UnsetOr[str] = Unset
+    ):
         return self.request(
             Route("GET", "/guilds/{guild_id}/widget.png", guild_id=guild_id),
             query_params={"style": style},
         )
 
     def get_guild_welcome_screen(self, guild_id: dt.Snowflake):
-        return self.request(Route("GET", "/guilds/{guild_id}/welcome-screen", guild_id=guild_id))
+        return self.request(
+            Route("GET", "/guilds/{guild_id}/welcome-screen", guild_id=guild_id)
+        )
 
     def modify_guild_welcome_screen(
         self,

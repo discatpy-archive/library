@@ -76,7 +76,11 @@ class BurstRatelimiter(ManualRatelimiter):
         self.reset_after: t.Optional[float] = None
 
     async def acquire(self) -> None:
-        if self.reset_after is not None and self.remaining == 0 and not self.is_locked():
+        if (
+            self.reset_after is not None
+            and self.remaining == 0
+            and not self.is_locked()
+        ):
             _log.info("Auto-locking for %f seconds.", self.reset_after)
             self.lock_for(self.reset_after)
 

@@ -35,7 +35,9 @@ class StageInstanceEndpoints(EndpointMixin):
         )
 
     def get_stage_instance(self, channel_id: dt.Snowflake):
-        return self.request(Route("GET", "/stage-instances/{channel_id}", channel_id=channel_id))
+        return self.request(
+            Route("GET", "/stage-instances/{channel_id}", channel_id=channel_id)
+        )
 
     def modify_stage_instance(
         self,
@@ -51,7 +53,10 @@ class StageInstanceEndpoints(EndpointMixin):
             reason=reason,
         )
 
-    def delete_stage_instance(self, channel_id: dt.Snowflake, reason: t.Optional[str] = None):
+    def delete_stage_instance(
+        self, channel_id: dt.Snowflake, reason: t.Optional[str] = None
+    ):
         return self.request(
-            Route("DELETE", "/stage-instances/{channel_id}", channel_id=channel_id), reason=reason
+            Route("DELETE", "/stage-instances/{channel_id}", channel_id=channel_id),
+            reason=reason,
         )

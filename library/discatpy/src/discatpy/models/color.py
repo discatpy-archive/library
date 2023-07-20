@@ -39,7 +39,9 @@ class Color:
             return hex(i).lstrip("0x")
 
         hex_code = (
-            _decimal_to_hex(self.red) + _decimal_to_hex(self.green) + _decimal_to_hex(self.blue)
+            _decimal_to_hex(self.red)
+            + _decimal_to_hex(self.green)
+            + _decimal_to_hex(self.blue)
         )
         return hex_int(hex_code)
 

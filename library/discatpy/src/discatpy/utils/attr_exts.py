@@ -5,8 +5,9 @@ import typing as t
 from collections.abc import Callable, Mapping
 
 import attr
-from discatcore.types import Unset
 from typing_extensions import TypeGuard, TypeVarTuple, Unpack
+
+from discatcore.types import Unset
 
 from .typing import get_globals, is_union
 
@@ -52,12 +53,16 @@ def fields(cls: type[AttrsInstance]) -> tuple[attr.Attribute[t.Any], ...]:
     return attr.fields(cls)
 
 
-def _sentinel_to_be_filtered(cls: type[AttrsInstance]) -> t.Optional[tuple[object, ...]]:
+def _sentinel_to_be_filtered(
+    cls: type[AttrsInstance],
+) -> t.Optional[tuple[object, ...]]:
     res: t.Optional[tuple[object, ...]] = None
 
     for field in fields(cls):
         field_type = (
-            eval(field.type, get_globals(cls), {}) if isinstance(field.type, str) else field.type
+            eval(field.type, get_globals(cls), {})
+            if isinstance(field.type, str)
+            else field.type
         )
         if is_union(field_type):
             # if we detect Unset, then we should filter that and not None

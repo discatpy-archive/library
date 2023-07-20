@@ -82,7 +82,9 @@ class Event:
 
             _log.debug("Registered new event prototype under event %s", self.name)
         else:
-            raise ValueError(f"Event prototype for event {self.name} has already been set!")
+            raise ValueError(
+                f"Event prototype for event {self.name} has already been set!"
+            )
 
     @t.overload
     def proto(self, func: CoroFunc, *, force_parent: bool = ...) -> Event:
@@ -198,13 +200,19 @@ class Event:
             index (int): The index where the callback is located.
         """
         if len(self.callbacks) - 1 < index:
-            raise ValueError(f"Event {self.name} has less callbacks than the index provided!")
+            raise ValueError(
+                f"Event {self.name} has less callbacks than the index provided!"
+            )
 
         del self.callbacks[index]
-        _log.debug("Removed event callback with index %d under event %s", index, self.name)
+        _log.debug(
+            "Removed event callback with index %d under event %s", index, self.name
+        )
 
     @t.overload
-    def callback(self, func: CoroFunc, *, one_shot: bool = ..., force_parent: bool = ...) -> Event:
+    def callback(
+        self, func: CoroFunc, *, one_shot: bool = ..., force_parent: bool = ...
+    ) -> Event:
         pass
 
     @t.overload
@@ -277,10 +285,14 @@ class Event:
         """
         for i, callback in enumerate(self.callbacks):
             metadata = self.metadata.get(callback, _EventCallbackMetadata())
-            _log.debug("Running event callback under event %s with index %s", self.name, i)
+            _log.debug(
+                "Running event callback under event %s with index %s", self.name, i
+            )
 
             self._schedule_task(callback, i, *args, **kwargs)
 
             if metadata.one_shot:
-                _log.debug("Removing event callback under event %s with index %s", self.name, i)
+                _log.debug(
+                    "Removing event callback under event %s with index %s", self.name, i
+                )
                 self.remove_callback(i)

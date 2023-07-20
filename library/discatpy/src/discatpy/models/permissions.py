@@ -356,5 +356,7 @@ class PermissionOverwrite:
         allow_kwargs: dict[str, bool] = {n: v for n, v in kwargs.items() if v is True}
         deny_kwargs: dict[str, bool] = {n: v for n, v in kwargs.items() if v is False}
 
-        self._allow = Permissions(**allow_kwargs) if allow_kwargs else Permissions.none()
+        self._allow = (
+            Permissions(**allow_kwargs) if allow_kwargs else Permissions.none()
+        )
         self._deny = Permissions(**deny_kwargs) if deny_kwargs else Permissions.none()

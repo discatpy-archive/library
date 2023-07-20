@@ -46,7 +46,9 @@ class AutoModerationEndpoints(EndpointMixin):
         reason: t.Optional[str] = None,
     ):
         return self.request(
-            Route("POST", "/guilds/{guild_id}/auto-moderation/rules", guild_id=guild_id),
+            Route(
+                "POST", "/guilds/{guild_id}/auto-moderation/rules", guild_id=guild_id
+            ),
             json_params={
                 "name": name,
                 "event_type": event_type,

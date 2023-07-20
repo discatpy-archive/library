@@ -56,7 +56,9 @@ class Bucket(BurstRatelimiter):
                 self.remaining = converted_remaining
             elif self.remaining is not None:
                 self.remaining = (
-                    converted_remaining if converted_remaining < self.remaining else self.remaining
+                    converted_remaining
+                    if converted_remaining < self.remaining
+                    else self.remaining
                 )
 
         raw_reset = response.headers.get("X-RateLimit-Reset")
@@ -71,7 +73,9 @@ class Bucket(BurstRatelimiter):
                 self.reset_after = raw_reset_after
             else:
                 self.reset_after = (
-                    raw_reset_after if self.reset_after < raw_reset_after else self.reset_after
+                    raw_reset_after
+                    if self.reset_after < raw_reset_after
+                    else self.reset_after
                 )
 
         raw_bucket = response.headers.get("X-RateLimit-Bucket")

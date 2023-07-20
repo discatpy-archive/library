@@ -16,7 +16,9 @@ __all__ = ("ChannelEndpoints",)
 
 class ChannelEndpoints(EndpointMixin):
     def get_channel(self, channel_id: dt.Snowflake):
-        return self.request(Route("GET", "/channels/{channel_id}", channel_id=channel_id))
+        return self.request(
+            Route("GET", "/channels/{channel_id}", channel_id=channel_id)
+        )
 
     def modify_channel(
         self,
@@ -30,7 +32,9 @@ class ChannelEndpoints(EndpointMixin):
         rate_limit_per_user: UnsetOr[t.Optional[int]] = Unset,
         bitrate: UnsetOr[t.Optional[int]] = Unset,
         user_limit: UnsetOr[t.Optional[int]] = Unset,
-        permission_overwrites: UnsetOr[t.Optional[list[dt.PermissionOverwriteData]]] = Unset,
+        permission_overwrites: UnsetOr[
+            t.Optional[list[dt.PermissionOverwriteData]]
+        ] = Unset,
         parent_id: UnsetOr[t.Optional[dt.Snowflake]] = Unset,
         rtc_region: UnsetOr[t.Optional[str]] = Unset,
         video_quality_mode: UnsetOr[t.Optional[dt.VideoQualityModes]] = Unset,
@@ -98,7 +102,8 @@ class ChannelEndpoints(EndpointMixin):
 
     def delete_channel(self, channel_id: dt.Snowflake, reason: t.Optional[str] = None):
         return self.request(
-            Route("DELETE", "/channels/{channel_id}", channel_id=channel_id), reason=reason
+            Route("DELETE", "/channels/{channel_id}", channel_id=channel_id),
+            reason=reason,
         )
 
     def get_channel_messages(
@@ -112,7 +117,12 @@ class ChannelEndpoints(EndpointMixin):
     ):
         return self.request(
             Route("GET", "/channels/{channel_id}/messages", channel_id=channel_id),
-            query_params={"around": around, "before": before, "after": after, "limit": limit},
+            query_params={
+                "around": around,
+                "before": before,
+                "after": after,
+                "limit": limit,
+            },
         )
 
     def get_channel_message(self, channel_id: dt.Snowflake, message_id: dt.Snowflake):
@@ -168,7 +178,9 @@ class ChannelEndpoints(EndpointMixin):
             )
         )
 
-    def create_reaction(self, channel_id: dt.Snowflake, message_id: dt.Snowflake, emoji: str):
+    def create_reaction(
+        self, channel_id: dt.Snowflake, message_id: dt.Snowflake, emoji: str
+    ):
         return self.request(
             Route(
                 "PUT",
@@ -179,7 +191,9 @@ class ChannelEndpoints(EndpointMixin):
             )
         )
 
-    def delete_own_reaction(self, channel_id: dt.Snowflake, message_id: dt.Snowflake, emoji: str):
+    def delete_own_reaction(
+        self, channel_id: dt.Snowflake, message_id: dt.Snowflake, emoji: str
+    ):
         return self.request(
             Route(
                 "DELETE",
@@ -191,7 +205,11 @@ class ChannelEndpoints(EndpointMixin):
         )
 
     def delete_user_reaction(
-        self, channel_id: dt.Snowflake, message_id: dt.Snowflake, emoji: str, user_id: dt.Snowflake
+        self,
+        channel_id: dt.Snowflake,
+        message_id: dt.Snowflake,
+        emoji: str,
+        user_id: dt.Snowflake,
     ):
         return self.request(
             Route(
@@ -279,7 +297,10 @@ class ChannelEndpoints(EndpointMixin):
         )
 
     def delete_message(
-        self, channel_id: dt.Snowflake, message_id: dt.Snowflake, reason: t.Optional[str] = None
+        self,
+        channel_id: dt.Snowflake,
+        message_id: dt.Snowflake,
+        reason: t.Optional[str] = None,
     ):
         return self.request(
             Route(
@@ -299,7 +320,11 @@ class ChannelEndpoints(EndpointMixin):
         reason: t.Optional[str] = None,
     ):
         return self.request(
-            Route("POST", "/channels/{channel_id}/messages/bulk-delete", channel_id=channel_id),
+            Route(
+                "POST",
+                "/channels/{channel_id}/messages/bulk-delete",
+                channel_id=channel_id,
+            ),
             json_params={"messages": messages},
             reason=reason,
         )
@@ -326,7 +351,9 @@ class ChannelEndpoints(EndpointMixin):
         )
 
     def get_channel_invites(self, channel_id: dt.Snowflake):
-        return self.request(Route("GET", "/channels/{channel_id}/invites", channel_id=channel_id))
+        return self.request(
+            Route("GET", "/channels/{channel_id}/invites", channel_id=channel_id)
+        )
 
     def create_channel_invite(
         self,
@@ -356,7 +383,10 @@ class ChannelEndpoints(EndpointMixin):
         )
 
     def delete_channel_permission(
-        self, channel_id: dt.Snowflake, overwrite_id: dt.Snowflake, reason: t.Optional[str] = None
+        self,
+        channel_id: dt.Snowflake,
+        overwrite_id: dt.Snowflake,
+        reason: t.Optional[str] = None,
     ):
         return self.request(
             Route(
@@ -377,13 +407,20 @@ class ChannelEndpoints(EndpointMixin):
         )
 
     def trigger_typing_indicator(self, channel_id: dt.Snowflake):
-        return self.request(Route("POST", "/channels/{channel_id}/typing", channel_id=channel_id))
+        return self.request(
+            Route("POST", "/channels/{channel_id}/typing", channel_id=channel_id)
+        )
 
     def get_pinned_messages(self, channel_id: dt.Snowflake):
-        return self.request(Route("GET", "/channels/{channel_id}/pins", channel_id=channel_id))
+        return self.request(
+            Route("GET", "/channels/{channel_id}/pins", channel_id=channel_id)
+        )
 
     def pin_message(
-        self, channel_id: dt.Snowflake, message_id: dt.Snowflake, reason: t.Optional[str] = None
+        self,
+        channel_id: dt.Snowflake,
+        message_id: dt.Snowflake,
+        reason: t.Optional[str] = None,
     ):
         return self.request(
             Route(
@@ -396,7 +433,10 @@ class ChannelEndpoints(EndpointMixin):
         )
 
     def unpin_message(
-        self, channel_id: dt.Snowflake, message_id: dt.Snowflake, reason: t.Optional[str] = None
+        self,
+        channel_id: dt.Snowflake,
+        message_id: dt.Snowflake,
+        reason: t.Optional[str] = None,
     ):
         return self.request(
             Route(
@@ -495,7 +535,11 @@ class ChannelEndpoints(EndpointMixin):
 
     def join_thread(self, channel_id: dt.Snowflake):
         return self.request(
-            Route("PUT", "/channels/{channel_id}/thread-members/@me", channel_id=channel_id)
+            Route(
+                "PUT",
+                "/channels/{channel_id}/thread-members/@me",
+                channel_id=channel_id,
+            )
         )
 
     def add_thread_member(self, channel_id: dt.Snowflake, user_id: dt.Snowflake):
@@ -510,7 +554,11 @@ class ChannelEndpoints(EndpointMixin):
 
     def leave_thread(self, channel_id: dt.Snowflake):
         return self.request(
-            Route("DELETE", "/channels/{channel_id}/thread-members/@me", channel_id=channel_id)
+            Route(
+                "DELETE",
+                "/channels/{channel_id}/thread-members/@me",
+                channel_id=channel_id,
+            )
         )
 
     def remove_thread_member(self, channel_id: dt.Snowflake, user_id: dt.Snowflake):
@@ -539,23 +587,43 @@ class ChannelEndpoints(EndpointMixin):
         )
 
     def list_public_archived_threads(
-        self, channel_id: dt.Snowflake, *, before: UnsetOr[str] = Unset, limit: UnsetOr[int] = Unset
+        self,
+        channel_id: dt.Snowflake,
+        *,
+        before: UnsetOr[str] = Unset,
+        limit: UnsetOr[int] = Unset,
     ):
         return self.request(
-            Route("GET", "/channels/{channel_id}/threads/archived/public", channel_id=channel_id),
+            Route(
+                "GET",
+                "/channels/{channel_id}/threads/archived/public",
+                channel_id=channel_id,
+            ),
             query_params={"before": before, "limit": limit},
         )
 
     def list_private_archived_threads(
-        self, channel_id: dt.Snowflake, *, before: UnsetOr[str] = Unset, limit: UnsetOr[int] = Unset
+        self,
+        channel_id: dt.Snowflake,
+        *,
+        before: UnsetOr[str] = Unset,
+        limit: UnsetOr[int] = Unset,
     ):
         return self.request(
-            Route("GET", "/channels/{channel_id}/threads/archived/private", channel_id=channel_id),
+            Route(
+                "GET",
+                "/channels/{channel_id}/threads/archived/private",
+                channel_id=channel_id,
+            ),
             query_params={"before": before, "limit": limit},
         )
 
     def list_joined_private_archived_threads(
-        self, channel_id: dt.Snowflake, *, before: UnsetOr[str] = Unset, limit: UnsetOr[int] = Unset
+        self,
+        channel_id: dt.Snowflake,
+        *,
+        before: UnsetOr[str] = Unset,
+        limit: UnsetOr[int] = Unset,
     ):
         return self.request(
             Route(

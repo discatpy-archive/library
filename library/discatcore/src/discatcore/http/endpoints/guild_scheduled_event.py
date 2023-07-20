@@ -76,7 +76,9 @@ class GuildScheduledEventEndpoints(EndpointMixin):
         guild_scheduled_event_id: dt.Snowflake,
         *,
         channel_id: UnsetOr[dt.Snowflake] = Unset,
-        entity_metadata: UnsetOr[t.Optional[dt.GuildScheduledEventEntityMetadataData]] = Unset,
+        entity_metadata: UnsetOr[
+            t.Optional[dt.GuildScheduledEventEntityMetadataData]
+        ] = Unset,
         name: UnsetOr[str] = Unset,
         privacy_level: UnsetOr[dt.GuildScheduledEventPrivacyLevels] = Unset,
         scheduled_start_time: UnsetOr[str] = Unset,

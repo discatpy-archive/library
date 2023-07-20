@@ -203,7 +203,9 @@ class GatewayClient:
             await self.close(code=1012)
             return False
 
-        typed_msg: BaseTypedWSMessage[t.Any] = BaseTypedWSMessage.convert_from_untyped(msg)
+        typed_msg: BaseTypedWSMessage[t.Any] = BaseTypedWSMessage.convert_from_untyped(
+            msg
+        )
 
         _log.debug("Received WS message from Gateway with type %s", typed_msg.type.name)
 
@@ -237,8 +239,14 @@ class GatewayClient:
         self._ws = await self._http.ws_connect(url)
 
         res = await self.receive()
-        if res and self.recent_payload is not None and self.recent_payload["op"] == HELLO:
-            self.heartbeat_interval = self.recent_payload["d"]["heartbeat_interval"] / 1000
+        if (
+            res
+            and self.recent_payload is not None
+            and self.recent_payload["op"] == HELLO
+        ):
+            self.heartbeat_interval = (
+                self.recent_payload["d"]["heartbeat_interval"] / 1000
+            )
         else:
             # I guess Discord is having issues today if we get here
             # Disconnect and DO NOT ATTEMPT a reconnection
@@ -271,7 +279,9 @@ class GatewayClient:
                 and (datetime.datetime.now() - self._last_heartbeat_ack).total_seconds()
                 > self.heartbeat_timeout
             ):
-                _log.debug("Zombified connection detected. Closing connection with code 1008.")
+                _log.debug(
+                    "Zombified connection detected. Closing connection with code 1008."
+                )
                 await self.close(code=1008)
                 return
 

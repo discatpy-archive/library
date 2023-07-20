@@ -7,6 +7,7 @@ from enum import Enum
 
 import attr
 import discord_typings as dt
+
 from discatcore import BasicFile
 from discatcore.types import Unset, UnsetOr
 from discatcore.utils import Snowflake
@@ -155,7 +156,9 @@ class MessageFlags(Flag):
 def _parse_files_to_attachments(files: list[BasicFile]):
     generated_attachments: list[dt.PartialAttachmentData] = []
     for i, file in enumerate(files):
-        generated_attachments.append(dt.PartialAttachmentData(id=i, filename=file.filename))
+        generated_attachments.append(
+            dt.PartialAttachmentData(id=i, filename=file.filename)
+        )
     return generated_attachments
 
 
@@ -177,7 +180,9 @@ def _send_message(
         flags = flags.value
 
     if content is Unset and embeds is Unset and stickers is Unset and files is Unset:
-        raise ValueError("At least one of content, embeds, stickers, and files are required!")
+        raise ValueError(
+            "At least one of content, embeds, stickers, and files are required!"
+        )
 
     generated_attachments: UnsetOr[list[dt.PartialAttachmentData]] = Unset
     if files is not Unset:
@@ -230,7 +235,9 @@ class Message:
             self.edited_timestamp = raw_edited_timestamp
 
         self.tts: bool = self.data["tts"]
-        self.mentions: list[User] = [User(bot=self.bot, data=d) for d in self.data["mentions"]]
+        self.mentions: list[User] = [
+            User(bot=self.bot, data=d) for d in self.data["mentions"]
+        ]
         self.attachments: UnsetOr[list[Attachment]] = [
             Attachment(bot=self.bot, data=a) for a in self.data["attachments"]
         ]
@@ -242,7 +249,9 @@ class Message:
         self.webhook_id: UnsetOr[dt.Snowflake] = self.data.get("webhook_id", Unset)
         self.type: MessageTypes = MessageTypes(self.data["type"])
         # TODO: activity, application
-        self.application_id: UnsetOr[dt.Snowflake] = self.data.get("application_id", Unset)
+        self.application_id: UnsetOr[dt.Snowflake] = self.data.get(
+            "application_id", Unset
+        )
 
         self.message_reference: UnsetOr[MessageReference]
         raw_message_reference = self.data.get("message_reference", Unset)
@@ -260,7 +269,9 @@ class Message:
 
         self.referenced_message: UnsetOr[t.Optional[Message]]
         raw_referenced_message = self.data.get("referenced_message", Unset)
-        if isinstance(raw_referenced_message, (dt.ChannelMessageData, dt.GuildMessageData)):
+        if isinstance(
+            raw_referenced_message, (dt.ChannelMessageData, dt.GuildMessageData)
+        ):
             # TODO: attempt to get message object from cache
             self.referenced_message = Message(bot=self.bot, data=raw_referenced_message)
         else:
@@ -297,7 +308,8 @@ class Message:
             kwargs["attachments"] = _parse_files_to_attachments(files)
 
         new_msg_data = t.cast(
-            dt.MessageData, await self.bot.http.edit_message(self.channel_id, self.id, **kwargs)
+            dt.MessageData,
+            await self.bot.http.edit_message(self.channel_id, self.id, **kwargs),
         )
         new_msg = Message(bot=self.bot, data=new_msg_data)
         # TODO: edit cache
@@ -320,7 +332,15 @@ class Message:
         return await self.bot.http.create_message(
             self.channel_id,
             **_send_message(
-                content, nonce, tts, embeds, allowed_mentions, msg_reference, stickers, files, flags
+                content,
+                nonce,
+                tts,
+                embeds,
+                allowed_mentions,
+                msg_reference,
+                stickers,
+                files,
+                flags,
             ),
         )
 

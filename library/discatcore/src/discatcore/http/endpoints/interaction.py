@@ -124,7 +124,10 @@ class InteractionEndpoints(EndpointMixin):
         )
 
     def get_followup_message(
-        self, application_id: dt.Snowflake, interaction_token: str, message_id: dt.Snowflake
+        self,
+        application_id: dt.Snowflake,
+        interaction_token: str,
+        message_id: dt.Snowflake,
     ):
         return self.request(
             Route(
@@ -168,7 +171,10 @@ class InteractionEndpoints(EndpointMixin):
         )
 
     def delete_followup_message(
-        self, application_id: dt.Snowflake, interaction_token: str, message_id: dt.Snowflake
+        self,
+        application_id: dt.Snowflake,
+        interaction_token: str,
+        message_id: dt.Snowflake,
     ):
         return self.request(
             Route(

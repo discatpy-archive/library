@@ -6,6 +6,7 @@ from collections.abc import AsyncIterator
 from datetime import datetime
 
 import discord_typings as dt
+
 from discatcore.types import Unset, UnsetOr
 from discatcore.utils import DISCORD_EPOCH
 
@@ -30,9 +31,15 @@ async def channel_history(
     around: UnsetOr[t.Union[datetime, dt.Snowflake]] = Unset,
     limit: t.Optional[int] = None,
 ) -> AsyncIterator[dt.MessageData]:
-    converted_before = _datetime_to_snowflake(before) if isinstance(before, datetime) else before
-    converted_after = _datetime_to_snowflake(after) if isinstance(after, datetime) else after
-    converted_around = _datetime_to_snowflake(around) if isinstance(around, datetime) else around
+    converted_before = (
+        _datetime_to_snowflake(before) if isinstance(before, datetime) else before
+    )
+    converted_after = (
+        _datetime_to_snowflake(after) if isinstance(after, datetime) else after
+    )
+    converted_around = (
+        _datetime_to_snowflake(around) if isinstance(around, datetime) else around
+    )
     retrieve = 0
 
     channel_id = await channel._get_channel_id()  # pyright: ignore[reportPrivateUsage]

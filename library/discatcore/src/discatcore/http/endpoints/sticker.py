@@ -16,13 +16,17 @@ __all__ = ("StickerEndpoints",)
 
 class StickerEndpoints(EndpointMixin):
     def get_sticker(self, sticker_id: dt.Snowflake):
-        return self.request(Route("GET", "/stickers/{sticker_id}", sticker_id=sticker_id))
+        return self.request(
+            Route("GET", "/stickers/{sticker_id}", sticker_id=sticker_id)
+        )
 
     def list_nitro_sticker_packs(self):
         return self.request(Route("GET", "/sticker-packs"))
 
     def list_guild_stickers(self, guild_id: dt.Snowflake):
-        return self.request(Route("GET", "/guilds/{guild_id}/stickers", guild_id=guild_id))
+        return self.request(
+            Route("GET", "/guilds/{guild_id}/stickers", guild_id=guild_id)
+        )
 
     def get_guild_sticker(self, guild_id: dt.Snowflake, sticker_id: dt.Snowflake):
         return self.request(
@@ -51,7 +55,8 @@ class StickerEndpoints(EndpointMixin):
         form_data.add_field("tags", tags)
         form_data.add_field("file", file.fp, content_type=file.content_type)
         return self.request(
-            Route("POST", "/guilds/{guild_id}/stickers", guild_id=guild_id), data=form_data
+            Route("POST", "/guilds/{guild_id}/stickers", guild_id=guild_id),
+            data=form_data,
         )
 
     def modify_guild_sticker(
@@ -76,7 +81,10 @@ class StickerEndpoints(EndpointMixin):
         )
 
     def delete_guild_sticker(
-        self, guild_id: dt.Snowflake, sticker_id: dt.Snowflake, reason: t.Optional[str] = None
+        self,
+        guild_id: dt.Snowflake,
+        sticker_id: dt.Snowflake,
+        reason: t.Optional[str] = None,
     ):
         return self.request(
             Route(

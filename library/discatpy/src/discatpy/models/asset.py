@@ -154,12 +154,16 @@ class Asset:
 
     @property
     def formatted_url(self):
-        return f"https://cdn.discordapp.com/{self.url}.{self.extension}?size={self.size}"
+        return (
+            f"https://cdn.discordapp.com/{self.url}.{self.extension}?size={self.size}"
+        )
 
     async def read(self):
         return await self.bot.http.get_from_cdn(self.formatted_url)
 
-    def replace(self, *, size: t.Optional[int] = None, extension: t.Optional[str] = None):
+    def replace(
+        self, *, size: t.Optional[int] = None, extension: t.Optional[str] = None
+    ):
         if size is not None:
             self.size = size
         if extension is not None:

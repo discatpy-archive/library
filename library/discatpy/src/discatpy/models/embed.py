@@ -75,7 +75,10 @@ class EmbedField(ToDictMixin[dt.EmbedFieldData]):
 
 
 def _grab_and_convert(
-    d: Mapping[str, t.Any], key: str, type_from: type[Mapping[str, t.Any]], type_to: type[T]
+    d: Mapping[str, t.Any],
+    key: str,
+    type_from: type[Mapping[str, t.Any]],
+    type_to: type[T],
 ) -> t.Optional[T]:
     return type_to(**t.cast(type_from, d.get(key, {}))) if d.get(key) else None
 
@@ -103,17 +106,25 @@ class Embed:
     @classmethod
     def from_dict(cls, data: dt.EmbedData):
         timestamp = (
-            datetime.fromisoformat(data.get("timestamp", "")) if data.get("timestamp") else None
+            datetime.fromisoformat(data.get("timestamp", ""))
+            if data.get("timestamp")
+            else None
         )
         color = Color.from_hex(int(data.get("color", 0))) if data.get("color") else None
         footer = _grab_and_convert(data, "footer", dt.EmbedFooterData, EmbedFooter)
         image = _grab_and_convert(data, "image", dt.EmbedImageData, EmbedImage)
-        thumbnail = _grab_and_convert(data, "thumbnail", dt.EmbedThumbnailData, EmbedThumbnail)
+        thumbnail = _grab_and_convert(
+            data, "thumbnail", dt.EmbedThumbnailData, EmbedThumbnail
+        )
         video = _grab_and_convert(data, "video", dt.EmbedVideoData, EmbedVideo)
-        provider = _grab_and_convert(data, "provider", dt.EmbedProviderData, EmbedProvider)
+        provider = _grab_and_convert(
+            data, "provider", dt.EmbedProviderData, EmbedProvider
+        )
         author = _grab_and_convert(data, "author", dt.EmbedAuthorData, EmbedAuthor)
         fields = (
-            [EmbedField(**field) for field in data.get("fields", [])] if data.get("fields") else []
+            [EmbedField(**field) for field in data.get("fields", [])]
+            if data.get("fields")
+            else []
         )
 
         return cls(
@@ -174,9 +185,15 @@ class Embed:
         return data
 
     def set_footer(
-        self, *, text: str, icon_url: t.Optional[str] = None, proxy_icon_url: t.Optional[str] = None
+        self,
+        *,
+        text: str,
+        icon_url: t.Optional[str] = None,
+        proxy_icon_url: t.Optional[str] = None,
     ) -> None:
-        self.footer = EmbedFooter(text=text, icon_url=icon_url, proxy_icon_url=proxy_icon_url)
+        self.footer = EmbedFooter(
+            text=text, icon_url=icon_url, proxy_icon_url=proxy_icon_url
+        )
 
     def set_image(
         self,
@@ -186,7 +203,9 @@ class Embed:
         height: t.Optional[int] = None,
         width: t.Optional[int] = None,
     ) -> None:
-        self.image = EmbedImage(url=url, proxy_url=proxy_url, height=height, width=width)
+        self.image = EmbedImage(
+            url=url, proxy_url=proxy_url, height=height, width=width
+        )
 
     def set_thumbnail(
         self,
@@ -196,7 +215,9 @@ class Embed:
         height: t.Optional[int] = None,
         width: t.Optional[int] = None,
     ) -> None:
-        self.thumbnail = EmbedThumbnail(url=url, proxy_url=proxy_url, height=height, width=width)
+        self.thumbnail = EmbedThumbnail(
+            url=url, proxy_url=proxy_url, height=height, width=width
+        )
 
     def set_video(
         self,
@@ -206,9 +227,13 @@ class Embed:
         height: t.Optional[int] = None,
         width: t.Optional[int] = None,
     ) -> None:
-        self.video = EmbedVideo(url=url, proxy_url=proxy_url, height=height, width=width)
+        self.video = EmbedVideo(
+            url=url, proxy_url=proxy_url, height=height, width=width
+        )
 
-    def set_provider(self, *, name: t.Optional[str] = None, url: t.Optional[str] = None) -> None:
+    def set_provider(
+        self, *, name: t.Optional[str] = None, url: t.Optional[str] = None
+    ) -> None:
         self.provider = EmbedProvider(name=name, url=url)
 
     def set_author(
@@ -226,7 +251,9 @@ class Embed:
     def add_field(self, *, name: str, value: str, inline: bool = False) -> None:
         self.fields.append(EmbedField(name=name, value=value, inline=inline))
 
-    def insert_field_at(self, index: int, *, name: str, value: str, inline: bool = False) -> None:
+    def insert_field_at(
+        self, index: int, *, name: str, value: str, inline: bool = False
+    ) -> None:
         self.fields.insert(index, EmbedField(name=name, value=value, inline=inline))
 
     def remove_field(self, index: int) -> None:

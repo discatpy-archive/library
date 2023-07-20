@@ -15,12 +15,17 @@ __all__ = ("EmojiEndpoints",)
 
 class EmojiEndpoints(EndpointMixin):
     def list_guild_emojis(self, guild_id: dt.Snowflake):
-        return self.request(Route("GET", "/guilds/{guild_id}/emojis", guild_id=guild_id))
+        return self.request(
+            Route("GET", "/guilds/{guild_id}/emojis", guild_id=guild_id)
+        )
 
     def get_guild_emoji(self, guild_id: dt.Snowflake, emoji_id: dt.Snowflake):
         return self.request(
             Route(
-                "GET", "/guilds/{guild_id}/emojis/{emoji_id}", guild_id=guild_id, emoji_id=emoji_id
+                "GET",
+                "/guilds/{guild_id}/emojis/{emoji_id}",
+                guild_id=guild_id,
+                emoji_id=emoji_id,
             )
         )
 
@@ -60,7 +65,10 @@ class EmojiEndpoints(EndpointMixin):
         )
 
     def delete_guild_emoji(
-        self, guild_id: dt.Snowflake, emoji_id: dt.Snowflake, reason: t.Optional[str] = None
+        self,
+        guild_id: dt.Snowflake,
+        emoji_id: dt.Snowflake,
+        reason: t.Optional[str] = None,
     ):
         return self.request(
             Route(

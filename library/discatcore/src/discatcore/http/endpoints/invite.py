@@ -33,5 +33,6 @@ class InviteEndpoints(EndpointMixin):
 
     def delete_invite(self, invite_code: dt.Snowflake, reason: t.Optional[str] = None):
         return self.request(
-            Route("DELETE", "/invites/{invite_code}", invite_code=invite_code), reason=reason
+            Route("DELETE", "/invites/{invite_code}", invite_code=invite_code),
+            reason=reason,
         )
