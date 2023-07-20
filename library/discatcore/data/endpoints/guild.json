@@ -1,0 +1,779 @@
+{
+    "name": "GuildEndpoints",
+    "requires": [
+        "typing",
+        "discord_typings",
+        "Unset"
+    ],
+    "methods": {
+        "create_guild": {
+            "method": "POST",
+            "url": "/guilds",
+            "json-parameters": {
+                "name": "str",
+                "icon": [
+                    "UnsetOr[str]",
+                    "Unset"
+                ],
+                "verification_level": [
+                    "UnsetOr[dt.VerificationLevels]",
+                    "Unset"
+                ],
+                "default_message_notifications": [
+                    "UnsetOr[dt.DefaultMessageNotificationLevels]",
+                    "Unset"
+                ],
+                "explicit_content_filter": [
+                    "UnsetOr[dt.ExplicitContentFilterLevels]",
+                    "Unset"
+                ],
+                "roles": [
+                    "UnsetOr[list[dt.RoleData]]",
+                    "Unset"
+                ],
+                "channels": [
+                    "UnsetOr[list[dt.PartialChannelData]]",
+                    "Unset"
+                ],
+                "afk_channel_id": [
+                    "UnsetOr[dt.Snowflake]",
+                    "Unset"
+                ],
+                "afk_timeout": [
+                    "UnsetOr[int]",
+                    "Unset"
+                ],
+                "system_channel_id": [
+                    "UnsetOr[dt.Snowflake]",
+                    "Unset"
+                ],
+                "system_channel_flags": [
+                    "UnsetOr[int]",
+                    "Unset"
+                ]
+            }
+        },
+        "get_guild": {
+            "method": "GET",
+            "url": "/guilds/{guild_id}",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake"
+            },
+            "query-parameters": {
+                "with_counts": [
+                    "bool",
+                    "False"
+                ]
+            }
+        },
+        "get_guild_preview": {
+            "method": "GET",
+            "url": "/guilds/{guild_id}/preview",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake"
+            }
+        },
+        "modify_guild": {
+            "method": "PATCH",
+            "url": "/guilds/{guild_id}",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake"
+            },
+            "json-parameters": {
+                "name": [
+                    "UnsetOr[str]",
+                    "Unset"
+                ],
+                "icon": [
+                    "UnsetOr[t.Optional[str]]",
+                    "Unset"
+                ],
+                "verification_level": [
+                    "UnsetOr[t.Optional[dt.VerificationLevels]]",
+                    "Unset"
+                ],
+                "default_message_notifications": [
+                    "UnsetOr[t.Optional[dt.DefaultMessageNotificationLevels]]",
+                    "Unset"
+                ],
+                "explicit_content_filter": [
+                    "UnsetOr[t.Optional[dt.ExplicitContentFilterLevels]]",
+                    "Unset"
+                ],
+                "afk_channel_id": [
+                    "UnsetOr[t.Optional[dt.Snowflake]]",
+                    "Unset"
+                ],
+                "afk_timeout": [
+                    "UnsetOr[int]",
+                    "Unset"
+                ],
+                "system_channel_id": [
+                    "UnsetOr[t.Optional[dt.Snowflake]]",
+                    "Unset"
+                ],
+                "system_channel_flags": [
+                    "UnsetOr[int]",
+                    "Unset"
+                ],
+                "owner_id": [
+                    "UnsetOr[dt.Snowflake]",
+                    "Unset"
+                ],
+                "splash": [
+                    "UnsetOr[t.Optional[str]]",
+                    "Unset"
+                ],
+                "discovery_splash": [
+                    "UnsetOr[t.Optional[str]]",
+                    "Unset"
+                ],
+                "banner": [
+                    "UnsetOr[t.Optional[str]]",
+                    "Unset"
+                ],
+                "rules_channel_id": [
+                    "UnsetOr[t.Optional[dt.Snowflake]]",
+                    "Unset"
+                ],
+                "public_updates_channel_id": [
+                    "UnsetOr[t.Optional[dt.Snowflake]]",
+                    "Unset"
+                ],
+                "preferred_locale": [
+                    "UnsetOr[t.Optional[str]]",
+                    "Unset"
+                ],
+                "features": [
+                    "UnsetOr[list[str]]",
+                    "Unset"
+                ],
+                "description": [
+                    "UnsetOr[t.Optional[str]]",
+                    "Unset"
+                ],
+                "premium_progress_bar_enabled": [
+                    "UnsetOr[bool]",
+                    "Unset"
+                ]
+            },
+            "supports-reason": true
+        },
+        "delete_guild": {
+            "method": "DELETE",
+            "url": "/guilds/{guild_id}",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake"
+            }
+        },
+        "get_guild_channels": {
+            "method": "GET",
+            "url": "/guilds/{guild_id}/channels",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake"
+            }
+        },
+        "create_guild_channel": {
+            "method": "POST",
+            "url": "/guilds/{guild_id}/channels",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake"
+            },
+            "json-parameters": {
+                "name": "str",
+                "type": [
+                    "UnsetOr[t.Optional[dt.ChannelTypes]]",
+                    "Unset"
+                ],
+                "topic": [
+                    "UnsetOr[t.Optional[str]]",
+                    "Unset"
+                ],
+                "bitrate": [
+                    "UnsetOr[t.Optional[int]]",
+                    "Unset"
+                ],
+                "user_limit": [
+                    "UnsetOr[t.Optional[int]]",
+                    "Unset"
+                ],
+                "rate_limit_per_user": [
+                    "UnsetOr[t.Optional[int]]",
+                    "Unset"
+                ],
+                "position": [
+                    "UnsetOr[t.Optional[int]]",
+                    "Unset"
+                ],
+                "permission_overwrites": [
+                    "UnsetOr[t.Optional[list[dt.PermissionOverwriteData]]]",
+                    "Unset"
+                ],
+                "parent_id": [
+                    "UnsetOr[t.Optional[dt.Snowflake]]",
+                    "Unset"
+                ],
+                "nsfw": [
+                    "UnsetOr[t.Optional[bool]]",
+                    "Unset"
+                ],
+                "rtc_region": [
+                    "UnsetOr[t.Optional[str]]",
+                    "Unset"
+                ],
+                "video_quality_mode": [
+                    "UnsetOr[t.Optional[dt.VideoQualityModes]]",
+                    "Unset"
+                ],
+                "default_auto_archive_duration": [
+                    "UnsetOr[t.Optional[int]]",
+                    "Unset"
+                ],
+                "default_reaction_emoji": [
+                    "UnsetOr[t.Optional[dt.DefaultReactionData]]",
+                    "Unset"
+                ],
+                "available_tags": [
+                    "UnsetOr[t.Optional[list[dt.ForumTagData]]]",
+                    "Unset"
+                ],
+                "default_sort_order": [
+                    "UnsetOr[t.Optional[int]]",
+                    "Unset"
+                ]
+            },
+            "supports-reason": true
+        },
+        "modify_guild_channel_positions": {
+            "method": "PATCH",
+            "url": "/guilds/{guild_id}/channels",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake"
+            },
+            "json-parameters": {
+                "id": "dt.Snowflake",
+                "position": [
+                    "UnsetOr[t.Optional[int]]",
+                    "Unset"
+                ],
+                "lock_permissions": [
+                    "UnsetOr[t.Optional[bool]]",
+                    "Unset"
+                ],
+                "parent_id": [
+                    "UnsetOr[t.Optional[dt.Snowflake]]",
+                    "Unset"
+                ]
+            }
+        },
+        "list_active_guild_threads": {
+            "method": "GET",
+            "url": "/guilds/{guild_id}/threads/active",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake"
+            }
+        },
+        "get_guild_member": {
+            "method": "GET",
+            "url": "/guilds/{guild_id}/members/{user_id}",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake",
+                "user_id": "dt.Snowflake"
+            }
+        },
+        "list_guild_members": {
+            "method": "GET",
+            "url": "/guilds/{guild_id}/members",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake"
+            },
+            "query-parameters": {
+                "limit": [
+                    "int",
+                    "1"
+                ],
+                "after": [
+                    "UnsetOr[dt.Snowflake]",
+                    "Unset"
+                ]
+            }
+        },
+        "search_guild_members": {
+            "method": "GET",
+            "url": "/guilds/{guild_id}/members/search",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake"
+            },
+            "query-parameters": {
+                "query": "str",
+                "limit": [
+                    "int",
+                    "1"
+                ]
+            }
+        },
+        "add_guild_member": {
+            "method": "PUT",
+            "url": "/guilds/{guild_id}/members/{user_id}",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake",
+                "user_id": "dt.Snowflake"
+            },
+            "json-parameters": {
+                "access_token": "str",
+                "nick": [
+                    "UnsetOr[str]",
+                    "Unset"
+                ],
+                "roles": [
+                    "UnsetOr[list[dt.Snowflake]]",
+                    "Unset"
+                ],
+                "mute": [
+                    "UnsetOr[bool]",
+                    "Unset"
+                ],
+                "deaf": [
+                    "UnsetOr[bool]",
+                    "Unset"
+                ]
+            }
+        },
+        "modify_guild_member": {
+            "method": "PATCH",
+            "url": "/guilds/{guild_id}/members/{user_id}",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake",
+                "user_id": "dt.Snowflake"
+            },
+            "json-parameters": {
+                "nick": [
+                    "UnsetOr[t.Optional[str]]",
+                    "Unset"
+                ],
+                "roles": [
+                    "UnsetOr[t.Optional[list[dt.Snowflake]]]",
+                    "Unset"
+                ],
+                "mute": [
+                    "UnsetOr[t.Optional[bool]]",
+                    "Unset"
+                ],
+                "deaf": [
+                    "UnsetOr[t.Optional[bool]]",
+                    "Unset"
+                ],
+                "channel_id": [
+                    "UnsetOr[t.Optional[dt.Snowflake]]",
+                    "Unset"
+                ],
+                "communication_disabled_until": [
+                    "UnsetOr[t.Optional[str]]",
+                    "Unset"
+                ]
+            },
+            "supports-reason": true
+        },
+        "modify_current_member": {
+            "method": "PATCH",
+            "url": "/guilds/{guild_id}/members/@me",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake"
+            },
+            "json-parameters": {
+                "nick": [
+                    "UnsetOr[t.Optional[str]]",
+                    "Unset"
+                ]
+            },
+            "supports-reason": true
+        },
+        "add_guild_member_role": {
+            "method": "PUT",
+            "url": "/guilds/{guild_id}/members/{user_id}/roles/{role_id}",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake",
+                "user_id": "dt.Snowflake",
+                "role_id": "dt.Snowflake"
+            },
+            "supports-reason": true
+        },
+        "remove_guild_member_role": {
+            "method": "DELETE",
+            "url": "/guilds/{guild_id}/members/{user_id}/roles/{role_id}",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake",
+                "user_id": "dt.Snowflake",
+                "role_id": "dt.Snowflake"
+            },
+            "supports-reason": true
+        },
+        "remove_guild_member": {
+            "method": "DELETE",
+            "url": "/guilds/{guild_id}/members/{user_id}",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake",
+                "user_id": "dt.Snowflake"
+            },
+            "supports-reason": true
+        },
+        "get_guild_bans": {
+            "method": "GET",
+            "url": "/guilds/{guild_id}/bans",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake"
+            },
+            "query-parameters": {
+                "limit": [
+                    "int",
+                    "1000"
+                ],
+                "before": [
+                    "UnsetOr[dt.Snowflake]",
+                    "Unset"
+                ],
+                "after": [
+                    "UnsetOr[dt.Snowflake]",
+                    "Unset"
+                ]
+            }
+        },
+        "get_guild_ban": {
+            "method": "GET",
+            "url": "/guilds/{guild_id}/bans/{user_id}",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake",
+                "user_id": "dt.Snowflake"
+            }
+        },
+        "create_guild_ban": {
+            "method": "PUT",
+            "url": "/guilds/{guild_id}/bans/{user_id}",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake",
+                "user_id": "dt.Snowflake"
+            },
+            "json-parameters": {
+                "delete_message_seconds": [
+                    "UnsetOr[int]",
+                    "Unset"
+                ]
+            },
+            "supports-reason": true
+        },
+        "remove_guild_ban": {
+            "method": "DELETE",
+            "url": "/guilds/{guild_id}/bans/{user_id}",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake",
+                "user_id": "dt.Snowflake"
+            },
+            "supports-reason": true
+        },
+        "get_guild_roles": {
+            "method": "GET",
+            "url": "/guilds/{guild_id}/roles",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake"
+            }
+        },
+        "create_guild_role": {
+            "method": "POST",
+            "url": "/guilds/{guild_id}/roles",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake"
+            },
+            "json-parameters": {
+                "name": [
+                    "UnsetOr[str]",
+                    "Unset"
+                ],
+                "permissions": [
+                    "UnsetOr[str]",
+                    "Unset"
+                ],
+                "color": [
+                    "UnsetOr[int]",
+                    "Unset"
+                ],
+                "hoist": [
+                    "UnsetOr[bool]",
+                    "Unset"
+                ],
+                "icon": [
+                    "UnsetOr[t.Optional[str]]",
+                    "Unset"
+                ],
+                "unicode_emoji": [
+                    "UnsetOr[t.Optional[str]]",
+                    "Unset"
+                ],
+                "mentionable": [
+                    "UnsetOr[bool]",
+                    "Unset"
+                ]
+            },
+            "supports-reason": true
+        },
+        "modify_guild_role_positions": {
+            "method": "PATCH",
+            "url": "/guilds/{guild_id}/roles",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake"
+            },
+            "json-parameters": {
+                "id": "dt.Snowflake",
+                "position": [
+                    "UnsetOr[t.Optional[int]]",
+                    "Unset"
+                ]
+            },
+            "supports-reason": true
+        },
+        "modify_guild_role": {
+            "method": "PATCH",
+            "url": "/guilds/{guild_id}/roles/{role_id}",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake",
+                "role_id": "dt.Snowflake"
+            },
+            "json-parameters": {
+                "name": [
+                    "UnsetOr[t.Optional[str]]",
+                    "Unset"
+                ],
+                "permissions": [
+                    "UnsetOr[t.Optional[str]]",
+                    "Unset"
+                ],
+                "color": [
+                    "UnsetOr[t.Optional[int]]",
+                    "Unset"
+                ],
+                "hoist": [
+                    "UnsetOr[t.Optional[bool]]",
+                    "Unset"
+                ],
+                "icon": [
+                    "UnsetOr[t.Optional[str]]",
+                    "Unset"
+                ],
+                "unicode_emoji": [
+                    "UnsetOr[t.Optional[str]]",
+                    "Unset"
+                ],
+                "mentionable": [
+                    "UnsetOr[t.Optional[bool]]",
+                    "Unset"
+                ]
+            },
+            "supports-reason": true
+        },
+        "modify_guild_mfa_level": {
+            "method": "POST",
+            "url": "/guilds/{guild_id}/mfa",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake"
+            },
+            "json-parameters": {
+                "level": "dt.MFALevels"
+            },
+            "supports-reason": true
+        },
+        "delete_guild_role": {
+            "method": "DELETE",
+            "url": "/guilds/{guild_id}/roles/{role_id}",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake",
+                "role_id": "dt.Snowflake"
+            },
+            "supports-reason": true
+        },
+        "get_guild_prune_count": {
+            "method": "GET",
+            "url": "/guilds/{guild_id}/prune",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake"
+            },
+            "query-parameters": {
+                "days": [
+                    "int",
+                    "7"
+                ],
+                "include_roles": [
+                    "UnsetOr[str]",
+                    "Unset"
+                ]
+            }
+        },
+        "begin_guild_prune": {
+            "method": "POST",
+            "url": "/guilds/{guild_id}/prune",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake"
+            },
+            "json-parameters": {
+                "days": [
+                    "int",
+                    "7"
+                ],
+                "compute_prune_count": [
+                    "bool",
+                    "True"
+                ],
+                "include_roles": [
+                    "UnsetOr[list[dt.Snowflake]]",
+                    "Unset"
+                ]
+            },
+            "supports-reason": true
+        },
+        "get_guild_voice_regions": {
+            "method": "GET",
+            "url": "/guilds/{guild_id}/regions",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake"
+            }
+        },
+        "get_guild_invites": {
+            "method": "GET",
+            "url": "/guilds/{guild_id}/invites",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake"
+            }
+        },
+        "get_guild_integrations": {
+            "method": "GET",
+            "url": "/guilds/{guild_id}/integrations",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake"
+            }
+        },
+        "delete_guild_integration": {
+            "method": "DELETE",
+            "url": "/guilds/{guild_id}/integrations/{integration_id}",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake",
+                "integration_id": "dt.Snowflake"
+            },
+            "supports-reason": true
+        },
+        "get_guild_widget_settings": {
+            "method": "GET",
+            "url": "/guilds/{guild_id}/widget",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake"
+            }
+        },
+        "modify_guild_widget": {
+            "method": "PATCH",
+            "url": "/guilds/{guild_id}/widget",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake"
+            },
+            "json-parameters": {
+                "enabled": [
+                    "UnsetOr[bool]",
+                    "Unset"
+                ],
+                "channel_id": [
+                    "UnsetOr[t.Optional[dt.Snowflake]]",
+                    "Unset"
+                ]
+            },
+            "supports-reason": true
+        },
+        "get_guild_widget": {
+            "method": "GET",
+            "url": "/guilds/{guild_id}/widget.json",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake"
+            }
+        },
+        "get_guild_vanity_url": {
+            "method": "GET",
+            "url": "/guilds/{guild_id}/vanity-url",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake"
+            }
+        },
+        "get_guild_widget_image": {
+            "method": "GET",
+            "url": "/guilds/{guild_id}/widget.png",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake"
+            },
+            "query-parameters": {
+                "style": [
+                    "UnsetOr[str]",
+                    "Unset"
+                ]
+            }
+        },
+        "get_guild_welcome_screen": {
+            "method": "GET",
+            "url": "/guilds/{guild_id}/welcome-screen",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake"
+            }
+        },
+        "modify_guild_welcome_screen": {
+            "method": "PATCH",
+            "url": "/guilds/{guild_id}/welcome-screen",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake"
+            },
+            "json-parameters": {
+                "enabled": [
+                    "UnsetOr[t.Optional[bool]]",
+                    "Unset"
+                ],
+                "welcome_channels": [
+                    "UnsetOr[t.Optional[list[dt.WelcomeChannelData]]]",
+                    "Unset"
+                ],
+                "description": [
+                    "UnsetOr[t.Optional[str]]",
+                    "Unset"
+                ]
+            },
+            "supports-reason": true
+        },
+        "modify_current_user_voice_state": {
+            "method": "PATCH",
+            "url": "/guilds/{guild_id}/voice-states/@me",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake"
+            },
+            "json-parameters": {
+                "channel_id": [
+                    "UnsetOr[dt.Snowflake]",
+                    "Unset"
+                ],
+                "suppress": [
+                    "UnsetOr[bool]",
+                    "Unset"
+                ],
+                "request_to_speak_timestamp": [
+                    "UnsetOr[t.Optional[str]]",
+                    "Unset"
+                ]
+            }
+        },
+        "modify_user_voice_state": {
+            "method": "PATCH",
+            "url": "/guilds/{guild_id}/voice-states/{user_id}",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake",
+                "user_id": "dt.Snowflake"
+            },
+            "json-parameters": {
+                "channel_id": "dt.Snowflake",
+                "suppress": [
+                    "UnsetOr[bool]",
+                    "Unset"
+                ]
+            }
+        }
+    }
+}

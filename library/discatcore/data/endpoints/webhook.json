@@ -1,0 +1,241 @@
+{
+    "name": "WebhookEndpoints",
+    "requires": [
+        "typing",
+        "discord_typings",
+        "Unset"
+    ],
+    "methods": {
+        "create_webhook": {
+            "method": "POST",
+            "url": "/channels/{channel_id}/webhooks",
+            "url-parameters": {
+                "channel_id": "dt.Snowflake"
+            },
+            "json-parameters": {
+                "name": "str",
+                "avatar": [
+                    "UnsetOr[t.Optional[str]]",
+                    "Unset"
+                ]
+            },
+            "supports-reason": true
+        },
+        "get_channel_webhooks": {
+            "method": "GET",
+            "url": "/channels/{channel_id}/webhooks",
+            "url-parameters": {
+                "channel_id": "dt.Snowflake"
+            }
+        },
+        "get_guild_webhooks": {
+            "method": "GET",
+            "url": "/guilds/{guild_id}/webhooks",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake"
+            }
+        },
+        "get_webhook": {
+            "method": "GET",
+            "url": "/webhooks/{webhook_id}",
+            "url-parameters": {
+                "webhook_id": "dt.Snowflake"
+            }
+        },
+        "get_webhook_with_token": {
+            "method": "GET",
+            "url": "/webhooks/{webhook_id}/{webhook_token}",
+            "url-parameters": {
+                "webhook_id": "dt.Snowflake",
+                "webhook_token": "str"
+            }
+        },
+        "modify_webhook": {
+            "method": "PATCH",
+            "url": "/webhooks/{webhook_id}",
+            "url-parameters": {
+                "webhook_id": "dt.Snowflake"
+            },
+            "json-parameters": {
+                "name": [
+                    "UnsetOr[str]",
+                    "Unset"
+                ],
+                "avatar": [
+                    "UnsetOr[t.Optional[str]]",
+                    "Unset"
+                ],
+                "channel_id": [
+                    "UnsetOr[dt.Snowflake]",
+                    "Unset"
+                ]
+            },
+            "supports-reason": true
+        },
+        "modify_webhook_with_token": {
+            "method": "PATCH",
+            "url": "/webhooks/{webhook_id}/{webhook_token}",
+            "url-parameters": {
+                "webhook_id": "dt.Snowflake",
+                "webhook_token": "str"
+            },
+            "json-parameters": {
+                "name": [
+                    "UnsetOr[str]",
+                    "Unset"
+                ],
+                "avatar": [
+                    "UnsetOr[t.Optional[str]]",
+                    "Unset"
+                ]
+            },
+            "supports-reason": true
+        },
+        "delete_webhook": {
+            "method": "DELETE",
+            "url": "/webhooks/{webhook_id}",
+            "url-parameters": {
+                "webhook_id": "dt.Snowflake"
+            },
+            "supports-reason": true
+        },
+        "delete_webhook_with_token": {
+            "method": "DELETE",
+            "url": "/webhooks/{webhook_id}/{webhook_token}",
+            "url-parameters": {
+                "webhook_id": "dt.Snowflake",
+                "webhook_token": "str"
+            },
+            "supports-reason": true
+        },
+        "execute_webhook": {
+            "method": "POST",
+            "url": "/webhooks/{webhook_id}/{webhook_token}",
+            "url-parameters": {
+                "webhook_id": "dt.Snowflake",
+                "webhook_token": "str"
+            },
+            "query-parameters": {
+                "wait": [
+                    "bool",
+                    "False"
+                ],
+                "thread_id": [
+                    "UnsetOr[dt.Snowflake]",
+                    "Unset"
+                ]
+            },
+            "json-parameters": {
+                "content": [
+                    "UnsetOr[str]",
+                    "Unset"
+                ],
+                "username": [
+                    "UnsetOr[str]",
+                    "Unset"
+                ],
+                "avatar_url": [
+                    "UnsetOr[str]",
+                    "Unset"
+                ],
+                "tts": [
+                    "UnsetOr[bool]",
+                    "Unset"
+                ],
+                "embeds": [
+                    "UnsetOr[list[dt.EmbedData]]",
+                    "Unset"
+                ],
+                "allowed_mentions": [
+                    "UnsetOr[dt.AllowedMentionsData]",
+                    "Unset"
+                ],
+                "components": [
+                    "UnsetOr[list[dt.ComponentData]]",
+                    "Unset"
+                ],
+                "attachments": [
+                    "UnsetOr[list[dt.PartialAttachmentData]]",
+                    "Unset"
+                ],
+                "flags": [
+                    "UnsetOr[int]",
+                    "Unset"
+                ],
+                "thread_name": [
+                    "UnsetOr[str]",
+                    "Unset"
+                ]
+            },
+            "supports-files": true
+        },
+        "get_webhook_message": {
+            "method": "GET",
+            "url": "/webhooks/{webhook_id}/{webhook_token}/messages/{message_id}",
+            "url-parameters": {
+                "webhook_id": "dt.Snowflake",
+                "webhook_token": "str",
+                "message_id": "dt.Snowflake"
+            },
+            "query-parameters": {
+                "thread_id": [
+                    "UnsetOr[dt.Snowflake]",
+                    "Unset"
+                ]
+            }
+        },
+        "edit_webhook_message": {
+            "method": "PATCH",
+            "url": "/webhooks/{webhook_id}/{webhook_token}/messages/{message_id}",
+            "url-parameters": {
+                "webhook_id": "dt.Snowflake",
+                "webhook_token": "str",
+                "message_id": "dt.Snowflake"
+            },
+            "query-parameters": {
+                "thread_id": [
+                    "UnsetOr[dt.Snowflake]",
+                    "Unset"
+                ]
+            },
+            "json-parameters": {
+                "content": [
+                    "UnsetOr[t.Optional[str]]",
+                    "Unset"
+                ],
+                "embeds": [
+                    "UnsetOr[t.Optional[list[dt.EmbedData]]]",
+                    "Unset"
+                ],
+                "allowed_mentions": [
+                    "UnsetOr[t.Optional[dt.AllowedMentionsData]]",
+                    "Unset"
+                ],
+                "components": [
+                    "UnsetOr[t.Optional[list[dt.ComponentData]]]",
+                    "Unset"
+                ],
+                "attachments": [
+                    "UnsetOr[t.Optional[list[dt.PartialAttachmentData]]]",
+                    "Unset"
+                ]
+            },
+            "supports-files": true
+        },
+        "delete_webhook_message": {
+            "method": "DELETE",
+            "url": "/webhooks/{webhook_id}/{webhook_token}/messages/{message_id}",
+            "url-parameters": {
+                "webhook_id": "dt.Snowflake",
+                "webhook_token": "str",
+                "message_id": "dt.Snowflake"
+            },
+            "query-parameters": {
+                "thread_id": [
+                    "UnsetOr[dt.Snowflake]",
+                    "Unset"
+                ]
+            }
+        }
+    }
+}

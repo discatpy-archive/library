@@ -1,0 +1,166 @@
+{
+    "name": "InteractionEndpoints",
+    "requires": [
+        "typing",
+        "discord_typings",
+        "Unset"
+    ],
+    "methods": {
+        "create_interaction_response": {
+            "method": "POST",
+            "url": "/interactions/{interaction_id}/{interaction_token}/callback",
+            "url-parameters": {
+                "interaction_id": "dt.Snowflake",
+                "interaction_token": "str"
+            },
+            "json-parameters": {
+                "type": "dt.InteractionCallbackTypes",
+                "data": [
+                    "UnsetOr[dt.InteractionCallbackData]",
+                    "Unset"
+                ]
+            },
+            "supports-files": true
+        },
+        "get_original_interaction_response": {
+            "method": "GET",
+            "url": "/webhooks/{application_id}/{interaction_token}/messages/@original",
+            "url-parameters": {
+                "application_id": "dt.Snowflake",
+                "interaction_token": "str"
+            }
+        },
+        "edit_original_interaction_response": {
+            "method": "PATCH",
+            "url": "/webhooks/{application_id}/{interaction_token}/messages/@original",
+            "url-parameters": {
+                "application_id": "dt.Snowflake",
+                "interaction_token": "str"
+            },
+            "json-parameters": {
+                "content": [
+                    "UnsetOr[t.Optional[str]]",
+                    "Unset"
+                ],
+                "embeds": [
+                    "UnsetOr[t.Optional[list[dt.EmbedData]]]",
+                    "Unset"
+                ],
+                "allowed_mentions": [
+                    "UnsetOr[t.Optional[dt.AllowedMentionsData]]",
+                    "Unset"
+                ],
+                "components": [
+                    "UnsetOr[t.Optional[list[dt.ComponentData]]]",
+                    "Unset"
+                ],
+                "attachments": [
+                    "UnsetOr[t.Optional[list[dt.PartialAttachmentData]]]",
+                    "Unset"
+                ]
+            },
+            "supports-files": true
+        },
+        "delete_original_interaction_response": {
+            "method": "DELETE",
+            "url": "/webhooks/{application_id}/{interaction_token}/messages/@original",
+            "url-parameters": {
+                "application_id": "dt.Snowflake",
+                "interaction_token": "str"
+            }
+        },
+        "create_followup_message": {
+            "method": "POST",
+            "url": "/webhooks/{application_id}/{interaction_token}",
+            "url-parameters": {
+                "application_id": "dt.Snowflake",
+                "interaction_token": "str"
+            },
+            "json-parameters": {
+                "content": [
+                    "UnsetOr[str]",
+                    "Unset"
+                ],
+                "tts": [
+                    "UnsetOr[bool]",
+                    "Unset"
+                ],
+                "embeds": [
+                    "UnsetOr[list[dt.EmbedData]]",
+                    "Unset"
+                ],
+                "allowed_mentions": [
+                    "UnsetOr[dt.AllowedMentionsData]",
+                    "Unset"
+                ],
+                "components": [
+                    "UnsetOr[list[dt.ComponentData]]",
+                    "Unset"
+                ],
+                "attachments": [
+                    "UnsetOr[list[dt.PartialAttachmentData]]",
+                    "Unset"
+                ],
+                "flags": [
+                    "UnsetOr[int]",
+                    "Unset"
+                ],
+                "thread_name": [
+                    "UnsetOr[str]",
+                    "Unset"
+                ]
+            },
+            "supports-files": true
+        },
+        "get_followup_message": {
+            "method": "GET",
+            "url": "/webhooks/{application_id}/{interaction_token}/messages/{message_id}",
+            "url-parameters": {
+                "application_id": "dt.Snowflake",
+                "interaction_token": "str",
+                "message_id": "dt.Snowflake"
+            }
+        },
+        "edit_followup_message": {
+            "method": "PATCH",
+            "url": "/webhooks/{application_id}/{interaction_token}/messages/{message_id}",
+            "url-parameters": {
+                "application_id": "dt.Snowflake",
+                "interaction_token": "str",
+                "message_id": "dt.Snowflake"
+            },
+            "json-parameters": {
+                "content": [
+                    "UnsetOr[t.Optional[str]]",
+                    "Unset"
+                ],
+                "embeds": [
+                    "UnsetOr[t.Optional[list[dt.EmbedData]]]",
+                    "Unset"
+                ],
+                "allowed_mentions": [
+                    "UnsetOr[t.Optional[dt.AllowedMentionsData]]",
+                    "Unset"
+                ],
+                "components": [
+                    "UnsetOr[t.Optional[list[dt.ComponentData]]]",
+                    "Unset"
+                ],
+                "attachments": [
+                    "UnsetOr[t.Optional[list[dt.PartialAttachmentData]]]",
+                    "Unset"
+                ]
+            },
+            "supports-files": true
+        },
+        "delete_followup_message": {
+            "method": "DELETE",
+            "url": "/webhooks/{application_id}/{interaction_token}/messages/{message_id}",
+            "url-parameters": {
+                "application_id": "dt.Snowflake",
+                "interaction_token": "str",
+                "message_id": "dt.Snowflake"
+            }
+        }
+    }
+}

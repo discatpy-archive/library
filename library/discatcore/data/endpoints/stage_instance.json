@@ -1,0 +1,59 @@
+{
+    "name": "StageInstanceEndpoints",
+    "requires": [
+        "discord_typings",
+        "Unset"
+    ],
+    "methods": {
+        "create_stage_instance": {
+            "method": "POST",
+            "url": "/stage-instances",
+            "json-parameters": {
+                "channel_id": "dt.Snowflake",
+                "topic": "str",
+                "privacy_level": [
+                    "UnsetOr[dt.StageInstancePrivacyLevels]",
+                    "Unset"
+                ],
+                "send_start_notification": [
+                    "UnsetOr[bool]",
+                    "Unset"
+                ]
+            },
+            "supports-reason": true
+        },
+        "get_stage_instance": {
+            "method": "GET",
+            "url": "/stage-instances/{channel_id}",
+            "url-parameters": {
+                "channel_id": "dt.Snowflake"
+            }
+        },
+        "modify_stage_instance": {
+            "method": "PATCH",
+            "url": "/stage-instances/{channel_id}",
+            "url-parameters": {
+                "channel_id": "dt.Snowflake"
+            },
+            "json-parameters": {
+                "topic": [
+                    "UnsetOr[str]",
+                    "Unset"
+                ],
+                "privacy_level": [
+                    "UnsetOr[dt.StageInstancePrivacyLevels]",
+                    "Unset"
+                ]
+            },
+            "supports-reason": true
+        },
+        "delete_stage_instance": {
+            "method": "DELETE",
+            "url": "/stage-instances/{channel_id}",
+            "url-parameters": {
+                "channel_id": "dt.Snowflake"
+            },
+            "supports-reason": true
+        }
+    }
+}

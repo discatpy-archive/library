@@ -1,0 +1,73 @@
+# Build system/Metadata (Poetry)
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+
+[tool.poetry]
+name = "discatcore"
+version = "0.1.0"
+description = "A lower level Discord API wrapper that functions as the core layer of DisCatPy."
+license = "MIT"
+authors = ["EmreTech <emreterzioglu49@gmail.com>"]
+readme = "README.md"
+repository = "https://github.com/discatpy-dev/core"
+keywords = [
+    "discord",
+    "api",
+    "discord api",
+    "wrapper",
+    "discord api wrapper",
+    "internet",
+    "networking",
+    "bots",
+    "discord bots",
+    "discord framework",
+    "low level",
+    "typed",
+]
+classifiers = [
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Development Status :: 3 - Alpha",
+    "Framework :: AsyncIO",
+    "Framework :: aiohttp",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "Topic :: Internet",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+
+[tool.poetry.dependencies]
+python = ">=3.9"
+aiohttp = ">=3.6.0,<3.9.0"
+discord-typings = {git = "https://github.com/Bluenix2/discord-typings.git"}
+
+[tool.poetry.urls]
+"Bug Tracker" = "https://github.com/discatpy-dev/library/issues"
+
+
+# Formatting
+
+
+[tool.black]
+line-length = 100
+target-version = ["py39", "py310"]
+
+
+[tool.isort]
+profile = "black"
+py_version = 39
+line_length = 100
+combine_as_imports = true
+filter_files = true
+
+
+[tool.pyright]
+strict = ["discatcore/**"]
