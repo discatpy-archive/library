@@ -1,0 +1,9 @@
+{
+    "name": "VoiceEndpoints",
+    "methods": {
+        "list_voice_regions": {
+            "method": "GET",
+            "url": "/voice/regions"
+        }
+    }
+}

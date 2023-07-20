@@ -1,0 +1,65 @@
+{
+    "name": "EmojiEndpoints",
+    "requires": [
+        "discord_typings",
+        "Unset"
+    ],
+    "methods": {
+        "list_guild_emojis": {
+            "method": "GET",
+            "url": "/guilds/{guild_id}/emojis",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake"
+            }
+        },
+        "get_guild_emoji": {
+            "method": "GET",
+            "url": "/guilds/{guild_id}/emojis/{emoji_id}",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake",
+                "emoji_id": "dt.Snowflake"
+            }
+        },
+        "create_guild_emoji": {
+            "method": "POST",
+            "url": "/guilds/{guild_id}/emojis",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake"
+            },
+            "json-parameters": {
+                "name": "str",
+                "image": "str",
+                "roles": "list[dt.Snowflake]"
+            },
+            "supports-reason": true
+        },
+        "modify_guild_emoji": {
+            "method": "PATCH",
+            "url": "/guilds/{guild_id}/emojis/{emoji_id}",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake",
+                "emoji_id": "dt.Snowflake"
+            },
+            "json-parameters": {
+                "name": [
+                    "UnsetOr[str]",
+                    "Unset"
+                ],
+                "roles": [
+                    "UnsetOr[list[dt.Snowflake]]",
+                    "Unset"
+                ]
+            },
+            "supports-reason": true
+        },
+        "delete_guild_emoji": {
+            "method": "DELETE",
+            "url": "/guilds/{guild_id}/emojis/{emoji_id}",
+            "url-parameters": {
+                "guild_id": "dt.Snowflake",
+                "emoji_id": "dt.Snowflake"
+            },
+            "supports-reason": true
+        }
+    }
+}
