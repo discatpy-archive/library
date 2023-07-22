@@ -52,6 +52,11 @@ dynamic = ["version"]
 "Bug Tracker" = "https://github.com/discatpy-dev/library/issues"
 repository = "https://github.com/discatpy-dev/core"
 
+[project.optional-dependencies]
+speedup = [
+    "orjson~=3.9",
+]
+
 [tool.pdm.build]
 includes = []
 

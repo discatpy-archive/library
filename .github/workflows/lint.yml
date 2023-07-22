@@ -32,4 +32,5 @@ jobs:
             cd library/${{ matrix.library }}
 
             pdm install -dG lint
+            pdm install -G:all
             pdm run pyright src/${{ matrix.library }}
