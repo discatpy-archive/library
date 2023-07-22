@@ -18,6 +18,7 @@ from ..errors import GatewayReconnect
 from ..http import HTTPClient
 from ..utils.dispatcher import Dispatcher
 from ..utils.json import dumps, loads
+from . import events
 from .ratelimiter import Ratelimiter
 from .types import BaseTypedWSMessage, is_binary, is_text
 
@@ -203,9 +204,7 @@ class GatewayClient:
             await self.close(code=1012)
             return False
 
-        typed_msg: BaseTypedWSMessage[t.Any] = BaseTypedWSMessage.convert_from_untyped(
-            msg
-        )
+        typed_msg: BaseTypedWSMessage[t.Any] = BaseTypedWSMessage.convert_from_untyped(msg)
 
         _log.debug("Received WS message from Gateway with type %s", typed_msg.type.name)
 
@@ -239,14 +238,8 @@ class GatewayClient:
         self._ws = await self._http.ws_connect(url)
 
         res = await self.receive()
-        if (
-            res
-            and self.recent_payload is not None
-            and self.recent_payload["op"] == HELLO
-        ):
-            self.heartbeat_interval = (
-                self.recent_payload["d"]["heartbeat_interval"] / 1000
-            )
+        if res and self.recent_payload is not None and self.recent_payload["op"] == HELLO:
+            self.heartbeat_interval = self.recent_payload["d"]["heartbeat_interval"] / 1000
         else:
             # I guess Discord is having issues today if we get here
             # Disconnect and DO NOT ATTEMPT a reconnection
@@ -279,9 +272,7 @@ class GatewayClient:
                 and (datetime.datetime.now() - self._last_heartbeat_ack).total_seconds()
                 > self.heartbeat_timeout
             ):
-                _log.debug(
-                    "Zombified connection detected. Closing connection with code 1008."
-                )
+                _log.debug("Zombified connection detected. Closing connection with code 1008.")
                 await self.close(code=1008)
                 return
 
@@ -289,32 +280,31 @@ class GatewayClient:
 
             if res and self.recent_payload is not None:
                 op = int(self.recent_payload["op"])
-                if op == DISPATCH and self.recent_payload.get("t") is not None:
-                    event_name = str(self.recent_payload.get("t")).lower()
-                    data = self.recent_payload.get("d")
+                if op == DISPATCH and (event_name := self.recent_payload.get("t")) is not None:
+                    data = t.cast(t.Mapping[str, t.Any], self.recent_payload.get("d"))
+
+                    self._dispatcher.consume(event_name, self, data)
+                    await self._dispatcher.dispatch(events.DispatchEvent(data))
 
                     if event_name == "ready":
                         ready_data = t.cast(dt.ReadyData, data)
                         self.session_id = ready_data["session_id"]
                         self.resume_url = ready_data["resume_gateway_url"]
 
-                    args = (data,)
-                    if data is None:
-                        args = ()
-                    self._dispatcher.dispatch(event_name, *args)
+                        await self._dispatcher.dispatch(events.ReadyEvent(ready_data))
 
                 # these should be rare, but it's better to be safe than sorry
                 elif op == HEARTBEAT:
                     await self.heartbeat()
 
                 elif op == RECONNECT:
-                    self._dispatcher.dispatch("reconnect")
+                    await self._dispatcher.dispatch(events.ReconnectEvent())
                     await self.close(code=1012)
                     return
 
                 elif op == INVALID_SESSION:
                     self.can_resume = bool(self.recent_payload.get("d"))
-                    self._dispatcher.dispatch("invalid_session", self.can_resume)
+                    await self._dispatcher.dispatch(events.InvalidSessionEvent(self.can_resume))
                     await self.close(code=1012)
                     return
 

@@ -10,7 +10,7 @@ A lower level Discord API wrapper that functions as the core layer of DisCatPy.
 import discatcore
 import asyncio
 
-http = discatcore.HTTPClient("token")
+http = discatcore.http.HTTPClient("token")
 CHANNEL = 000000000000000000
 
 async def main():
@@ -29,16 +29,16 @@ import discatcore
 import asyncio
 import discord_typings
 
-http = discatcore.HTTPClient("token")
-dispatcher = discatcore.Dispatcher()
+http = discatcore.http.HTTPClient("token")
+dispatcher = discatcore.utils.Dispatcher()
 # Every intent except the GUILD_MEMBERS, GUILD_PRESENCES, and MESSAGE_CONTENT intents
 # calculated via https://discord-intents-calculator.vercel.app
 intents = 3243773
-gateway = discatcore.GatewayClient(http, dispatcher, intents=intents.value)
+gateway = discatcore.gateway.GatewayClient(http, dispatcher, intents=intents.value)
 
-@dispatcher.new_event("ready").callback
-async def ready(event: discord_typings.ReadyData):
-    print(event)
+@dispatcher.listen_to(discatcore.gateway.ReadyEvent)
+async def ready(event):
+    print(event.data)
 
 async def main():
     url: str | None = None

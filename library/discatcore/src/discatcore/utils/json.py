@@ -10,7 +10,12 @@ try:
 except ImportError:
     import json
 
-__all__ = ("dumps", "loads")
+__all__ = ("JSONObject", "dumps", "loads")
+
+
+JSONObject = t.Union[
+    str, int, float, bool, None, t.Sequence["JSONObject"], t.Mapping[str, "JSONObject"]
+]
 
 
 def dumps(obj: t.Any) -> str:
