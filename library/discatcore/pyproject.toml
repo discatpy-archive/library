@@ -1,19 +1,21 @@
-# Build system/Metadata (Poetry)
-
+# Build system/Metadata (PDM)
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
 
-
-[tool.poetry]
+[project]
+authors = [
+    {name = "EmreTech", email = "emreterzioglu49@gmail.com"},
+]
+requires-python = ">=3.9"
+dependencies = [
+    "aiohttp<3.9.0,>=3.6.0",
+    "discord-typings @ git+https://github.com/Bluenix2/discord-typings.git",
+]
 name = "discatcore"
-version = "0.1.0"
 description = "A lower level Discord API wrapper that functions as the core layer of DisCatPy."
-license = "MIT"
-authors = ["EmreTech <emreterzioglu49@gmail.com>"]
 readme = "README.md"
-repository = "https://github.com/discatpy-dev/core"
 keywords = [
     "discord",
     "api",
@@ -43,23 +45,30 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Typing :: Typed",
 ]
+license = {text = "MIT"}
+dynamic = ["version"]
 
-[tool.poetry.dependencies]
-python = ">=3.9"
-aiohttp = ">=3.6.0,<3.9.0"
-discord-typings = {git = "https://github.com/Bluenix2/discord-typings.git"}
-
-[tool.poetry.urls]
+[project.urls]
 "Bug Tracker" = "https://github.com/discatpy-dev/library/issues"
+repository = "https://github.com/discatpy-dev/core"
 
+[tool.pdm.build]
+includes = []
+
+[tool.pdm.dev-dependencies]
+lint = [
+    "pyright==1.1.318",
+]
+
+[tool.pdm.version]
+source = "file"
+path = "src/discatcore/__init__.py"
 
 # Formatting
-
 
 [tool.black]
 line-length = 100
 target-version = ["py39", "py310"]
-
 
 [tool.isort]
 profile = "black"
@@ -67,7 +76,6 @@ py_version = 39
 line_length = 100
 combine_as_imports = true
 filter_files = true
-
 
 [tool.pyright]
 strict = ["discatcore/**"]
