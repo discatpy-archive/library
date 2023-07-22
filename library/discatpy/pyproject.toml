@@ -62,7 +62,7 @@ lint = [
 
 [tool.pdm.version]
 source = "file"
-path = "src/discatcore/__init__.py"
+path = "src/discatpy/__init__.py"
 
 # Formatting
 
