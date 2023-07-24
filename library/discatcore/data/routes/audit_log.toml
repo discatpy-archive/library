@@ -1,4 +1,4 @@
-name = "AuditLogEndpoints"
+name = "AuditLogRoutes"
 
 [[methods]]
 name = "get_guild_audit_log"

@@ -1,4 +1,4 @@
-name = "VoiceEndpoints"
+name = "VoiceRoutes"
 
 [[methods]]
 name = "list_voice_regions"
