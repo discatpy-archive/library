@@ -1,0 +1,63 @@
+name = "AutoModerationRoutes"
+
+[[methods]]
+name = "list_auto_moderation_rules"
+method = "GET"
+url.link = "/guilds/{guild_id}/auto-moderation/rules"
+url.parameters = [{name = "guild_id", type = "dt.Snowflake"}]
+
+[[methods]]
+name = "get_auto_moderation_rule"
+method = "GET"
+url.link = "/guilds/{guild_id}/auto-moderation/rules/{auto_moderation_rule_id}"
+url.parameters = [
+    {name = "guild_id", type = "dt.Snowflake"},
+    {name = "auto_moderation_rule_id", type = "dt.Snowflake"},
+]
+
+[[methods]]
+name = "create_auto_moderation_rule"
+method = "POST"
+url.link = "/guilds/{guild_id}/auto-moderation/rules"
+url.parameters = [{name = "guild_id", type = "dt.Snowflake"}]
+json.parameters = [
+    {name = "name", type = "str"},
+    {name = "event_type", type = "dt.AutoModerationEventTypes"},
+    {name = "trigger_type", type = "dt.AutoModerationTriggerTypes"},
+    {name = "trigger_metadata", type = "UnsetOr[dt.AutoModerationTriggerMetadataData]"},
+    {name = "actions", type = "list[dt.AutoModerationActionData]"},
+    {name = "enabled", type = "UnsetOr[bool]"},
+    {name = "exempt_roles", type = "UnsetOr[list[dt.Snowflake]]"},
+    {name = "exempt_channels", type = "UnsetOr[list[dt.Snowflake]]"}
+]
+supports.reason = true
+
+[[methods]]
+name = "modify_auto_moderation_rule"
+method = "PATCH"
+url.link = "/guilds/{guild_id}/auto-moderation/rules/{auto_moderation_rule_id}"
+url.parameters = [
+    {name = "guild_id", type = "dt.Snowflake"},
+    {name = "auto_moderation_rule_id", type = "dt.Snowflake"},
+]
+json.parameters = [
+    {name = "name", type = "UnsetOr[str]"},
+    {name = "event_type", type = "UnsetOr[dt.AutoModerationEventTypes]"},
+    {name = "trigger_type", type = "UnsetOr[dt.AutoModerationTriggerTypes]"},
+    {name = "trigger_metadata", type = "UnsetOr[dt.AutoModerationTriggerMetadataData]"},
+    {name = "actions", type = "UnsetOr[list[dt.AutoModerationActionData]]"},
+    {name = "enabled", type = "UnsetOr[bool]"},
+    {name = "exempt_roles", type = "UnsetOr[list[dt.Snowflake]]"},
+    {name = "exempt_channels", type = "UnsetOr[list[dt.Snowflake]]"}
+]
+supports.reason = true
+
+[[methods]]
+name = "delete_auto_moderation_rule"
+method = "DELETE"
+url.link = "/guilds/{guild_id}/auto-moderation/rules/{auto_moderation_rule_id}"
+url.parameters = [
+    {name = "guild_id", type = "dt.Snowflake"},
+    {name = "auto_moderation_rule_id", type = "dt.Snowflake"},
+]
+supports.reason = true

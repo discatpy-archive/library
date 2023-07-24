@@ -1,0 +1,61 @@
+name = "GuildTemplateRoutes"
+
+[[methods]]
+name = "get_guild_template"
+method = "GET"
+url.link = "/guilds/templates/{template_code}"
+url.parameters = [{name = "template_code", type = "dt.Snowflake"}]
+
+[[methods]]
+name = "create_guild_from_guild_template"
+method = "POST"
+url.link = "/guilds/templates/{template_code}"
+url.parameters = [{name = "template_code", type = "dt.Snowflake"}]
+json.parameters = [
+    {name = "name", type = "str"},
+    {name = "icon", type = "UnsetOr[str]"},
+]
+
+[[methods]]
+name = "get_guild_templates"
+method = "GET"
+url.link = "/guilds/{guild_id}/templates"
+url.parameters = [{name = "guild_id", type = "dt.Snowflake"}]
+
+[[methods]]
+name = "create_guild_template"
+method = "POST"
+url.link = "/guilds/{guild_id}/templates"
+url.parameters = [{name = "guild_id", type = "dt.Snowflake"}]
+json.parameters = [
+    {name = "name", type = "str"},
+    {description = "description", type = "UnsetOr[t.Optional[str]]"},
+]
+
+[[methods]]
+name = "sync_guild_template"
+method = "PUT"
+url.link = "/guilds/{guild_id}/templates/{template_code}"
+url.parameters = [
+    {name = "guild_id", type = "dt.Snowflake"},
+    {name = "template_code", type = "dt.Snowflake"},
+]
+
+[[methods]]
+name = "modify_guild_template"
+method = "PATCH"
+url.link = "/guilds/{guild_id}/templates"
+url.parameters = [{name = "guild_id", type = "dt.Snowflake"}]
+json.parameters = [
+    {name = "name", type = "UnsetOr[str]"},
+    {description = "description", type = "UnsetOr[t.Optional[str]]"},
+]
+
+[[methods]]
+name = "delete_guild_template"
+method = "DELETE"
+url.link = "/guilds/{guild_id}/templates/{template_code}"
+url.parameters = [
+    {name = "guild_id", type = "dt.Snowflake"},
+    {name = "template_code", type = "dt.Snowflake"},
+]

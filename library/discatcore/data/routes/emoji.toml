@@ -1,0 +1,51 @@
+name = "EmojiRoutes"
+
+[[methods]]
+name = "list_guild_emojis"
+method = "GET"
+url.link = "/guilds/{guild_id}/emojis"
+url.parameters = [{name = "guild_id", type = "dt.Snowflake"}]
+
+[[methods]]
+name = "get_guild_emoji"
+method = "GET"
+url.link = "/guilds/{guild_id}/emojis/{emoji_id}"
+url.parameters = [
+    {name = "guild_id", type = "dt.Snowflake"},
+    {name = "emoji_id", type = "dt.Snowflake"},
+]
+
+[[methods]]
+name = "create_guild_emoji"
+method = "POST"
+url.link = "/guilds/{guild_id}/emojis"
+url.parameters = [{name = "guild_id", type = "dt.Snowflake"}]
+json.parameters = [
+    {name = "name", type = "str"},
+    {name = "image", type = "str"},
+    {name = "roles", type = "list[dt.Snowflake]"},
+]
+supports.reason = true
+
+[[methods]]
+name = "modify_guild_emoji"
+method = "PATCH"
+url.link = "/guilds/{guild_id}/emojis/{emoji_id}"
+url.parameters = [
+    {name = "guild_id", type = "dt.Snowflake"},
+    {name = "emoji_id", type = "dt.Snowflake"},
+]
+json.parameters = [
+    {name = "name", type = "UnsetOr[str]"},
+    {name = "roles", type = "UnsetOr[list[dt.Snowflake]]"},
+]
+
+[[methods]]
+name = "delete_guild_emoji"
+method = "DELETE"
+url.link = "/guilds/{guild_id}/emojis/{emoji_id}"
+url.parameters = [
+    {name = "guild_id", type = "dt.Snowflake"},
+    {name = "emoji_id", type = "dt.Snowflake"},
+]
+supports.reason = true

@@ -1,0 +1,77 @@
+name = "StickerRoutes"
+
+[[methods]]
+name = "get_sticker"
+method = "GET"
+url.link = "/stickers/{sticker_id}"
+url.parameters = [{name = "sticker_id", type = "dt.Snowflake"}]
+
+[[methods]]
+name = "list_nitro_sticker_packs"
+method = "GET"
+url = "/sticker-packs"
+
+[[methods]]
+name = "list_guild_stickers"
+method = "GET"
+url.link = "/guilds/{guild_id}/stickers"
+url.parameters = [{name = "guild_id", type = "dt.Snowflake"}]
+
+[[methods]]
+name = "get_guild_sticker"
+method = "GET"
+url.link = "/guilds/{guild_id}/stickers/{sticker_id}"
+url.parameters = [
+    {name = "guild_id", type = "dt.Snowflake"},
+    {name = "sticker_id", type = "dt.Snowflake"},
+]
+
+[[methods]]
+name = "create_guild_sticker"
+method = "POST"
+url.link = "/guilds/{guild_id}/stickers"
+url.parameters = [
+    {name = "guild_id", type = "dt.Snowflake"}
+]
+# this route has specific multipart data we have to send
+extras.parameters = [
+    {name = "name", type = "str"},
+    {description = "description", type = "str", default = '""'},
+    {name = "tags", type = "str"},
+    {name = "file", type = "BasicFile"},
+]
+extras.request_parameters = [
+    {name = "data", value = "form_data"}
+]
+extras.code = '''from aiohttp import FormData
+form_data = FormData()
+form_data.add_field("name", name)
+form_data.add_field("description", description)
+form_data.add_field("tags", tags)
+form_data.add_field("file", file.fp, content_type=file.content_type)
+'''
+
+[[methods]]
+name = "modify_guild_sticker"
+method = "PATCH"
+url.link = "/guilds/{guild_id}/stickers/{sticker_id}"
+url.parameters = [
+    {name = "guild_id", type = "dt.Snowflake"},
+    {name = "sticker_id", type = "dt.Snowflake"},
+]
+json.parameters = [
+    {name = "name", type = "UnsetOr[str]"},
+    {name = "description", type = "UnsetOr[t.Optional[str]]"},
+    {name = "tags", type = "UnsetOr[str]"},
+]
+supports.reason = true
+
+[[methods]]
+name = "delete_guild_sticker"
+method = "DELETE"
+url.link = "/guilds/{guild_id}/stickers/{sticker_id}"
+url.parameters = [
+    {name = "guild_id", type = "dt.Snowflake"},
+    {name = "sticker_id", type = "dt.Snowflake"},
+]
+supports.reason = true

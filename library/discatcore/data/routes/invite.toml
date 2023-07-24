@@ -1,0 +1,19 @@
+name = "InviteRoutes"
+
+[[methods]]
+name = "get_invite"
+method = "GET"
+url.link = "/invites/{invite_code}"
+url.parameters = [
+    {name = "invite_code", type = "dt.Snowflake"},
+    {name = "with_counts", type = "UnsetOr[bool]"},
+    {name = "with_expiration", type = "UnsetOr[bool]"},
+    {name = "guild_scheduled_event_id", type = "UnsetOr[dt.Snowflake]"},
+]
+
+[[methods]]
+name = "delete_invite"
+method = "DELETE"
+url.link = "/invites/{invite_code}"
+url.parameters = [{name = "invite_code", type = "dt.Snowflake"}]
+supports.reason = true

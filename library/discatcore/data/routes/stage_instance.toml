@@ -1,0 +1,37 @@
+name = "StageInstanceRoutes"
+
+[[methods]]
+name = "create_stage_instance"
+method = "POST"
+url = "/stage-instances"
+json.parameters = [
+    {name = "channel_id", type = "dt.Snowflake"},
+    {name = "topic", type = "str"},
+    {name = "privacy_level", type = "UnsetOr[dt.StageInstancePrivacyLevels]"},
+    {name = "send_start_notification", type = "UnsetOr[bool]"},
+]
+supports.reason = true
+
+[[methods]]
+name = "get_stage_instance"
+method = "GET"
+url.link = "/stage-instances/{channel_id}"
+url.parameters = [{name = "channel_id", type = "dt.Snowflake"}]
+
+[[methods]]
+name = "modify_stage_instance"
+method = "PATCH"
+url.link = "/stage-instances/{channel_id}"
+url.parameters = [{name = "channel_id", type = "dt.Snowflake"}]
+json.parameters = [
+    {name = "topic", type = "str"},
+    {name = "privacy_level", type = "UnsetOr[dt.StageInstancePrivacyLevels]"},
+]
+supports.reason = true
+
+[[methods]]
+name = "delete_stage_instance"
+method = "DELETE"
+url.link = "/stage-instances/{channel_id}"
+url.parameters = [{name = "channel_id", type = "dt.Snowflake"}]
+supports.reason = true
