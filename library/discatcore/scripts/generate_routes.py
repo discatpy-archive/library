@@ -215,14 +215,18 @@ class ExtrasSpec(TypedDict):
     code: NotRequired[str]
 
 
+class SupportsParamsSpec(TypedDict, total=False):
+    reason: bool
+    files: bool
+
+
 class RouteSpec(TypedDict):
     name: str
     method: str
     url: URLSpec
     json: NotRequired[JSONSpec]
     extras: NotRequired[ExtrasSpec]
-    supports_reason: NotRequired[bool]
-    supports_files: NotRequired[bool]
+    supports: NotRequired[SupportsParamsSpec]
 
 
 class FileSpec(TypedDict):
@@ -292,8 +296,12 @@ def process_route_func(func: RouteSpec):
         extra_request_params = extras["request_parameters"]
         code = extras.get("code")
 
-    supports_reason = func.get("supports_reason", False)
-    supports_files = func.get("supports_files", False)
+    supports = func.get("supports")
+    supports_reason = False
+    supports_files = False
+    if isinstance(supports, dict):
+        supports_reason = supports.get("reason", False)
+        supports_files = supports.get("files", False)
 
     func_creator = FunctionCreator(name)
     func_creator.args.append(FunctionArg("self"))
