@@ -1,0 +1,6 @@
+name = "VoiceEndpoints"
+
+[[methods]]
+name = "list_voice_regions"
+method = "GET"
+url = "/voice/regions"

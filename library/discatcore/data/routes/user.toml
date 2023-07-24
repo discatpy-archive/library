@@ -1,0 +1,54 @@
+name = "UserRoutes"
+
+[[methods]]
+name = "get_current_user"
+method = "GET"
+url = "/users/@me"
+
+[[methods]]
+name = "get_user"
+method = "GET"
+url.link = "/users/{user_id}"
+url.parameters = [{name = "user_id", type = "dt.Snowflake"}]
+
+[[methods]]
+name = "modify_current_user"
+method = "PATCH"
+url = "/users/@me"
+json.parameters = [
+    {name = "username", type = "UnsetOr[str]"},
+    {name = "avatar", type = "UnsetOr[t.Optional[str]]"},
+]
+
+[[methods]]
+name = "get_current_user_guilds"
+method = "GET"
+url.link = "/users/@me/guilds"
+url.parameters = [
+    {name = "before", type = "UnsetOr[dt.Snowflake]"},
+    {name = "after", type = "UnsetOr[dt.Snowflake]"},
+    {name = "limit", type = "int", default = "200"},
+]
+
+[[methods]]
+name = "get_current_user_guild_member"
+method = "GET"
+url.link = "/users/@me/guilds/{guild_id}/member"
+url.parameters = [{name = "guild_id", type = "dt.Snowflake"}]
+
+[[methods]]
+name = "leave_guild"
+method = "DELETE"
+url.link = "/users/@me/guilds/{guild_id}"
+url.parameters = [{name = "guild_id", type = "dt.Snowflake"}]
+
+[[methods]]
+name = "create_dm"
+method = "POST"
+url = "/users/@me/channels"
+json.parameters = [{name = "recipient_id", type = "dt.Snowflake"}]
+
+[[methods]]
+name = "get_user_connections"
+method = "GET"
+url = "/users/@me/connections"

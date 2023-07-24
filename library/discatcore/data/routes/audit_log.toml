@@ -1,0 +1,13 @@
+name = "AuditLogEndpoints"
+
+[[methods]]
+name = "get_guild_audit_log"
+method = "GET"
+url.link = "/guilds/{guild_id}/audit-logs"
+url.parameters = [
+    {name = "guild_id", type = "dt.Snowflake"},
+    {name = "user_id", type = "UnsetOr[dt.Snowflake]"},
+    {name = "action_type", type = "UnsetOr[dt.AuditLogEvents]"},
+    {name = "before", type = "UnsetOr[dt.Snowflake]"},
+    {name = "limit", type = "UnsetOr[int]"},
+]
