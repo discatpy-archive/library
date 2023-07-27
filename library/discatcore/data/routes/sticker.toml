@@ -36,7 +36,7 @@ url.parameters = [
 # this route has specific multipart data we have to send
 extras.parameters = [
     {name = "name", type = "str"},
-    {description = "description", type = "str", default = '""'},
+    {name = "description", type = "str", default = '""'},
     {name = "tags", type = "str"},
     {name = "file", type = "BasicFile"},
 ]

@@ -29,7 +29,7 @@ url.link = "/guilds/{guild_id}/templates"
 url.parameters = [{name = "guild_id", type = "dt.Snowflake"}]
 json.parameters = [
     {name = "name", type = "str"},
-    {description = "description", type = "UnsetOr[t.Optional[str]]"},
+    {name = "description", type = "UnsetOr[t.Optional[str]]"},
 ]
 
 [[methods]]
@@ -48,7 +48,7 @@ url.link = "/guilds/{guild_id}/templates"
 url.parameters = [{name = "guild_id", type = "dt.Snowflake"}]
 json.parameters = [
     {name = "name", type = "UnsetOr[str]"},
-    {description = "description", type = "UnsetOr[t.Optional[str]]"},
+    {name = "description", type = "UnsetOr[t.Optional[str]]"},
 ]
 
 [[methods]]
