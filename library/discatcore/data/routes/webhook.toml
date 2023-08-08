@@ -1,0 +1,147 @@
+name = "WebhookRoutes"
+
+[[methods]]
+name = "create_webhook"
+method = "POST"
+url.link = "/channels/{channel_id}/webhooks"
+url.parameters = [{name = "channel_id", type = "dt.Snowflake"}]
+json.parameters = [
+    {name = "name", type = "str"},
+    {name = "avatar", type = "UnsetOr[t.Optional[str]]"},
+]
+supports.reason = true
+
+[[methods]]
+name = "get_channel_webhooks"
+method = "GET"
+url.link = "/channels/{channel_id}/webhooks"
+url.parameters = [{name = "channel_id", type = "dt.Snowflake"}]
+
+[[methods]]
+name = "get_guild_webhooks"
+method = "GET"
+url.link = "/guilds/{guild_id}/webhooks"
+url.parameters = [{name = "guild_id", type = "dt.Snowflake"}]
+
+[[methods]]
+name = "get_webhook"
+method = "GET"
+url.link = "/webhooks/{webhook_id}"
+url.parameters = [{name = "webhook_id", type = "dt.Snowflake"}]
+
+[[methods]]
+name = "get_webhook_with_token"
+method = "GET"
+url.link = "/webhooks/{webhook_id}/{webhook_token}"
+url.parameters = [
+    {name = "webhook_id", type = "dt.Snowflake"},
+    {name = "webhook_token", type = "str"},
+]
+
+[[methods]]
+name = "modify_webhook"
+method = "PATCH"
+url.link = "/webhooks/{webhook_id}"
+url.parameters = [{name = "webhook_id", type = "dt.Snowflake"}]
+json.parameters = [
+    {name = "name", type = "UnsetOr[str]"},
+    {name = "avatar", type = "UnsetOr[t.Optional[str]]"},
+    {name = "channel_id", type = "UnsetOr[dt.Snowflake]"},
+]
+supports.reason = true
+
+[[methods]]
+name = "modify_webhook_with_token"
+method = "PATCH"
+url.link = "/webhooks/{webhook_id}/{webhook_token}"
+url.parameters = [
+    {name = "webhook_id", type = "dt.Snowflake"},
+    {name = "webhook_token", type = "str"},
+]
+json.parameters = [
+    {name = "name", type = "UnsetOr[str]"},
+    {name = "avatar", type = "UnsetOr[t.Optional[str]]"},
+]
+supports.reason = true
+
+[[methods]]
+name = "delete_webhook"
+method = "DELETE"
+url.link = "/webhooks/{webhook_id}"
+url.parameters = [{name = "webhook_id", type = "dt.Snowflake"}]
+supports.reason = true
+
+[[methods]]
+name = "delete_webhook_with_token"
+method = "DELETE"
+url.link = "/webhooks/{webhook_id}/{webhook_token}"
+url.parameters = [
+    {name = "webhook_id", type = "dt.Snowflake"},
+    {name = "webhook_token", type = "str"},
+]
+supports.reason = true
+
+[[methods]]
+name = "execute_webhook"
+method = "POST"
+url.link = "/webhooks/{webhook_id}/{webhook_token}"
+url.parameters = [
+    {name = "webhook_id", type = "dt.Snowflake"},
+    {name = "webhook_token", type = "str"},
+    {name = "wait", type = "bool", default = "False"},
+    {name = "thread_id", type = "UnsetOr[dt.Snowflake]"},
+]
+json.parameters = [
+    {name = "content", type = "UnsetOr[str]"},
+    {name = "username", type = "UnsetOr[str]"},
+    {name = "avatar_url", type = "UnsetOr[str]"},
+    {name = "tts", type = "UnsetOr[bool]"},
+    {name = "embeds", type = "UnsetOr[list[dt.EmbedData]]"},
+    {name = "allowed_mentions", type = "UnsetOr[dt.AllowedMentionsData]"},
+    {name = "components", type = "UnsetOr[list[dt.ComponentData]]"},
+    {name = "attachments", type = "UnsetOr[list[dt.PartialAttachmentData]]"},
+    {name = "flags", type = "UnsetOr[int]"},
+    {name = "thread_name", type = "UnsetOr[str]"},
+]
+supports.files = true
+
+[[methods]]
+name = "get_webhook_message"
+method = "GET"
+url.link = "/webhooks/{webhook_id}/{webhook_token}/messages/{message_id}"
+url.parameters = [
+    {name = "webhook_id", type = "dt.Snowflake"},
+    {name = "webhook_token", type = "str"},
+    {name = "message_id", type = "dt.Snowflake"},
+    {name = "thread_id", type = "UnsetOr[dt.Snowflake]"},
+]
+
+[[methods]]
+name = "edit_webhook_message"
+method = "PATCH"
+url.link = "/webhooks/{webhook_id}/{webhook_token}/messages/{message_id}"
+url.parameters = [
+    {name = "webhook_id", type = "dt.Snowflake"},
+    {name = "webhook_token", type = "str"},
+    {name = "message_id", type = "dt.Snowflake"},
+    {name = "thread_id", type = "UnsetOr[dt.Snowflake]"},
+]
+json.parameters = [
+    {name = "content", type = "UnsetOr[t.Optional[str]]"},
+    {name = "embeds", type = "UnsetOr[t.Optional[list[dt.EmbedData]]]"},
+    {name = "allowed_mentions", type = "UnsetOr[t.Optional[dt.AllowedMentionsData]]"},
+    {name = "components", type = "UnsetOr[t.Optional[list[dt.ComponentData]]]"},
+    {name = "attachments", type = "UnsetOr[t.Optional[list[dt.PartialAttachmentData]]]"},
+]
+supports.files = true
+
+[[methods]]
+name = "delete_webhook_message"
+method = "DELETE"
+url.link = "/webhooks/{webhook_id}/{webhook_token}/messages/{message_id}"
+url.parameters = [
+    {name = "webhook_id", type = "dt.Snowflake"},
+    {name = "webhook_token", type = "str"},
+    {name = "message_id", type = "dt.Snowflake"},
+    {name = "thread_id", type = "UnsetOr[dt.Snowflake]"},
+]

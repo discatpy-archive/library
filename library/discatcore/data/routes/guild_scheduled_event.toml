@@ -1,0 +1,81 @@
+name = "GuildScheduledEventRoutes"
+
+[[methods]]
+name = "list_scheduled_events_for_guild"
+method = "GET"
+url.link = "/guilds/{guild_id}/scheduled-events"
+url.parameters = [
+    {name = "guild_id", type = "dt.Snowflake"},
+    {name = "with_user_count", type = "UnsetOr[bool]"},
+]
+
+[[methods]]
+name = "create_guild_scheduled_event"
+method = "POST"
+url.link = "/guilds/{guild_id}/scheduled-events"
+url.parameters = [{name = "guild_id", type = "dt.Snowflake"}]
+json.parameters = [
+    {name = "channel_id", type = "UnsetOr[dt.Snowflake]"},
+    {name = "entity_metadata", type = "UnsetOr[dt.GuildScheduledEventEntityMetadataData]"},
+    {name = "name", type = "str"},
+    {name = "privacy_level", type = "dt.GuildScheduledEventPrivacyLevels"},
+    {name = "scheduled_start_time", type = "str"},
+    {name = "scheduled_end_time", type = "UnsetOr[str]"},
+    {name = "description", type = "UnsetOr[str]"},
+    {name = "entity_type", type = "dt.GuildScheduledEventEntityTypes"},
+    {name = "image", type = "UnsetOr[str]"},
+]
+supports.reason = true
+
+[[methods]]
+name = "get_guild_scheduled_event"
+method = "GET"
+url.link = "/guilds/{guild_id}/scheduled-events/{guild_scheduled_event_id}"
+url.parameters = [
+    {name = "guild_id", type = "dt.Snowflake"},
+    {name = "guild_scheduled_event_id", type = "dt.Snowflake"},
+    {name = "with_user_count", type = "UnsetOr[bool]"},
+]
+
+[[methods]]
+name = "modify_guild_scheduled_event"
+method = "PATCH"
+url.link = "/guilds/{guild_id}/scheduled-events/{guild_scheduled_event_id}"
+url.parameters = [
+    {name = "guild_id", type = "dt.Snowflake"},
+    {name = "guild_scheduled_event_id", type = "dt.Snowflake"},
+]
+json.parameters = [
+    {name = "channel_id", type = "UnsetOr[dt.Snowflake]"},
+    {name = "entity_metadata", type = "UnsetOr[dt.GuildScheduledEventEntityMetadataData]"},
+    {name = "name", type = "UnsetOr[str]"},
+    {name = "privacy_level", type = "UnsetOr[dt.GuildScheduledEventPrivacyLevels]"},
+    {name = "scheduled_start_time", type = "UnsetOr[str]"},
+    {name = "scheduled_end_time", type = "UnsetOr[str]"},
+    {name = "description", type = "UnsetOr[t.Optional[str]]"},
+    {name = "entity_type", type = "UnsetOr[dt.GuildScheduledEventEntityTypes]"},
+    {name = "image", type = "UnsetOr[str]"},
+]
+supports.reason = true
+
+[[methods]]
+name = "delete_guild_scheduled_event"
+method = "DELETE"
+url.link = "/guilds/{guild_id}/scheduled-events/{guild_scheduled_event_id}"
+url.parameters = [
+    {name = "guild_id", type = "dt.Snowflake"},
+    {name = "guild_scheduled_event_id", type = "dt.Snowflake"},
+]
+
+[[methods]]
+name = "get_guild_scheduled_event_users"
+method = "GET"
+url.link = "/guilds/{guild_id}/scheduled-events/{guild_scheduled_event_id}/users"
+url.parameters = [
+    {name = "guild_id", type = "dt.Snowflake"},
+    {name = "guild_scheduled_event_id", type = "dt.Snowflake"},
+    {name = "limit", type = "int", default = "100"},
+    {name = "with_member", type = "bool", default = "False"},
+    {name = "before", type = "UnsetOr[dt.Snowflake]"},
+    {name = "after", type = "UnsetOr[dt.Snowflake]"},
+]

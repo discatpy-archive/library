@@ -1,0 +1,167 @@
+name = "ApplicationCommandRoutes"
+
+[[methods]]
+name = "get_global_application_commands"
+method = "GET"
+url.link = "/applications/{application_id}/commands"
+url.parameters = [
+    {name = "application_id", type = "dt.Snowflake"},
+    {name = "with_localizations", type = "UnsetOr[bool]"},
+]
+
+[[methods]]
+name = "create_global_application_command"
+method = "POST"
+url.link = "/applications/{application_id}/commands"
+url.parameters = [{name = "application_id", type = "dt.Snowflake"}]
+json.parameters = [
+    {name = "name", type = "str"},
+    {name = "name_localizations", type = "UnsetOr[t.Optional[dict[dt.Locales, str]]]"},
+    {name = "description", type = "str"},
+    {name = "description_localizations", type = "UnsetOr[t.Optional[dict[dt.Locales, str]]]"},
+    {name = "options", type = "UnsetOr[list[dt.ApplicationCommandOptionData]]"},
+    {name = "default_member_permissions", type = "UnsetOr[t.Optional[str]]"},
+    {name = "dm_permission", type = "UnsetOr[t.Optional[bool]]"},
+    {name = "type", type = "dt.ApplicationCommandTypes", default = "1"},
+]
+
+[[methods]]
+name = "get_global_application_command"
+method = "GET"
+url.link = "/applications/{application_id}/commands/{command_id}"
+url.parameters = [
+    {name = "application_id", type = "dt.Snowflake"},
+    {name = "command_id", type = "dt.Snowflake"},
+]
+
+[[methods]]
+name = "edit_global_application_command"
+method = "PATCH"
+url.link = "/applications/{application_id}/commands/{command_id}"
+url.parameters = [
+    {name = "application_id", type = "dt.Snowflake"},
+    {name = "command_id", type = "dt.Snowflake"},
+]
+json.parameters = [
+    {name = "name", type = "UnsetOr[str]"},
+    {name = "name_localizations", type = "UnsetOr[t.Optional[dict[dt.Locales, str]]]"},
+    {name = "description", type = "UnsetOr[str]"},
+    {name = "description_localizations", type = "UnsetOr[t.Optional[dict[dt.Locales, str]]]"},
+    {name = "options", type = "UnsetOr[list[dt.ApplicationCommandOptionData]]"},
+    {name = "default_member_permissions", type = "UnsetOr[t.Optional[str]]"},
+    {name = "dm_permission", type = "UnsetOr[t.Optional[bool]]"},
+]
+
+[[methods]]
+name = "delete_global_application_command"
+method = "DELETE"
+url.link = "/applications/{application_id}/commands/{command_id}"
+url.parameters = [
+    {name = "application_id", type = "dt.Snowflake"},
+    {name = "command_id", type = "dt.Snowflake"},
+]
+
+[[methods]]
+name = "bulk_overwrite_global_application_commands"
+method = "PUT"
+url.link = "/applications/{application_id}/commands"
+url.parameters = [{name = "application_id", type = "dt.Snowflake"}]
+extras.parameters = [{name = "commands", type = "list[dt.ApplicationCommandData]"}]
+extras.request_parameters = [{name = "json_params", value = "commands"}]
+
+[[methods]]
+name = "get_guild_application_commands"
+method = "GET"
+url.link = "/applications/{application_id}/guilds/{guild_id}/commands"
+url.parameters = [
+    {name = "application_id", type = "dt.Snowflake"},
+    {name = "guild_id", type = "dt.Snowflake"},
+]
+
+[[methods]]
+name = "create_guild_application_command"
+method = "POST"
+url.link = "/applications/{application_id}/guilds/{guild_id}/commands"
+url.parameters = [
+    {name = "application_id", type = "dt.Snowflake"},
+    {name = "guild_id", type = "dt.Snowflake"},
+]
+json.parameters = [
+    {name = "name", type = "str"},
+    {name = "name_localizations", type = "UnsetOr[t.Optional[dict[dt.Locales, str]]]"},
+    {name = "description", type = "str"},
+    {name = "description_localizations", type = "UnsetOr[t.Optional[dict[dt.Locales, str]]]"},
+    {name = "options", type = "UnsetOr[list[dt.ApplicationCommandOptionData]]"},
+    {name = "default_member_permissions", type = "UnsetOr[t.Optional[str]]"},
+    {name = "dm_permission", type = "UnsetOr[t.Optional[bool]]"},
+    {name = "type", type = "dt.ApplicationCommandTypes", default = "1"},
+]
+
+[[methods]]
+name = "get_guild_application_command"
+method = "GET"
+url.link = "/applications/{application_id}/guilds/{guild_id}/commands/{command_id}"
+url.parameters = [
+    {name = "application_id", type = "dt.Snowflake"},
+    {name = "guild_id", type = "dt.Snowflake"},
+    {name = "command_id", type = "dt.Snowflake"},
+]
+
+[[methods]]
+name = "edit_guild_application_command"
+method = "PATCH"
+url.link = "/applications/{application_id}/guilds/{guild_id}/commands/{command_id}"
+url.parameters = [
+    {name = "application_id", type = "dt.Snowflake"},
+    {name = "guild_id", type = "dt.Snowflake"},
+    {name = "command_id", type = "dt.Snowflake"},
+]
+json.parameters = [
+    {name = "name", type = "UnsetOr[str]"},
+    {name = "name_localizations", type = "UnsetOr[t.Optional[dict[dt.Locales, str]]]"},
+    {name = "description", type = "UnsetOr[str]"},
+    {name = "description_localizations", type = "UnsetOr[t.Optional[dict[dt.Locales, str]]]"},
+    {name = "options", type = "UnsetOr[list[dt.ApplicationCommandOptionData]]"},
+    {name = "default_member_permissions", type = "UnsetOr[t.Optional[str]]"},
+    {name = "dm_permission", type = "UnsetOr[t.Optional[bool]]"},
+]
+
+[[methods]]
+name = "delete_guild_application_command"
+method = "DELETE"
+url.link = "/applications/{application_id}/guilds/{guild_id}/commands/{command_id}"
+url.parameters = [
+    {name = "application_id", type = "dt.Snowflake"},
+    {name = "guild_id", type = "dt.Snowflake"},
+    {name = "command_id", type = "dt.Snowflake"},
+]
+
+[[methods]]
+name = "bulk_overwrite_guild_application_commands"
+method = "PUT"
+url.link = "/applications/{application_id}/guilds/{guild_id}/commands"
+url.parameters = [
+    {name = "application_id", type = "dt.Snowflake"},
+    {name = "guild_id", type = "dt.Snowflake"},
+]
+extras.parameters = [{name = "commands", type = "list[dt.ApplicationCommandData]"}]
+extras.request_parameters = [{name = "json_params", value = "commands"}]
+
+[[methods]]
+name = "get_guild_application_command_permissions"
+method = "GET"
+url.link = "/applications/{application_id}/guilds/{guild_id}/commands/permissions"
+url.parameters = [
+    {name = "application_id", type = "dt.Snowflake"},
+    {name = "guild_id", type = "dt.Snowflake"},
+]
+
+[[methods]]
+name = "get_application_command_permissions"
+method = "GET"
+url.link = "/applications/{application_id}/guilds/{guild_id}/commands/{command_id}/permissions"
+url.parameters = [
+    {name = "application_id", type = "dt.Snowflake"},
+    {name = "guild_id", type = "dt.Snowflake"},
+    {name = "command_id", type = "dt.Snowflake"},
+]

@@ -1,0 +1,108 @@
+name = "InteractionRoutes"
+
+[[methods]]
+name = "create_interaction_response"
+method = "POST"
+url.link = "/interactions/{interaction_id}/{interaction_token}/callback"
+url.parameters = [
+    {name = "interaction_id", type = "dt.Snowflake"},
+    {name = "interaction_token", type = "str"},
+]
+json.parameters = [
+    {name = "type", type = "dt.InteractionCallbackTypes"},
+    {name = "data", type = "UnsetOr[dt.InteractionCallbackData]"},
+]
+supports.files = true
+
+[[methods]]
+name = "get_original_interaction_response"
+method = "GET"
+url.link = "/webhooks/{application_id}/{interaction_token}/messages/@original"
+url.parameters = [
+    {name = "application_id", type = "dt.Snowflake"},
+    {name = "interaction_token", type = "str"},
+]
+
+[[methods]]
+name = "edit_original_interaction_response"
+method = "PATCH"
+url.link = "/webhooks/{application_id}/{interaction_token}/messages/@original"
+url.parameters = [
+    {name = "application_id", type = "dt.Snowflake"},
+    {name = "interaction_token", type = "str"},
+]
+json.parameters = [
+    {name = "content", type = "UnsetOr[t.Optional[str]]"},
+    {name = "embeds", type = "UnsetOr[t.Optional[list[dt.EmbedData]]]"},
+    {name = "allowed_mentions", type = "UnsetOr[t.Optional[dt.AllowedMentionsData]]"},
+    {name = "components", type = "UnsetOr[t.Optional[list[dt.ComponentData]]]"},
+    {name = "attachments", type = "UnsetOr[t.Optional[list[dt.PartialAttachmentData]]]"},
+]
+supports.files = true
+
+[[methods]]
+name = "delete_original_interaction_response"
+method = "DELETE"
+url.link = "/webhooks/{application_id}/{interaction_token}/messages/@original"
+url.parameters = [
+    {name = "application_id", type = "dt.Snowflake"},
+    {name = "interaction_token", type = "str"},
+]
+
+[[methods]]
+name = "create_followup_message"
+method = "POST"
+url.link = "/webhooks/{application_id}/{interaction_token}"
+url.parameters = [
+    {name = "application_id", type = "dt.Snowflake"},
+    {name = "interaction_token", type = "str"},
+]
+json.parameters = [
+    {name = "content", type = "UnsetOr[str]"},
+    {name = "tts", type = "UnsetOr[bool]"},
+    {name = "embeds", type = "UnsetOr[list[dt.EmbedData]]"},
+    {name = "allowed_mentions", type = "UnsetOr[dt.AllowedMentionsData]"},
+    {name = "components", type = "UnsetOr[list[dt.ComponentData]]"},
+    {name = "attachments", type = "UnsetOr[list[dt.PartialAttachmentData]]"},
+    {name = "flags", type = "UnsetOr[int]"},
+    {name = "thread_name", type = "UnsetOr[str]"},
+]
+supports.files = true
+
+[[methods]]
+name = "get_followup_message"
+method = "GET"
+url.link = "/webhooks/{application_id}/{interaction_token}/messages/{message_id}"
+url.parameters = [
+    {name = "application_id", type = "dt.Snowflake"},
+    {name = "interaction_token", type = "str"},
+    {name = "message_id", type = "dt.Snowflake"},
+]
+
+[[methods]]
+name = "edit_followup_message"
+method = "PATCH"
+url.link = "/webhooks/{application_id}/{interaction_token}/messages/{message_id}"
+url.parameters = [
+    {name = "application_id", type = "dt.Snowflake"},
+    {name = "interaction_token", type = "str"},
+    {name = "message_id", type = "dt.Snowflake"},
+]
+json.parameters = [
+    {name = "content", type = "UnsetOr[t.Optional[str]]"},
+    {name = "embeds", type = "UnsetOr[t.Optional[list[dt.EmbedData]]]"},
+    {name = "allowed_mentions", type = "UnsetOr[t.Optional[dt.AllowedMentionsData]]"},
+    {name = "components", type = "UnsetOr[t.Optional[list[dt.ComponentData]]]"},
+    {name = "attachments", type = "UnsetOr[t.Optional[list[dt.PartialAttachmentData]]]"},
+]
+supports.files = true
+
+[[methods]]
+name = "delete_followup_message"
+method = "DELETE"
+url.link = "/webhooks/{application_id}/{interaction_token}/messages/{message_id}"
+url.parameters = [
+    {name = "application_id", type = "dt.Snowflake"},
+    {name = "interaction_token", type = "str"},
+    {name = "message_id", type = "dt.Snowflake"},
+]
