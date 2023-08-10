@@ -184,7 +184,7 @@ class Dispatcher:
 
         return wrapper
 
-    def wait_for(
+    async def wait_for(
         self,
         event: type[EventT],
         *,
@@ -206,7 +206,7 @@ class Dispatcher:
         )
 
         try:
-            return asyncio.wait_for(future, timeout)
+            return await asyncio.wait_for(future, timeout)
         except asyncio.CancelledError:
             _log.info(
                 "Waiting for %s.%s has cancelled! Cleaning up.",
