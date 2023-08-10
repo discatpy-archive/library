@@ -50,7 +50,7 @@ dynamic = ["version"]
 
 [project.urls]
 "Bug Tracker" = "https://github.com/discatpy-dev/library/issues"
-repository = "https://github.com/discatpy-dev/core"
+repository = "https://github.com/discatpy-dev/library"
 
 [project.optional-dependencies]
 speedup = [
