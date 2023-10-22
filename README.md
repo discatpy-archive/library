@@ -1,5 +1,7 @@
 ![DisCatPy Banner](./assets/banner.png)
 
+# This project has now been archived.
+
 ## Structure
 
 This repository holds two libraries both dedicated to wrapping the Discord API:
